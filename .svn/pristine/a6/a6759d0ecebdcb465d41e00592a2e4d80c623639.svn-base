@@ -1,0 +1,154 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.left .layui-inline{width:100px;}
+.layui-table-cell {padding: 6px 5px;}
+.pear-container {margin: 0; background-color: #fff;}
+</style>
+{if $data}
+<table class="layui-table" id="materialTable" lay-filter="materialTable">
+	<thead>
+		<tr>
+			<th lay-data="{field:'id', width:50,type: 'checkbox'}" class="excludeThisClass"></th>
+			<th lay-data="{field:'id', width:50,hide:true}" class="excludeThisClass"></th>
+			<th lay-data="{field:'can_warehous', width:50,hide:true}" class="excludeThisClass"></th>
+			<th lay-data="{field:'delivery_date', width:{:get_col_width('delivery_date',110)}}">交货日期</th>
+			<th lay-data="{field:'produce_sn', width:{:get_col_width('produce_sn',150)}}">产品编码</th>
+			<th lay-data="{field:'product_model', width:{:get_col_width('product_model',120)}}">型号</th>
+			<th lay-data="{field:'product_specs', width:{:get_col_width('product_specs',100)}}">款式</th>
+			<th lay-data="{field:'queue_num', width:{:get_col_width('queue_num',80)}}">数量</th>
+			<th lay-data="{field:'order_sn', width:{:get_col_width('order_sn',140)}}">销售合同号</th>
+			<th lay-data="{field:'address', width:{:get_col_width('address',150)}}">收货地址/国家</th>
+			<th lay-data="{field:'username', width:{:get_col_width('username',80)}}">销售员</th>
+			<th lay-data="{field:'order_type_desc', width:{:get_col_width('order_type_desc',120)}}">订单类型</th>
+			{if $from == 1}
+			<th lay-data="{field:'order_product_remark', width:{:get_col_width('order_product_remark',120)}}">备注</th>
+			{/if}
+			{if $from == 2}
+			<th lay-data="{field:'status_desc', width:{:get_col_width('status_desc',120)}}">状态</th>
+			<th lay-data="{field:'over_day', width:{:get_col_width('over_day',120)}}">超期天数</th>
+			<th lay-data="{field:'can_remove',title: '操作',toolbar: '#options',align: 'center',unresize: true,width: 80}">操作</th>
+			{/if}
+		</tr> 
+	</thead>
+	<tbody>
+		{volist name="data['data']" id="vo"}
+		<tr id="td{$vo['id']}" data-check="">
+			<td class="excludeThisClass"></td>
+			<td>{$vo['id']}</td>
+			<td>{$vo['can_warehous']}</td>
+			<td>{$vo['delivery_date']}</td>
+			<td>{$vo['produce_sn']}</td>
+			<td>{$vo['product_model']}</td>
+			<td>{$vo['product_specs']}</td>
+			{if $from == 1}
+			<td>{$vo['queue_num']}/{$vo['product_num']}</td>
+			{/if}
+			{if $from == 2}
+			<td>{$vo['apply_num']}</td>
+			{/if}
+			<td>{$vo['order_sn']}</td>
+			<td>{$vo['address']}</td>
+			<td>{$vo['username']}</td>
+			<td>{$vo['order_type_desc']}</td>
+			{if $from == 1}
+			<td>{$vo['order_product_remark']}</td>
+			{/if}
+			{if $from == 2}
+			<td>{$vo['status_desc']}</td>
+			<td>{$vo['over_day']}</td>
+			<td>{$vo['can_remove']}</td>
+			{/if}
+		</tr>
+		<tr>
+			<td class="excludeThisClass"></td>
+			<td colspan="{$from == 1?11:13}">
+				{$vo['order_product']['project_html']|raw}
+			</td>
+		</tr>
+		{/volist}
+	</tbody>
+</table>
+{else/}
+<div class="empty" style="margin-top: 50px;margin-left: 220px;margin-bottom: 80px;" width="184" height="152">
+	请点击左边“行”，选择入库单编号，查看明细！
+</div>
+{/if}
+<script type="text/html" id="toolbar">
+	{if $from == 2}
+	<button class="pear-btn pear-btn-primary pear-btn-sm"  lay-event="warehous"><i class="layui-icon layui-icon-template-1"></i>采购入库</button>
+	{/if}
+</script>
+<script type="text/html" id="options">
+	{{#  if(d.can_remove){ }}<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="remove">核消</button>{{#  } }}
+</script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		table.init('materialTable', {
+			escape :false,
+			height: 'full-40',
+			toolbar: '#toolbar',
+			defaultToolbar: [],
+			done: function(res, curr, count){
+				$(".layui-table-main tr").each(function (index, val) {
+					$($(".layui-table-fixed-l .layui-table-body tbody tr")[index]).height($(val).height());
+					$($(".layui-table-fixed-r .layui-table-body tbody tr")[index]).height($(val).height());
+					if(parseInt($(this).data('index'))%2 == 1){
+						$(this).html('<td colspan="{$from == 1?11:13}"><div class="layui-table-cell">'+$(this).find('td').eq(1).find('.layui-table-cell').html()+'</div></td>');
+					}
+				});
+			}
+		});
+
+		table.on('toolbar(materialTable)', function(obj) {
+			if (obj.event === 'warehous') {
+				var checkStatus = table.checkStatus('materialTable');
+				if(checkStatus.data.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				var id = [];			
+				for(var i in checkStatus.data) {
+					if(checkStatus.data[i].id && checkStatus.data[i].produce_sn){
+						if (checkStatus.data[i].can_warehous == true) {
+							id.push(checkStatus.data[i].id);
+						}else{
+							layer.msg(checkStatus.data[i].produce_sn+'已入库');
+							return false;
+						}
+					}
+				}
+				parent.openLayer('采购入库','{:url('warehous')}?id={$order_id|default=''}&warehous_type=2&ids='+id.join(','),'90%','90%',function(){
+					location.reload();		
+				});
+			}
+		});
+
+		table.on('tool(materialTable)', function(obj) {
+			if (obj.event === 'remove') {
+				parent.layerConfirm('是否作废所选的采购单项，作废后将不能恢复，是否继续?','{:url('removeData')}',{id:obj.data['id']},function(res){
+					location.reload();
+				})
+			}
+		});	
+
+		table.on('colResized(materialTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+	})
+</script>
+{/block}
+
+

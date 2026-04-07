@@ -1,0 +1,366 @@
+<?php
+declare (strict_types = 1);
+namespace app\admin\logic;
+use app\admin\logic\BaseLogic;
+use app\common\model\ErpOrderShipping;
+use app\common\model\ErpOrderProduce;
+use app\common\model\ErpOrder;
+use app\common\model\ErpOrderProduceBom;
+use app\admin\validate\ErpOrderShippingValidate;
+use app\common\enum\RegionTypeEnum;
+use app\common\enum\ErpOrderShippingEnum;
+use app\common\enum\ErpOrderEnum;
+use app\common\service\ErpOrderShippingService;
+use app\common\model\{ErpOrderProduceProcess,ErpOrderProduct,ErpOrderAftersale};
+use think\facade\Db;
+
+class ErpOrderShippingLogic extends BaseLogic{
+
+	// 获取列表
+    public static function getList($query=[],$limit=10)
+    {
+		$map	 			= [];
+		$map[]				= ['a.shipping_status', '<>', ErpOrderShippingEnum::SHIPPING_STATUS_FINISH];
+		$map[]				= ['b.data_type', '=', ErpOrderEnum::DATA_TYPE_1];
+		if(!empty($query['customer_name'])) {
+			$map[]			= ['b.customer_name', 'like', '%' . $query['customer_name'] . '%'];
+        }
+		if(!empty($query['order_sn'])) {
+			$map[]			= ['b.order_sn', 'like', '%' . $query['order_sn'] . '%'];
+        }
+		if(!empty($query['produce_sn'])) {
+			$map[]			= ['c.produce_sn', 'like', '%' . $query['produce_sn'] . '%'];
+        }
+		if(!empty($query['produce_finish_sn'])) {
+			$map[]			= ['c.produce_finish_sn', 'like', '%' . $query['produce_finish_sn'] . '%'];
+        }		
+		
+		if(!empty($query['shipping_sn'])) {
+			$map[]			= ['a.shipping_sn', 'like', '%' . $query['shipping_sn'] . '%'];
+        }		
+		if(!empty($query['bom_sn'])) {
+			$map[]			= ['d.num|d.after_num', 'like', '%' . $query['bom_sn'] . '%'];
+        }		
+		if(!empty($query['shipping_date'])) {
+			$time 			= is_array($query['shipping_date'])?$query['shipping_date']:explode('至',$query['shipping_date']);
+			if(!empty($time[0])){
+				$map[]		= ['a.shipping_date', '>=', (trim($time[0]))];
+			}
+			if(!empty($time[1])){
+				$map[]		= ['a.shipping_date', '<=', (trim($time[1]))];
+			}
+        }
+
+		if(isset($query['region_type']) && $query['region_type'] !== '') {
+			$map[]			= ['b.region_type', '=', $query['region_type']];
+        }	
+		if(isset($query['approve_status']) && $query['approve_status'] !== '') {
+			$map[]			= ['a.approve_status', '=', $query['approve_status']];
+        }
+		
+		$field 				= 'a.*,b.order_sn,b.region_type,b.customer_name,b.contacts,b.create_time as order_time';	
+		$list 				= ErpOrderShipping::alias('a')
+		->join('erp_order b','a.order_id = b.id','LEFT')
+		->join('erp_order_produce c','a.id = c.order_shipping_id','left')
+		->join('erp_order_produce_follow d','c.id = d.order_produce_id','left')
+		->with(['order_product.bom'])->field($field)->where($map)->append(['shipping_status_desc','order_product.bom_html','can_cancel','can_confirm','approve_status_desc'])->order('a.id','desc')->group(['a.id'])->paginate($limit);
+        
+		$data 				= $list->items();
+		$tmp 				= ErpOrderProduce::where('order_shipping_id','in',array_column($data,'id'))->field('id,produce_sn,produce_finish_sn,order_shipping_id')->select();
+		$produce 			= [];
+		foreach($tmp as $vo){
+			$produce[$vo['order_shipping_id']][] = $vo->toArray();
+		}
+		foreach($data as $k=>$vo){
+			$data[$k]['region_type_desc']	= RegionTypeEnum::getDesc($vo['region_type']);
+			if(!empty($produce[$vo['id']])){
+				$data[$k]['produce_sns'] 		= implode(',',array_column($produce[$vo['id']],'produce_sn'));
+				$data[$k]['produce_finish_sn'] 	= implode(',',array_column($produce[$vo['id']],'produce_finish_sn'));
+			}
+		}
+		return ['code'=>0,'data'=>$data,'extend'=>['count' => $list->total(), 'limit' => $limit]];
+    }
+
+
+    // 设为已打印
+    public static function goPrint($data)
+    {
+		//验证
+        $validate 	= new ErpOrderShippingValidate;
+        if(!$validate->scene('print')->check($data)){
+			return ['msg'=>$validate->getError(),'code'=>201];
+		}	
+        try{
+			$count 			= ErpOrderShipping::withTrashed()->whereDay('create_time')->max('max_count') + 1;
+			$shipping_sn 	= 'FH'.date('Ymd').sprintf("%03d",$count);
+			ErpOrderShipping::where('shipping_status',ErpOrderShippingEnum::SHIPPING_STATUS_NO)->where('id','in',$data['ids'])->update(['shipping_sn'=>$shipping_sn,'max_count'=>$count,'shipping_status'=>ErpOrderShippingEnum::SHIPPING_STATUS_PRINTED]);
+        }catch (\Exception $e){
+            return ['msg'=>'操作失败'.$e->getMessage(),'code'=>201];
+        }
+    }
+	
+	
+    public static function goCancel($data,$data_type=1)
+    {
+		//验证
+        $validate 	= new ErpOrderShippingValidate;
+        if(!$validate->scene('cancel')->check($data)){
+			return ['msg'=>$validate->getError(),'code'=>201];
+		}	
+        try{
+			ErpOrderShipping::destroy($data['ids']);
+			ErpOrderProduce::where('order_shipping_id','in',$data['ids'])->update(['order_shipping_id'=>0]);
+			ErpOrderAftersale::where('order_shipping_id','in',$data['ids'])->update(['order_shipping_id'=>0]);
+        }catch (\Exception $e){
+            return ['msg'=>'操作失败'.$e->getMessage(),'code'=>201];
+        }
+    }	
+	
+    public static function goConfirm($data)
+    {
+		//验证
+        $validate 	= new ErpOrderShippingValidate;
+        //if(!$validate->scene('confirm')->check($data)){
+			//return ['msg'=>$validate->getError(),'code'=>201];
+		//}
+		
+		$model 		= ErpOrderShipping::where('shipping_sn','=',$data['shipping_sn'])->select();
+		if($model->isEmpty()){
+			return ['msg'=>'产品出仓（发货）单号不存在','code'=>201];
+		}
+        return ErpOrderShippingService::goConfirm($data,$model);
+    }	
+	
+	
+	
+	
+	// 获取列表
+    public static function getProduce($query=[],$limit=10)
+    {
+		$map	 			= self::getProduceMap($query);
+		$field 				= 'a.*,b.order_sn,b.region_type,b.customer_name,b.contacts,b.salesman_id,b.order_remark,b.shipping_type,c.shipping_sn,c.shipping_num,c.shipping_photo,c.out_warehouse_time,c.address';	
+		$list 				= ErpOrderProduce::alias('a')
+		->join('erp_order b','a.order_id = b.id','LEFT')
+		->join('erp_order_shipping c','a.order_shipping_id = c.id','left')
+		->join('erp_order_produce_follow d','a.id = d.order_produce_id','left')
+		->with(['order_product.bom'])->field($field)->where($map)->append(['order_product.project_html','can_notice_shipping'])->order('a.id','desc')->group(['a.id'])->paginate($limit);
+        
+		$data 				= $list->items();
+		$admins 			= self::getAdmins();
+
+		foreach($data as $k=>$vo){
+			$data[$k]['region_type_desc']				= RegionTypeEnum::getDesc($vo['region_type']);
+			$data[$k]['num_desc']						= $vo['queue_num'].'/'.$vo['order_product']['product_num'];
+			$data[$k]['salesman']						= empty($admins[$vo['salesman_id']])?'':$admins[$vo['salesman_id']]['username'];
+			$data[$k]['shipping_type_desc']				= ErpOrderEnum::getShippingTypeDesc($vo['shipping_type']);
+			
+		}
+		return ['code'=>0,'data'=>$data,'extend'=>['count' => $list->total(), 'limit' => $limit]];
+    }
+	
+	// 获取列表
+    public static function getProduceMap($query=[])
+    {
+		$map	 			= [];
+		if(!empty($query['customer_name'])) {
+			$map[]			= ['b.customer_name', 'like', '%' . $query['customer_name'] . '%'];
+        }
+		if(!empty($query['order_sn'])) {
+			$map[]			= ['b.order_sn', 'like', '%' . $query['order_sn'] . '%'];
+        }
+		if(!empty($query['produce_sn'])) {
+			$map[]			= ['a.produce_sn', 'like', '%' . $query['produce_sn'] . '%'];
+        }
+		if(!empty($query['produce_finish_sn'])) {
+			$map[]			= ['a.produce_finish_sn', 'like', '%' . $query['produce_finish_sn'] . '%'];
+        }		
+		if(!empty($query['shipping_sn'])) {
+			$map[]			= ['c.shipping_sn', 'like', '%' . $query['shipping_sn'] . '%'];
+        }		
+		if(!empty($query['bom_sn'])) {
+			$map[]			= ['d.num|d.after_num', 'like', '%' . $query['bom_sn'] . '%'];
+        }		
+		if(!empty($query['no_out'])) {
+			$map[]			= ['', 'exp', Db::raw('a.order_shipping_id = 0 or c.shipping_status in (10,20)')];
+			$map[]			= ['a.produce_status', '=', 30];
+        }
+		if(!empty($query['shipping_status'])) {
+			$map[]			= ['c.shipping_status', 'in', $query['shipping_status']];
+        }		
+		if(isset($query['region_type']) && $query['region_type'] !== '') {
+			$map[]			= ['b.region_type', '=', $query['region_type']];
+        }
+		if(isset($query['shipping_type']) && $query['shipping_type'] !== '') {
+			$map[]			= ['b.shipping_type', '=', $query['shipping_type']];
+        }		
+		if(!empty($query['produce_status'])) {
+			$map[]			= ['a.produce_status', 'in', $query['produce_status']];
+        }		
+		if(!empty($query['out_warehouse_time'])) {
+			$time 			= is_array($query['out_warehouse_time'])?$query['out_warehouse_time']:explode('至',$query['out_warehouse_time']);
+			if(!empty($time[0])){
+				$map[]	=	 ['c.out_warehouse_time', '>=', trim($time[0])];
+			}
+			if(!empty($time[1])){
+				$map[]		= ['c.out_warehouse_time', '<=', trim($time[1])];
+			}
+        }	
+		if(!empty($query['finish_date'])) {
+			$time 			= is_array($query['finish_date'])?$query['finish_date']:explode('至',$query['finish_date']);
+			if(!empty($time[0])){
+				$map[]	=	 ['a.finish_date', '>=', trim($time[0])];
+			}
+			if(!empty($time[1])){
+				$map[]		= ['a.finish_date', '<=', trim($time[1])];
+			}
+        }
+		return $map;
+    }	
+	
+	public static function produceBom($order_produce_id,$type){
+		$map	 		= [];
+		$map[]			= ['order_produce_id', '=', $order_produce_id];
+		$map[]			= ['type', '=', $type];
+		$data 			= ErpOrderProduceBom::where($map)->with(['material'])->select()->each(function($item,$index){
+			
+		});
+		return $data;
+	}
+	
+	
+	// 获取列表
+    public static function getProduceOut($query=[],$limit=10)
+    {
+		$map	 			= self::getProduceMap($query);
+		$field 				= 'a.*,b.order_sn,b.customer_name,b.address,b.contacts';	
+		$list 				= ErpOrderProduce::alias('a')
+		->join('erp_order b','a.order_id = b.id','LEFT')
+		->join('erp_order_shipping c','a.order_shipping_id = c.id','left')
+		->join('erp_order_produce_bom d','a.id = d.order_produce_id','left')
+		->with(['order_product'])->field($field)->where($map)->append(['order_product.project_html'])->order(['b.customer_id'=>'desc','a.order_id'=>'desc','a.product_id'=>'desc'])->group(['a.id'])->limit((int)$limit)->select();
+		$tmp 				= [];
+		foreach($list as $k=>$vo){
+			$tmp1 			= $vo['order_product']['add_project'];
+			asort($tmp1);
+			$tmp2 			= $vo['order_product']['change_project'];
+			asort($tmp2);
+			$tmp3 			= $vo['order_product']['replace_info'];
+			asort($tmp3);
+			$key 			= md5($vo['order_id'].$vo['product_id'].serialize($tmp1).serialize($tmp2).serialize($tmp3));
+			
+			if(empty($tmp[$vo['order_id']][$key])){
+				$tmp[$vo['order_id']][$key] 				= ['order_sn'=>$vo['order_sn'],'customer_name'=>$vo['customer_name'],'address'=>$vo['address'].'  '.$vo['contacts'],'product_model'=>$vo['order_product']['product_model'],'product_unit'=>$vo['order_product']['product_unit'],'product_num'=>1,'project_html'=>$vo['order_product']['project_html'],'produce_sn'=>$vo['produce_sn']];
+			}else{
+				$tmp[$vo['order_id']][$key]['product_num'] 	= $tmp[$vo['order_id']][$key]['product_num'] + 1;
+				$tmp[$vo['order_id']][$key]['produce_sn'] 	= $tmp[$vo['order_id']][$key]['produce_sn'].','.$vo['produce_sn'];
+			}
+		}
+		
+		$data				= [];
+		foreach($tmp as $v1){
+			foreach($v1 as $v2){
+				$data[] 	= $v2;
+			}
+		}
+		return ['code'=>0,'data'=>$data,'extend'=>['count' => count($data), 'limit' => $limit]];
+    }
+	
+	
+	 public static function goNoticeShipping($ids,$address='',$shipping_date=''){
+		$list 			= ErpOrderProduce::where('id','in',$ids)->append(['can_notice_shipping'])->select();
+		$order			= ErpOrder::where('id','in',$list->column('order_id'))->column('id,address','id');
+		$shipping_date 	= $shipping_date?$shipping_date:date('Y-m-d');
+		$data 			= [];
+		foreach($list as $vo){
+			if(!$vo['can_notice_shipping']){
+				return ['msg'=>'不能发起发货通知','code'=>201];
+			}
+			$data[$vo['order_id']][$vo['order_product_id']][] = $vo['id'];
+		}
+		try{
+			foreach($data as $k=>$vo){
+				self::goNotice($vo,$address?$address:$order[$k]['address'],$shipping_date);
+			}
+		}catch (\Exception $e){
+			return ['msg'=>'操作失败'.$e->getMessage(),'code'=>201];
+		}
+	}
+	 
+	public static function  goNotice($produce_id,$address,$shipping_date){
+		$data 			= [];
+		$order_product 	= ErpOrderProduct::where('id','in',array_keys($produce_id))->select();
+		foreach($order_product as $k=>$v){
+			if(!empty($produce_id[$v['id']])){
+				$model	= ErpOrderShipping::create(['admin'=>self::$adminUser['username'],'address'=>$address,'shipping_date'=>$shipping_date,'num'=>count($produce_id[$v['id']]),'shipping_sn'=>'','order_id'=>$v['order_id'],'order_produce_id'=>implode(',',$produce_id[$v['id']]),'order_product_id'=>$v['id'],'product_id'=>$v['product_id']]);
+				ErpOrderProduce::where('id','in',$produce_id[$v['id']])->where('order_shipping_id',0)->update(['order_shipping_id'=>$model->id]);
+			}
+		}
+	}
+	
+	public static function  goAftersaleNotice($aftersale_id,$address='',$shipping_date=''){
+		try{
+			$aftersale 		= ErpOrderAftersale::where('id','in',$aftersale_id)->select();
+			foreach($aftersale as $vo){
+				if(!$vo['can_notice_shipping']){
+					throw new \Exception($vo['material_name'].'不能发起发货通知');
+				}
+			}
+			$shipping_date 	= $shipping_date?$shipping_date:date('Y-m-d');
+			$order			= ErpOrder::where('id','in',$aftersale->column('order_id'))->column('id,address','id');
+			
+			foreach($aftersale as $k=>$v){
+				$model		= ErpOrderShipping::create(['admin'=>self::$adminUser['username'],'address'=>$address?$address:$order[$v['order_id']]['address'],'shipping_date'=>$shipping_date,'num'=>$v['material_num'],'shipping_sn'=>'','order_id'=>$v['order_id'],'order_produce_id'=>$v['id'],'order_product_id'=>$v['id'],'product_id'=>$v['material_id']]);
+				ErpOrderAftersale::where('id','=',$v['id'])->where('order_shipping_id',0)->update(['order_shipping_id'=>$model->id]);
+			}
+		}catch (\Exception $e){
+			return ['msg'=>'操作失败'.$e->getMessage(),'code'=>201];
+		}
+	}
+	
+	// 获取列表
+    public static function getAftersale($query=[],$limit=10)
+    {
+		$map	 			= [];
+		$map[]				= ['a.shipping_status', '<>', ErpOrderShippingEnum::SHIPPING_STATUS_FINISH];
+		$map[]				= ['b.data_type', '=', ErpOrderEnum::DATA_TYPE_2];
+		if(!empty($query['customer_name'])) {
+			$map[]			= ['b.customer_name', 'like', '%' . $query['customer_name'] . '%'];
+        }
+		if(!empty($query['order_sn'])) {
+			$map[]			= ['b.order_sn', 'like', '%' . $query['order_sn'] . '%'];
+        }
+		if(!empty($query['shipping_sn'])) {
+			$map[]			= ['a.shipping_sn', 'like', '%' . $query['shipping_sn'] . '%'];
+        }			
+		if(!empty($query['shipping_date'])) {
+			$time 			= is_array($query['shipping_date'])?$query['shipping_date']:explode('至',$query['shipping_date']);
+			if(!empty($time[0])){
+				$map[]		= ['a.shipping_date', '>=', (trim($time[0]))];
+			}
+			if(!empty($time[1])){
+				$map[]		= ['a.shipping_date', '<=', (trim($time[1]))];
+			}
+        }
+		if(isset($query['region_type']) && $query['region_type'] !== '') {
+			$map[]			= ['b.region_type', '=', $query['region_type']];
+        }		
+		$field 				= 'a.*,b.order_sn,b.region_type,b.customer_name,b.contacts,c.material_name,c.material_sn,c.material_category,c.material_type';	
+		$list 				= ErpOrderShipping::alias('a')
+		->join('erp_order b','a.order_id = b.id','LEFT')
+		->join('erp_order_aftersale c','a.id = c.order_shipping_id','left')
+		->field($field)->where($map)->append(['shipping_status_desc','can_cancel','can_confirm'])->order('a.id','desc')->group('a.id')->paginate($limit);
+        
+		$data 				= $list->items();
+		foreach($data as $k=>$vo){
+			$data[$k]['region_type_desc']	= RegionTypeEnum::getDesc($vo['region_type']);
+		}
+		return ['code'=>0,'data'=>$data,'extend'=>['count' => $list->total(), 'limit' => $limit]];
+    }
+	
+	public static function goApprove($ids)
+    {
+		ErpOrderShipping::where('id','in',$ids)->update(['approve_status'=>1]);
+    }
+	
+	
+}

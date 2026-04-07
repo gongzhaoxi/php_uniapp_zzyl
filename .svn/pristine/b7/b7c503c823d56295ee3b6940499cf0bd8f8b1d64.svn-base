@@ -1,0 +1,106 @@
+{extend name="layout" /}
+{block name="body"}
+<style>
+.layui-table-cell{padding: 6px 0px;}
+</style>
+{include file="public/nav" /}
+<div class="layui-card">
+	<div class="layui-card-body">
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	<button class="layui-btn layui-btn-normal layui-btn-sm" lay-event="signed">确认签收</button>
+</script>
+
+{/block}
+{block name="js"}
+<script src="/static/tool/jquery.min.js"></script>
+<script src="/static/tool/jQuery.print.min.js"></script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		table.render({
+			elem: '#dataTable',
+			url: "{:url('index')}",
+			page: true,
+			height: 'full-180',
+			size:'sm',
+			limit:100,
+			limits:[100,200,300,400,500],
+			cols: [[
+				{type: 'checkbox'},
+				{field: 'order_sn',title: '调拨单号',align: 'center',unresize: false,width: {:get_col_width('order_sn',150)}},
+				{field: 'sn',title: '物料编码',align: 'center',unresize: false,width: {:get_col_width('sn',150)}},
+				{field: 'name',title: '物料名称',align: 'left',unresize: false},
+				{field: 'enter_order_sn',title: '入库单号',align: 'center',unresize: false,width: {:get_col_width('enter_order_sn',150)}},
+				{field: 'stock_num',title: '调拨数量',align: 'center',unresize: false,width: {:get_col_width('stock_num',100)}},
+				{field: 'signed_num',title: '签收数量',align: 'center',unresize: false,width: {:get_col_width('num',80)}, edit: 'text'},
+			]],
+			toolbar: '#toolbar',
+			defaultToolbar: [{
+					title: '刷新',
+					layEvent: 'refresh',
+					icon: 'layui-icon-refresh',
+			}],
+		});
+		
+		table.on('toolbar(dataTable)', function(obj) {
+			if (obj.event === 'refresh') {
+				table.reload('dataTable');
+			}else if (obj.event === 'signed') {
+				var checkStatus = table.checkStatus('dataTable');
+				if(checkStatus.data.length == 0){
+					var data = table.cache['dataTable'] || {};
+				}else{
+					var data = checkStatus.data;
+				}
+				var id = [];
+				var signed_num = {};
+				for(var i in data) {
+					id.push(data[i].id);
+					signed_num[data[i].id] = data[i].signed_num
+				}
+				if(id.length == 0){
+					layer.msg('暂无要签收的物料');
+					return false;
+				}
+				layerConfirm('确认签收？','{:url('signed')}',{'ids':id,signed_num:signed_num},function(){
+					table.reload('dataTable');
+				})
+			}
+		});		
+		
+		// 单元格普通编辑事件
+		table.on('edit(dataTable)', function(obj){	
+			var reg = /^([0-9]*)$/
+			var check_result = true;
+			if(reg.test(obj.value)) {
+				if(parseInt(obj.value) > parseInt(obj.data.stock_num)){
+					layer.msg('最大数量为:'+obj.data.stock_num);
+					check_result = false;
+				}
+			}else{
+				layer.msg('请输入大于0的正整数')
+				check_result = false;
+			}
+
+			if(check_result == false){
+				obj.td.find('.layui-table-cell').html(obj.oldValue);
+				obj.td.find('.layui-table-cell .layui-input').val(obj.oldValue);
+				var update = {};
+				update[obj.field] = obj.oldValue;
+				obj.update(update);
+			}
+			
+		});	
+	
+	})
+</script>
+{/block}
+
+

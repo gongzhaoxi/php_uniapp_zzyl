@@ -1,0 +1,113 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-form-item {margin-bottom: 5px;}
+.layui-tab .layui-tab-title{border:none;}
+</style>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="" id="searchForm" lay-filter="searchForm" style="border-bottom:1px solid rgb(233, 233, 233);margin-bottom:5px;">	
+			<input type="hidden" name="region_type" id="region_type" value="{$region_type}" >	
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="year" id="year" value="{$year}"  placeholder="选择年份" class="layui-input year">						
+				</div>				
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+					<button class="pear-btn pear-btn-md pear-btn-success" lay-submit lay-filter="export"><i class="layui-icon layui-icon-export"></i>导出</button>
+				</div>
+			</div>
+		</form>		
+		<div class="layui-tab layui-tab-brief" lay-filter="region_type">
+			<ul class="layui-tab-title">
+				<li {if $region_type == 1}class="layui-this"{/if} data-val="1">国内数据</li></a>
+				<li {if $region_type == 2}class="layui-this"{/if} data-val="2">国外数据</li>
+			</ul>
+		</div>
+		<div class="layui-btn-group nav" style="margin-top:15px;">
+			<button type="button"  class="layui-btn layui-btn-sm layui-bg-blue toStat">汇总</button>
+			{php}
+			for($i=1;$i<=12;$i++){
+				echo '<button type="button" data-val="'.$i.'" class="layui-btn layui-btn-sm  layui-btn-primary monthData">'.$i.'月</button> ';			
+			}
+			{/php}
+		</div>	
+		<table class="layui-table" lay-filter="dataTable" id="mtable">
+			<thead>
+				<tr>
+					<th lay-data="{field:'index', width:80,fixed:'left'}">序号</th>
+					<th lay-data="{field:'name', width:{:get_col_width('name',130)},fixed:'left'}">省份</th>
+					{volist name="product" id="vo"}
+					<th lay-data="{field:'product{$vo['id']}', width:{:get_col_width('product'.$vo['id'],130)}}">{$vo['sn']}</th>
+					{/volist}
+					<th lay-data="{field:'total', width:100,fixed:'right'}">合计</th>
+				</tr> 
+			</thead>
+			<tbody>
+				{volist name="data" id="vo"}
+				<tr>
+					<td>{$i}</td>
+					<td>{$vo['name']}</td>
+					{foreach $vo['num'] as $item}
+					<td>{$item}</td>
+					{/foreach}
+					<td>{$vo['total']}</td>
+				</tr>
+				{/volist}
+			</tbody>
+		</table>
+	</div>
+</div>
+
+{/block}
+{block name="js"}
+<script type="text/javascript" src="/static/tool/jquery.min.js"></script>
+<script type="text/javascript" src="/static/tool/jquery.table2excel.js"></script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common','element'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		let element = layui.element;
+
+		table.init('dataTable', {
+			title:'成品发货统计',
+			height:'full-215',
+		});
+
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+
+		$('.monthData').click(function(){
+			location = '{:url('monthStat')}?year='+$('#year').val()+'&region_type='+$('#region_type').val()+'&month='+$(this).data('val');
+		})
+		
+		element.on('tab(region_type)', function(data){
+			$('#region_type').val($(data.elem).find('li').eq(data.index).data('val'));
+			location = '{:url('stat')}?year='+$('#year').val()+'&region_type='+$('#region_type').val();
+		});
+		
+		form.on('submit(export)', function(data) {
+			$("#mtable").table2excel({
+				exclude: ".excludeThisClass",
+				name: "Worksheet Name",
+				filename: "成品发货统计.xls", // do include extension
+				preserveColors: false // set to true if you want background colors and font colors preserved
+			});
+			return false;
+		});			
+	})
+</script>
+{/block}
+
+

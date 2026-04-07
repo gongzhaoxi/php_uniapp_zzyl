@@ -1,0 +1,344 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.uload_photos,.operate .layui-icon{display:none;}
+</style>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<div class="layui-tab  layui-tab-brief">
+			<ul class="layui-tab-title">
+				<li class="layui-this">订单信息</li>
+				<li>生产信息</li>
+				<li>组件清单</li>
+				<li>组件追溯</li>
+			</ul>
+			<div class="layui-tab-content">
+				<div class="layui-tab-item layui-show">
+					<blockquote class="layui-elem-quote">合同信息</blockquote>
+					<table class="layui-table" lay-skin="nob">
+						<tbody>
+							<colgroup>
+								<col width="16.66%">
+								<col width="16.66%">
+								<col width="16.66%">
+								<col width="16.66%">
+								<col width="16.66%">
+								<col>
+							</colgroup>
+							<tr>
+								<td style="text-align:right;">销售合同号</td>
+								<td>{$model['order']['order_sn']}</td>
+								<td style="text-align:right;">客户名称/订货单位</td>
+								<td>{$model['order']['customer_name']}</td>
+								<td style="text-align:right;">交货日期</td>
+								<td>{$model['order']['delivery_time']}</td>
+							</tr>
+							<tr>
+								<td style="text-align:right;">收货地址/国家</td>
+								<td>{$model['order']['address']}</td>
+								<td style="text-align:right;">收货地址/国家(简称)</td>
+								<td>{$model['order']['address_short']}</td>
+								<td style="text-align:right;">订单性质</td>
+								<td>{$model['order']['region_type_desc']}</td>
+							</tr>						
+							<tr>
+								<td style="text-align:right;">联系电话</td>
+								<td>{$model['order']['phone']}</td>
+								<td style="text-align:right;">联系人</td>
+								<td>{$model['order']['contacts']}</td>
+								<td style="text-align:right;">装柜号</td>
+								<td>{$model['order']['cabinet_num']}</td>
+							</tr>							
+							<tr>
+								<td style="text-align:right;">技术参数</td>
+								<td>{$model['order']['technical_parameter']}</td>
+								<td style="text-align:right;">要求</td>
+								<td>{$model['order']['customer_remark']}</td>
+								<td style="text-align:right;">电机编码</td>
+								<td>{$model['order']['motor_code']}</td>
+							</tr>					
+							<tr>
+								<td style="text-align:right;">发货类型</td>
+								<td>{$model['order']['shipping_type_desc']}</td>
+								<td style="text-align:right;">特殊订单</td>
+								<td>{$model['order']['is_special_desc']}</td>
+								<td style="text-align:right;">备注</td>
+								<td>{$model['order']['order_remark']}</td>
+							</tr>
+							<tr>
+								<td style="text-align:right;">UDI标签图片</td>
+								<td>{if $model['udi']}<a href="javascript:layerPhotos('{$model['udi']}')"><img  src="{$model['udi']}"/>{/if}</a></td>
+								<td style="text-align:right;"></td>
+								<td></td>
+								<td style="text-align:right;"></td>
+								<td></td>
+							</tr>							
+							
+						</tbody>
+					</table>
+					<blockquote class="layui-elem-quote">产品信息</blockquote>
+					<table class="layui-table">
+						<thead>
+							<tr>
+								<th>产品编码</th>
+								<th>产品序列号</th>
+								<th>产品名称</th>
+								<th>型号</th>
+								<th>款式</th>
+								<th>颜色</th>
+								<th>单价</th>
+								<th>金额</th>
+								<th>生产状态</th>
+								<th>发货装态</th>
+							</tr> 
+						</thead>
+						<tbody>
+						<tr>
+							<td>{$model['produce_sn']}</td>
+							<td>{$model['produce_finish_sn']}</td>
+							<td>{$model['order_product']['product_name']}</td>
+							<td>{$model['order_product']['product_model']}</td>
+							<td>{$model['order_product']['product_specs']}</td>
+							<td>{$model['order_product']['color']}</td>
+							<td>{$model['order_product']['product_price']}</td>
+							<td>{$model['order_product']['total_price']}</td>		
+							<td>{$model['produce_status_desc']}</td>
+							<td>{$model['shipping']?$model['shipping']['shipping_status_desc']:''}</td>
+						</tr>
+						<tr>
+							<td colspan="9">
+								{$model->order_product->project_html|raw}
+							</td>
+						</tr>
+						</tbody>
+					</table>
+					<blockquote class="layui-elem-quote">发货信息</blockquote>
+					<form class="layui-form" action="">
+						<div class="layui-form-item">
+							<label class="layui-form-label">物流单号</label>
+							<div class="layui-form-mid layui-word-aux">{$model['shipping']?$model['shipping']['shipping_num']:''}</div>
+						</div>
+						<div class="layui-form-item">
+							<label class="layui-form-label">单据图片</label>
+							<div class="layui-input-block">
+								{if $model['shipping'] && $model['shipping']['shipping_photo']}
+								{:$form->photos('shipping_photo',$model['shipping']['shipping_photo'])}
+								{/if}
+							</div>
+						</div>
+					</form>
+				</div>
+				<div class="layui-tab-item">
+					<blockquote class="layui-elem-quote">产品信息</blockquote>
+					<div style="overflow-x:scroll;">
+					<table class="layui-table" id="dataList" style="width:{php}echo 1000+(count($model['process']))*150;{/php}px;">
+						<thead>
+							<tr>
+								<th rowspan="2">收货地址</th>
+								<th rowspan="2">上线日期</th>
+								<th rowspan="2">销售合同号</th>
+								<th rowspan="2">型号</th>
+								<th rowspan="2">款式</th>
+								<th rowspan="2">产品编码</th>
+								<th rowspan="2">产品序列号</th>
+								<th colspan="{:count($model['process'])}">生产工艺组进度</th>	
+							</tr>
+							<tr>
+								{foreach $model['process'] as $v}
+								<th>{$v['process_name']}</th>
+								{/foreach}
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td>{$model['order']['address']}</td>
+								<td>{$model['produce_date']}</td>
+								<td>{$model['order']['order_sn']}</td>
+								<td>{$model['order_product']['product_model']}</td>
+								<td>{$model['order_product']['product_specs']}</td>
+								<td>{$model['produce_sn']}</td>
+								<td>{$model['produce_finish_sn']}</td>
+								{foreach $model['process'] as $v}
+								<td>
+									{if $v['username']}
+										<p>{$v['confirm_date']}</p>
+										<p>报工人：{$v['username']}</p>
+									{else/}
+									&nbsp;
+									{/if}
+								</td>
+								{/foreach}
+							</tr>
+						</tbody>
+					</table>
+					</div>
+					<blockquote class="layui-elem-quote">随工单信息</blockquote>
+					
+					<table class="layui-table">
+						<thead>
+							<tr>
+								<th>序号</th>
+								<th>报工工序</th>
+								<th>完成日期</th>
+								<th>完成人</th>
+								<th>操作</th>
+							</tr> 
+						</thead>
+						<tbody>
+							{volist name="model['process']" id="vo"}
+							<tr>
+								<td>{$i}</td>
+								<td>{$vo['process_name']}</td>
+								<td>{$vo['confirm_date']}</td>
+								<td>{$vo['username']}</td>
+								<td>
+									{if $vo['produce_follow_id']}<button class="pear-btn pear-btn-primary pear-btn-sm follow" data-id="{$vo['produce_follow_id']}" >查阅</button>{/if}
+									{if $vo['process_id'] == 3}<button class="pear-btn pear-btn-primary pear-btn-sm produce_report" data-id="{$vo['process_id']}" >查阅</button>{/if}
+								</td>
+							</tr>
+							{/volist}
+						</tbody>
+					</table>
+					
+					<blockquote class="layui-elem-quote">不合格/返工评审处理单</blockquote>
+					<table class="layui-table">
+						<thead>
+							<tr>
+								<th>序号</th>
+								<th>不合格描述</th>
+								<th>发起人</th>
+								<th>发起时间</th>
+								<th>操作</th>
+							</tr> 
+						</thead>
+						<tbody>
+							{volist name="model['rework']" id="vo"}
+							<tr>
+								<td>{$i}</td>
+								<td>{$vo['remark']}</td>
+								<td>{$vo['username']}</td>
+								<td>{$vo['create_time']}</td>
+								<td><button class="pear-btn pear-btn-primary pear-btn-sm rework" data-id="{$vo['id']}" >详情</button></td>
+							</tr>
+							{/volist}
+						</tbody>
+					</table>					
+					
+				</div>
+				<div class="layui-tab-item">	
+					<table class="layui-table data-table">
+						<thead>
+							<tr>
+								<th>序号</th>
+								<th>物料编号</th>
+								<th>物料名称</th>
+								<th>需求数量</th>								
+								<th>单位</th>
+								<th>类别</th>											
+								<th>颜色</th>
+								<th>备注</th>
+							</tr> 
+						</thead>
+						<tbody>
+							{volist name="bom" id="vo"}
+							<tr class="cid-{$vo['material']['cid']|default=''}" >
+								<td>{$i}</td>
+								<td>{$vo['material']['sn']|default=''}</td>
+								<td>{$vo['material']['name']|default=''}</td>
+								<td>{$vo['num']}</td>						
+								<td>{$vo['material']['unit']|default=''}</td>
+								<td>{$vo['material']['category_name']|default=''}</td>
+								<td>{$vo['material_color']}</td>												
+								<td>{$vo['material']['remark']|default=''}</td>								
+							</tr>
+							{/volist}
+						</tbody>
+					</table>
+				</div>
+				<div class="layui-tab-item">
+					<table class="layui-table data-table">
+						<thead>
+							<tr>
+								<th>序号</th>
+								<th>所在随工单名称</th>
+								<th>所在工序标题</th>
+								<th>组件编号/QC编号</th>								
+								<th>QC检验日期</th>
+								<th>QC检验员</th>											
+								<th>入库单号</th>
+								<th>入库日期</th>
+								<th>采购单号</th>
+								<th>供应商</th>
+								<th>采购日期</th>
+								<th>检验报告</th>
+								<th>操作</th>
+							</tr> 
+						</thead>
+						<tbody>
+							{volist name="code" id="vo"}
+							<tr >
+								<td>{$i}</td>
+								<td>{$vo['follow_name']}</td>
+								<td>{$vo['process_name']}</td>
+								<td>{$vo['sn']|default=''}</td>						
+								<td>{$vo['check_date']|default=''}</td>
+								<td>{$vo['check_username']|default=''}</td>
+								<td>{$vo['enter_order_sn']|default=''}</td>												
+								<td>{$vo['enter_stock_date']|default=''}</td>	
+								<td>{$vo['purchase_order_sn']|default=''}</td>	
+								<td>{$vo['supplier_name']|default=''}</td>	
+								<td>{$vo['purchase_order_date']|default=''}</td>	
+								<td align="center">{if !empty($vo['data_id']) && $vo['data_id'] && $vo['data_type'] == 'erp_material_enter_material'}<i data-id="{$vo['data_id']}" class="layui-icon layui-icon-file-b report"></i>{/if} </td>	
+								<td>{if !empty($vo['data_id']) && $vo['data_id'] && $vo['data_type'] == 'erp_material_enter_material'}<button type="button" data-id="{$vo['data_id']}" class="layui-btn layui-bg-blue layui-btn-sm product">关联产品</button>{/if}</td>	
+							</tr>							
+							{/volist}
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		$('.follow').click(function(){
+			openLayer('随工单查阅','{:url('follow')}?follow_id='+$(this).data('id')+'&id={$model['id']}','90%','90%',function(){
+						
+			});	
+		})
+		
+		$('.produce_report').click(function(){
+			openLayer('产品档案生产过程及检验记录','{:url('report')}?process_id='+$(this).data('id')+'&id={$model['id']}','90%','90%',function(){
+						
+			});	
+		})	
+		
+		$('.report').click(function(){
+			openLayer('检验报告	','{:url('erp.MaterialEnterMaterial/report')}?id='+$(this).data('id'),'90%','90%',function(){
+						
+			});	
+		})		
+		$('.product').click(function(){
+			openLayer('关联产品	','{:url('produceByEnter')}?enter_material_id='+$(this).data('id'),'90%','90%',function(){
+						
+			});	
+		})	
+
+		$('.rework').click(function(){
+			openLayer('不合格/返工评审处理单详情','{:url('reworkDetail')}?id='+$(this).data('id'),'90%','90%',function(){
+						
+			});	
+		})
+		
+	})
+</script>
+{/block}
+
+

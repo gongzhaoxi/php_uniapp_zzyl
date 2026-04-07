@@ -1,0 +1,52 @@
+{extend name="base" /}
+{block name="body"}
+<form class="layui-form" action="" method="post">
+	<input type="hidden"  id="id"  name="id" value="{$model->id??''}"  >
+	<input type="hidden"  id="parent_id"  name="parent_id" value="{$model->parent_id??''}"  >
+	<div class="mainBox">
+		<div class="main-container">
+			<div class="layui-form-item">
+				<label for="" class="layui-form-label">父级</label>
+				<div class="layui-input-block">
+					<ul id="demoTree" class="dtree" ></ul>
+				</div>
+			</div>			
+			<div class="layui-form-item">
+				<label class="layui-form-label">名称</label>
+				<div class="layui-input-block">
+					<input type="text" maxlength="100" name="name" value="{$model['name']}"  lay-verify="required" placeholder="请输入地区名称" autocomplete="off" class="layui-input">
+				</div>
+			</div>							
+		</div>
+	</div>       
+	<div class="bottom">
+		<div class="button-container">
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*"><i class="layui-icon layui-icon-ok"></i>提交</button>
+		</div>
+    </div>
+</form>
+{/block}
+{block name="script"}
+<script>
+layui.use(['form','element','dtree','jquery'], function() {
+	var form = layui.form;
+	var element = layui.element;
+	var dtree = layui.dtree;
+	var $ = layui.jquery;
+	var demoTree = dtree.renderSelect({
+		elem: "#demoTree",
+		data:{:json_encode($tree)},
+		selectInitVal: "{$model->parent_id??'0'}", 
+		response:{
+            treeId: "id",			  //节点ID
+            parentId: "parent_id",	  //父节点ID
+            title: "name",			  //节点名称 
+            childName: "children",	  //子节点名称
+		}
+	});
+	dtree.on("node('demoTree')" ,function(param){
+		$('#parent_id').val(param.param.nodeId);
+	});
+});
+</script>
+{/block}

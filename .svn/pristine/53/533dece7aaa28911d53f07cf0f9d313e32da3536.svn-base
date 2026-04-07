@@ -1,0 +1,120 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-input-block {margin-left: 160px;}
+.layui-form-label {width: 130px;}
+</style>
+ <div class="mainBox">
+	<div class="main-container">
+		<blockquote class="layui-elem-quote">合同信息<span style="color:red;padding-left:10px;">({$model['technician_approve_desc']})</span></blockquote>
+		<table class="layui-table" lay-skin="nob">
+			<tbody>
+				<tr>
+					<td style="text-align:right;">销售合同号</td>
+					<td>{$model['order_sn']}</td>
+					<td style="text-align:right;">客户名称/订货单位</td>
+					<td>{$model['customer_name']}</td>
+					<td style="text-align:right;">交货日期</td>
+					<td>{$model['delivery_time']}</td>
+				</tr>
+				<tr>
+					<td style="text-align:right;">技术参数</td>
+					<td>{$model['technical_parameter']}</td>
+					<td style="text-align:right;">要求</td>
+					<td>{$model['customer_remark']}</td>
+					<td style="text-align:right;">电机编码</td>
+					<td>{$model['motor_code']}</td>
+				</tr>
+				<tr>
+					<td style="text-align:right;">备注</td>
+					<td>{$model['order_remark']}</td>
+					<td style="text-align:right;">销售员</td>
+					<td>{$model['salesman']['username']}</td>
+					<td></td>
+					<td></td>
+				</tr>
+			</tbody>
+		</table>
+		{if $model['is_special']}
+		<div style="margin-bottom:20px;">
+			{if $model['technician_approve'] == 0}<button type="button" class="layui-btn layui-btn-success layui-btn-sm technician-pass"><i class="layui-icon layui-icon-ok-circle"></i>技术审批</button>{/if}
+			{if $model['technician_approve'] == 1}<button type="button" class="layui-btn layui-btn-danger layui-btn-sm technician-reset"><i class="layui-icon layui-icon-close-fill"></i>技术反审</button>{/if}
+		</div>
+		{/if}
+		<blockquote class="layui-elem-quote">产品信息</blockquote>
+		<table class="layui-table">
+			<thead>
+				<tr>
+					<th>序号</th>
+					<th>产品名称</th>
+					<th>型号</th>
+					<th>款式</th>
+					<th>颜色</th>
+					<th>数量</th>
+					<th>单价</th>
+					<th>金额</th>
+					<th>操作</th>
+				</tr> 
+			</thead>
+			<tbody>
+				{foreach $model->orderProduct as $k1=>$v1}
+				<tr>
+					<td>{$k1+1}</td>
+					<td>{$v1['product_name']}</td>
+					<td>{$v1['product_model']}</td>
+					<td>{$v1['product_specs']}</td>
+					<td>{$v1['color']}</td>
+					<td>{$v1['product_num']}</td>
+					<td>{$v1['product_price']}</td>
+					<td>{$v1['total_price']}</td>
+					<td>
+						<button class="pear-btn pear-btn-primary pear-btn-xs edit-product" data-id="{$v1['id']}"><i class="layui-icon layui-icon-edit"></i></button>
+					</td>					
+				</tr>
+				<tr>
+					<td></td>
+					<td colspan="8">
+						<div class="layui-row">
+							<div class="layui-col-md11">
+								具体配置：
+								{$v1['bom_html']|raw}
+							</div>
+							<div class="layui-col-md1">
+								
+							</div>
+						</div>
+					</td>
+				</tr>
+				{/foreach}
+			</tbody>
+		</table>
+	</div>
+</div>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+		$('.technician-reset').click(function(){
+			layerConfirm('确认反审？','{:url('technicianReset')}',{'id':'{$model['id']}'},function(){
+				location.reload();	
+			})
+		})
+
+		$('.edit-product').click(function(){
+			openLayer('编辑产品','{:url('erp.orderProduct/technicianEdit')}?id='+$(this).data('id'),'90%','90%',function(){
+				location.reload();		
+			});
+		})
+
+		$('.technician-pass').click(function(){
+			layerConfirm('确认审批？','{:url('technicianPass')}',{'id':'{$model['id']}'},function(){
+				location.reload();	
+			})
+		})
+	})
+</script>
+{/block}

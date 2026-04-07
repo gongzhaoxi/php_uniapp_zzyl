@@ -1,0 +1,184 @@
+{extend name="layout" /}
+{block name="body"}
+<style>
+.left .layui-inline{width:100px;}
+.layui-table-cell {padding: 6px 5px;}
+</style>
+{include file="public/nav2" /}
+<div class="layui-row layui-col-space">
+	<div class="layui-col-md4">
+		<div class="layui-card left">
+			<div class="layui-card-body">
+				<form class="layui-form" action="">
+					<div class="layui-form-item">
+						<div class="layui-form-item layui-inline">
+							<input type="text" name="order_sn" placeholder="采购单编号" class="layui-input">					
+						</div>
+						<div class="layui-form-item layui-inline">
+							<select name="supplier_id" lay-search="">
+								<option value="">供应商</option>
+								{foreach $supplier as $key=>$vo}
+								<option value="{$vo['id']}">{$vo['name']}</option>
+								{/foreach}
+							</select>				
+						</div>						
+						<div class="layui-form-item layui-inline">
+							<select name="follow_admin_id">
+								<option value="">跟进人</option>
+								{foreach $admins as $key=>$vo}
+								<option value="{$vo['id']}" >{$vo['username']}</option>
+								{/foreach}
+							</select>
+						</div>						
+						<div class="layui-form-item layui-inline" style="width:auto;">
+							<button class="layui-btn layui-btn-md" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+						</div>
+					</div>
+				</form>
+				<table id="dataTable" lay-filter="dataTable"></table>
+			</div>
+		</div>
+	</div>
+	<div class="layui-col-md8">
+		<div class="layui-card">
+			<div class="layui-card-body">
+				<form class="layui-form" action="" id="searchForm">
+					<div class="layui-form-item">
+						<div class="layui-form-item layui-inline">
+							<input type="text" name="keyword" placeholder="物料编码/名称" class="layui-input">					
+						</div>							
+						<div class="layui-form-item layui-inline">
+							<button class="layui-btn layui-btn-md" lay-submit lay-filter="materialQuery"><i class="layui-icon layui-icon-search"></i>查询</button>
+						</div>
+					</div>
+				</form>
+				<div class="empty" style="margin-top: 50px;margin-left: 220px;margin-bottom: 80px;" width="184" height="152">
+					请点击左边“行”，选择入库单编号，查看明细！
+				</div>
+				<table id="materialTable" lay-filter="materialTable"></table>
+			</div>
+		</div>
+
+	</div>
+</div>
+<script type="text/html" id="toolbarMaterial">
+	<button class="layui-btn layui-bg-blue  layui-btn-sm"  lay-event="warehous"><i class="layui-icon layui-icon-template-1"></i>采购入库</button>
+</script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		let order_id;
+		var order_sn = '';
+		var supplier_id = '';
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('materialFollow')}',
+			page: true,
+			height: 'full-220',
+			size:'sm',
+			cols: [[
+				{field: 'order_sn',title: '采购单编号',align: 'center',unresize: false,width: {:get_col_width('order_sn',150)}},
+				{field: 'supplier_name',title: '供应商',align: 'center',unresize: false,width: {:get_col_width('supplier_name',100)},},
+				{field: 'order_date',title: '采购日期',align: 'center',unresize: false,width: {:get_col_width('order_date',150)}},
+				{field: 'follow_admin_name',title: '采购跟进人',align: 'center',unresize: false,width: {:get_col_width('follow_admin_name')},},
+				
+			]],
+			limit:100,
+			limits:[100,200,300,400,500],
+			cellMinWidth: 60,
+			toolbar: false,
+			defaultToolbar:false,
+		});
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+
+		table.on('row(dataTable)',function (obj) {
+			window.renderData(obj.data)
+		})		
+		
+		window.renderData = function(order) {
+			$(".empty").hide();
+			order_id = order.id
+			supplier_id = order.supplier_id;
+			
+			table.render({
+				elem: '#materialTable',
+				url: "{:url('materialData')}?"+$('#searchForm').serialize()+"&order_id="+order_id,
+				page: true,
+				height: 'full-220',
+				limit:100,
+				limits:[100,200,300,400,500],
+				cols: [[
+					{type: 'checkbox'},
+					{field: 'sn',title: '物料编码',align: 'center',unresize: false,width: {:get_col_width('sn'.'2',150)}},
+					{field: 'name',title: '物料名称',align: 'left',unresize: false,width: {:get_col_width('name'.'2',250)}},
+					{field: 'apply_num',title: '采购量',align: 'center',unresize: false,width: {:get_col_width('apply_num'.'2',100)}},
+					{field: 'warehous_num',title: '已回厂数',align: 'center',unresize: false,width: {:get_col_width('warehous_num'.'2',100)}},
+					{field: 'wait_num',title: '在途数',align: 'center',unresize: false,width: {:get_col_width('wait_num'.'2',100)},templet: function(d){return d.apply_num-d.warehous_num;}},
+					{field: 'unit',title: '单位',align: 'center',unresize: false,width: {:get_col_width('unit'.'2',100)}},
+					{field: 'material',title: '材料',align: 'center',unresize: false,width: {:get_col_width('material'.'2',100)}},
+					{field: 'surface',title: '表面',align: 'center',unresize: false,width: {:get_col_width('surface'.'2',100)}},
+					{field: 'color',title: '颜色',align: 'center',unresize: false,width: {:get_col_width('color'.'2',100)}},
+					{field: 'delivery_date',title: '要求交货日期',align: 'center',unresize: false,width: {:get_col_width('delivery_date'.'2',120)}},
+				]],
+				toolbar: '#toolbarMaterial',
+				defaultToolbar: [{
+					title: '刷新',
+					layEvent: 'refresh',
+					icon: 'layui-icon-refresh',
+				}, 'filter'],
+			});
+		}
+		
+
+		table.on('toolbar(materialTable)', function(obj) {
+			if (obj.event === 'warehous') {
+				var checkStatus = table.checkStatus('materialTable');
+				if(checkStatus.data.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				
+				var id = [];
+				for(var i in checkStatus.data) {
+					if (checkStatus.data[i].can_warehous == true) {
+						id.push(checkStatus.data[i].id);
+					}else{
+						layer.msg(checkStatus.data[i].sn+'已全部回厂');
+						return false;
+					}
+				}
+				if(id.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				openLayer('采购入库','{:url('warehous')}?ids='+id.join(',')+'&supplier_id='+supplier_id,'90%','90%');
+			}else if (obj.event === 'refresh') {
+				table.reload('materialTable');
+			}
+		});
+		
+		form.on('submit(materialQuery)', function(data) {
+			table.reload('materialTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+		
+	})
+</script>
+{/block}
+
+

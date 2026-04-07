@@ -1,0 +1,187 @@
+{extend name="h5layout" /}
+{block name="body"}
+<style>
+.am-form .item{margin-top:10px;padding-left: 0.5rem;padding-right: 0.5rem;}
+.am-form .item input[type="text"],.item *{font-size: 1.3rem;}
+.list .item{margin-top:10px;}
+.list .item .am-table tbody tr td {vertical-align: middle;border: none;}
+</style>
+<div class="am-g">
+	<form class="am-form" action="{:url('list')}" method="get">
+		<div class="am-u-sm-10">
+			<div class="am-g">
+				<div class="am-u-sm-6 item"><input type="text" name="order_sn" value="{$query['order_sn']|default=''}" placeholder="输入销售合同号"></div>
+				<div class="am-u-sm-6 item"><input type="text" name="customer_name" value="{$query['customer_name']|default=''}" placeholder="输入客户名称"></div>
+				<div class="am-u-sm-6 item">
+					<select name="salesman_id" data-am-selected="{btnWidth: '100%', searchBox: 1,maxHeight: 200}">
+						<option value="0">全部</option>
+						{volist name="admins" id="vo"}
+						<option value="{$vo['id']}" {if !empty($query['salesman_id']) && $query['salesman_id'] == $vo['id']}selected{/if}>{$vo['username']}</option>
+						{/volist}
+					</select>
+				</div>
+				<div class="am-u-sm-6 item">
+					<div class="am-g">
+						<div class="am-u-sm-6" style="padding-right:0;"><input type="text" class="am-form-field" name="create_start" value="{$query['create_start']|default=''}" placeholder="开始时间" data-am-datepicker readonly required /></div>
+						<div class="am-u-sm-6" style="padding-left:0;"><input type="text" class="am-form-field" name="create_end" value="{$query['create_end']|default=''}" placeholder="结束时间" data-am-datepicker readonly required /></div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="am-u-sm-2">
+			<div class="am-g">
+				<div class="am-u-sm-12 item"><button type="submit" class="am-btn  am-btn-primary am-btn-sm"><i class="am-icon-search"></i></button></div>
+				<div class="am-u-sm-12 item"><a class="am-btn am-btn-default am-btn-sm" href="{:url('list')}"><i class="am-icon-refresh"></i></a></div>
+			</div>
+		</div>
+	</form>
+</div>
+<div class="list">
+	{if count($data) > 0}
+	{volist name="data" id="vo"}
+	<div class="item am-u-">
+		<table class="am-table am-table-bordered am-table-radius">
+			<colgroup>
+				<col width="100">
+				<col>
+				<col width="100">
+			</colgroup>
+			<tbody>
+				<tr>
+					<td align="right">销售合同号：</td>
+					<td>{$vo['order_sn']}</td>
+					<td rowspan="4" valign="middle" >
+						<button type="button" class="am-btn am-btn-primary  js-modal-open" data-sn="{$vo['order_sn']}" data-id="{$vo['id']}">查看订单</button>
+						{if $salesman_pass && $vo['salesman_approve'] == 0}<button type="button" class="am-btn am-btn-danger salesman-pass" data-id="{$vo['id']}">销售审批</button>{/if}
+						{if $shipping && $vo['salesman_approve'] == 1}<button type="button" class="am-btn am-btn-danger shipping" data-id="{$vo['id']}">申请发货</button>{/if}
+					</td>
+				</tr>
+				<tr>
+					<td align="right">客户名称：</td>
+					<td>{$vo['customer_name']}</td>
+				</tr>
+				<tr >
+					<td align="right">收货地址：</td>
+					<td>{$vo['address']}</td>
+				</tr>
+				<tr>
+					<td align="right">下单日期：</td>
+					<td>{$vo['create_date']}</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	{/volist}
+	<div class="am-g">
+		<div class="am-u-sm-12">
+			<ul  data-am-widget="pagination" class="am-pagination am-pagination-select"  >
+				<li class="am-pagination-prev "><a href="{if $page == 1}javascript:;{else/}{:url('list')}?page={$page-1}{if $query}&{:http_build_query($query);}{/if}{/if}">上一页</a></li>
+				<li class="am-pagination-next "><a href="{if $page == $last_page}javascript:;{else/}{:url('list')}?page={$page+1}{if $query}&{:http_build_query($query);}{/if}{/if}">下一页</a></li>
+			</ul>
+		</div>
+	</div>
+	{else/}
+	<div data-am-widget="titlebar" class="am-titlebar am-titlebar-default" ><h2 class="am-titlebar-title ">暂无数据</h2></div>
+	{/if}
+</div>
+<script>
+
+layui.use(['layer'], function() {
+	var layer = layui.layer;
+
+	$('.js-modal-open').click(function(){
+		layer.open({
+			type: 2,
+			area: ['95%','90%'],
+			fix: false, //不固定
+			maxmin: true,
+			shade:0.4,
+			title: '订单详情',
+			scrollbar: false,
+			content: '{:url('view')}?id='+$(this).data('id'),
+			cancel: function () {
+				
+			},
+			end: function() {
+				
+			},
+			success: function(layero, index){
+							
+			}
+		});
+	})
+	
+	$('.shipping').click(function(){
+		layer.open({
+			type: 2,
+			area: ['95%','90%'],
+			fix: false, //不固定
+			maxmin: true,
+			shade:0.4,
+			title: '申请发货',
+			scrollbar: false,
+			content: '{:url('shipping')}?id='+$(this).data('id'),
+			cancel: function () {
+				
+			},
+			end: function() {
+				
+			},
+			success: function(layero, index){
+							
+			}
+		});
+	})	
+	
+	$('.salesman-pass').click(function(){
+		var btn =  $(this);
+		layer.open({
+			shade: 0.3,
+			content: '正在对 '+btn.data('sn')+'  订单进行审批，审批后将进行排产操作，是否继续！',
+			btn: ['确定', '取消'],
+			yes: function (index) {
+				layer.close(index);
+				var load_index = layer.load(2);
+				$.ajax({
+					type: 'POST',
+					url:'{:url('salesmanPass')}',
+					data: {'id':btn.data('id')},
+					dataType: 'json',
+					success: function(res){
+						layer.close(load_index);
+						//判断有没有权限
+						if(res && res.code==999){
+							layer.msg(res.msg, {
+								icon: 5,
+								time: 2000, 
+							})
+							return false;
+						}else if (res.code==200) {					
+							layer.msg(res.msg, {
+								icon: 1,
+								time: 1000
+							}, function() {
+								btn.remove();
+							});
+						} else {
+							layer.msg(res.msg, {
+								icon: 2,
+								time: 1000
+							});
+						}
+						return false;		     
+					},
+					error : function() {
+						layer.close(load_index);
+						layer.msg('失败。');
+					}
+				});
+			}
+		});
+	})	
+
+});
+
+
+</script>
+{/block}

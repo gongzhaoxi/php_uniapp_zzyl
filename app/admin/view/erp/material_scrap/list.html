@@ -1,0 +1,248 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-table-cell { height:auto;}
+.layui-table .layui-table-cell img{ max-height: 30px;}
+</style>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<div class="layui-tab layui-tab-brief">
+			<ul class="layui-tab-title">
+				<li class="layui-this">不良品明细</li>
+				<a href="{:url('erp.MaterialScrapOut/list')}"><li>不良品已出库记录</li></a>
+			</ul>
+		</div>		
+		<form class="layui-form" action="" id="searchForm" lay-filter="searchForm">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline" >
+					<select name="cid" lay-search>
+						<option value="">不良品来源</option>
+						<option value="0">质检检验</option>
+						{foreach $material_scrap_type as $key=>$vo}
+						<option value="{$vo['id']}">{$vo['name']}</option>
+						{/foreach}
+					</select>
+				</div>	
+				<div class="layui-form-item layui-inline" >
+					<input type="text" name="sn" placeholder="物料编码" class="layui-input">	
+				</div>	
+				<div class="layui-form-item layui-inline" >
+					<input type="text" name="name" placeholder="物料名称" class="layui-input">	
+				</div>					
+				<div class="layui-form-item layui-inline">
+					<select name="supplier_id" lay-search id="supplier_id" lay-filter="supplier_id">
+						<option value="">供应商</option>
+						{foreach $supplier as $key=>$vo}
+						<option value="{$vo['id']}">{$vo['name']}</option>
+						{/foreach}
+					</select>
+				</div>	
+				<div class="layui-form-item layui-inline" style="width:190px;">
+					<input type="text" name="stock_date" placeholder="退货日期" class="layui-input rangedate">					
+				</div>					
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+					<button type="reset" class="pear-btn pear-btn-md"><i class="layui-icon layui-icon-refresh"></i>重置</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	<button class="pear-btn pear-btn-sm" lay-event="export"><i class="layui-icon layui-icon-export"></i>导出</button>
+	<button class="pear-btn pear-btn-danger pear-btn-sm" lay-event="remove"><i class="layui-icon layui-icon-delete"></i>删除</button>
+	<button class="pear-btn pear-btn-primary pear-btn-sm" lay-event="add"><i class="layui-icon layui-icon-add-1"></i>创建</button>
+	<button class="pear-btn pear-btn-success pear-btn-sm" lay-event="out"><i class="layui-icon layui-icon-upload"></i>不良品出库</button>
+	<button class="pear-btn pear-btn-primary  pear-btn-sm" plain="" lay-event="print"><i class="layui-icon layui-icon-print"></i>打印生产退料单</button>
+</script>
+<script type="text/html" id="photo">
+	{{#  if(d.photo_link){ }}<a onclick="layerPhotos('{{ d.photo_link }}','{{ d.id }}')" href="javascript:;"><img src="{{ d.photo_link }}"/> </a>  {{#  } }} 
+</script>
+<script type="text/html" id="stock_num">
+	{{d.stock_num}}
+	{{# if(d.is_confirm == 0){ }} 
+		<input type="text"  placeholder="" data-id="{{d.id}}" autocomplete="off" class="layui-input stock_num">
+	{{# } }}
+</script>
+
+
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+		$("body").on("change",".stock_num",function(){
+			editStockNum($(this))
+		});
+		
+		$("body").on("keydown",".stock_num",function(){
+			if (event.key === "Enter") {
+				editStockNum($(this))
+			}
+		});
+
+		function editStockNum(obj){
+			var stock_num = obj.val();
+			var id = obj.data('id');
+			if(!stock_num || isNaN(parseFloat(stock_num)) || stock_num <= 0 ){ 
+				layer.msg('请输入大于0的数字');
+				obj.val('')
+				return 
+			}
+			layerConfirm('是否修改总不良品量，修改后不可逆转?','{:url('edit')}',{id:id,stock_num:stock_num,is_confirm:1},function(res){
+				table.reload('dataTable');
+			})
+		}
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('list')}',
+			page: true,
+			limit:90,
+			height:'full-210',			
+			cols: [[
+				{type: 'checkbox'},
+				{field: 'type',title: '不良品来源',align: 'center',unresize: false,width: {:get_col_width('type',120)}, hide: getTableFieldIsHide('dataTable','type')},
+				{field: 'stock_date',title: '不良品日期',align: 'center',unresize: false,width: {:get_col_width('stock_date',120)}, hide: getTableFieldIsHide('dataTable','stock_date')},
+				{field: 'remark',title: '不良品原因',align: 'center',unresize: false,width: {:get_col_width('remark')}, hide: getTableFieldIsHide('dataTable','remark')},
+				{field: 'supplier_name',title: '供应商',align: 'center',unresize: false,width: {:get_col_width('supplier_name')}, hide: getTableFieldIsHide('dataTable','supplier_name')},
+				{field: 'sn',title: '物料编码',align: 'center',unresize: false,width: {:get_col_width('sn')}, hide: getTableFieldIsHide('dataTable','sn')},
+				{field: 'name',title: '物料名称',align: 'center',unresize: false,width: {:get_col_width('name')}, hide: getTableFieldIsHide('dataTable','name')},
+				{field: 'stock_num',title: '总需量',align: 'center',unresize: false,width: {:get_col_width('stock_num',120)},templet:'#stock_num', hide: getTableFieldIsHide('dataTable','stock_num')},
+				{field: 'stocked_num',title: '已出库量',align: 'center',unresize: false,width: {:get_col_width('stocked_num',120)}, hide: getTableFieldIsHide('dataTable','stocked_num')},
+				{field: 'num',title: '剩余量',align: 'center',unresize: false,width: {:get_col_width('num',120)}, hide: getTableFieldIsHide('dataTable','num')},
+				{field: 'photo',title: '不合格图片',align: 'center',unresize: false,width: {:get_col_width('photo',100)},templet: '#photo', hide: getTableFieldIsHide('dataTable','photo')},
+			]],
+			cellMinWidth: 80,
+			//skin: 'line',
+			toolbar: '#toolbar',
+			defaultToolbar: [{
+				title: '刷新',
+				layEvent: 'refresh',
+				icon: 'layui-icon-refresh',
+			}, 'filter']
+		});
+
+		table.on('sort(dataTable)', function(obj){
+			table.reload('dataTable', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+
+		table.on('toolbar(dataTable)', function(obj) {
+			if (obj.event === 'refresh') {
+				table.reload('dataTable');
+			}else if (obj.event === 'export') {
+				var data = form.val('searchForm');
+				exportData('{:url('export')}',data);
+			}else if (obj.event === 'remove') {
+				var checkStatus = table.checkStatus('dataTable');
+				if(checkStatus.data.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				
+				var id = [];
+				for(var i in checkStatus.data) {
+					if(checkStatus.data[i].cid == 0){
+						layer.msg(checkStatus.data[i].sn+'不可删除');
+						return false;
+					}
+					if(checkStatus.data[i].stocked_num > 0){
+						layer.msg(checkStatus.data[i].sn+'已出库');
+						return false;
+					}					
+					id.push(checkStatus.data[i].id);
+				}
+				if(id.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				
+				layerConfirm('确认删除？','{:url('remove')}',{id:id},function(){
+					table.reload('dataTable');
+				})
+			}else if (obj.event === 'add') {
+				openLayer('创建','{:url('add')}','80%','90%');
+			}else if (obj.event === 'out') {
+				var supplier_id = $('#supplier_id').val();
+				if(!supplier_id){
+					layer.msg('请选择供应商');
+					return false;
+				}
+				var checkStatus = table.checkStatus('dataTable');
+				if(checkStatus.data.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				var id = [];
+				var error = [];
+				for(var i in checkStatus.data) {			
+					id.push(checkStatus.data[i].id);
+					if(checkStatus.data[i].is_confirm == 0){
+						error.push(checkStatus.data[i].sn);
+					}
+				}
+				if(error.length > 0){
+					layer.msg(error.join('，')+'请先确认实际不良品量方可进行不良品出库！');
+					return false;
+				}
+				openLayer('不良品出库','{:url('erp.MaterialScrapOut/add')}?ids='+id.join(',')+'&supplier_id='+supplier_id,'80%','90%');
+			}else if (obj.event === 'print') {
+			
+				var checkStatus = table.checkStatus('dataTable');
+				if(checkStatus.data.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				var ids = [];
+				for(var i in checkStatus.data) {
+					ids.push(checkStatus.data[i].id);
+				}
+		
+				toPrintPage(82,{id:ids});
+				return false;
+			}
+		});
+
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+		
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+		table.on('colToggled(dataTable)', function(obj){
+			setTableFieldIsHide(obj.config.id,obj.col.field,obj.col.hide);
+		});
+		
+		form.on('select(supplier_id)', function(data){
+			$(".layui-icon-search").trigger("click");
+		});
+		
+	})
+</script>
+{/block}

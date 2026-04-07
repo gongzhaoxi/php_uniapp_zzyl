@@ -1,0 +1,157 @@
+{extend name="layout" /}
+{block name="body"}
+<style>
+.layui-table-cell{padding: 6px 0px;}
+</style>
+{include file="public/nav" /}
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="keyword" placeholder="物料编码/名称" class="layui-input">					
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<button class="layui-btn" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+				</div>
+			</div>
+		</form>
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	<button class="layui-btn layui-btn-normal layui-btn-sm layui-bg-red" lay-event="return">退回车间库存</button>
+	<button class="layui-btn layui-btn-normal layui-btn-sm" lay-event="pull">零件领用</button>
+	<button class="layui-btn layui-btn-warm layui-btn-sm" lay-event="scrap">物料不良品</button>
+	<button class="layui-btn layui-btn-normal layui-btn-sm layui-bg-red" lay-event="back">车间退回仓库</button>
+</script>
+
+{/block}
+{block name="js"}
+<script src="/static/tool/jquery.min.js"></script>
+<script src="/static/tool/jQuery.print.min.js"></script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		table.render({
+			elem: '#dataTable',
+			url: "{:url('index')}",
+			page: true,
+			height: 'full-230',
+			limit:100,
+			//size:'sm',
+			limits:[100,200,300,400,500],
+			cols: [[
+				{type: 'checkbox'},
+				{field: 'sn',title: '物料编码',align: 'left',unresize: false,width: {:get_col_width('sn')}},
+				{field: 'name',title: '物料名称',align: 'left',unresize: false},
+				{field: 'stock',sort: true, title: '库存数量',align: 'center',unresize: false,width: {:get_col_width('stock',100)}},
+				{field: 'warehouse_name',title: '工位仓位',align: 'left',unresize: false},
+				{field: 'num',title: '领用数量',align: 'center',unresize: false,width: {:get_col_width('num',80)}, edit: 'text'},
+			]],
+			toolbar: '#toolbar',
+			defaultToolbar: [{
+					title: '刷新',
+					layEvent: 'refresh',
+					icon: 'layui-icon-refresh',
+			}],
+		});
+		
+		table.on('toolbar(dataTable)', function(obj) {
+			if (obj.event === 'refresh') {
+				table.reload('dataTable');
+			}else if (obj.event === 'pull') {
+				var checkStatus = table.checkStatus('dataTable');
+				var data = checkStatus.data;
+				var id = [];
+				var num = {};
+				for(var i in data) {
+					id.push(data[i].id);
+					num[data[i].id] = data[i].num
+				}
+				if(id.length == 0){
+					layer.msg('请选择物料');
+					return false;
+				}
+				layerConfirm('确认领用？','{:url('pull')}',{'ids':id,num:num},function(){
+					table.reload('dataTable');
+				})
+			}else if (obj.event === 'return') {
+				var checkStatus = table.checkStatus('dataTable');
+				var data = checkStatus.data;
+				var id = [];
+				for(var i in data) {
+					id.push(data[i].id);
+				}
+				if(id.length == 0){
+					layer.msg('请选择数据');
+					return false;
+				}
+				
+				openLayer('退回车间库存','{:url('returnAdd')}?ids='+id.join(','),'95%','95%');
+			}else if (obj.event === 'scrap') {
+				var checkStatus = table.checkStatus('dataTable');
+				var data = checkStatus.data;
+				var id = [];
+				for(var i in data) {
+					id.push(data[i].id);
+				}
+				if(id.length == 0){
+					layer.msg('请选择数据');
+					return false;
+				}
+				
+				openLayer('物料不良品','{:url('scrapApprovalAdd')}?ids='+id.join(','),'95%','95%');
+			}else if (obj.event === 'back') {
+				var checkStatus = table.checkStatus('dataTable');
+				var data = checkStatus.data;
+				var id = [];
+				for(var i in data) {
+					id.push(data[i].material_id);
+				}
+				openLayer('车间退回仓库','{:url('approvalAdd')}?material_id='+id.join(','),'95%','95%');
+			}
+		});		
+		
+		// 单元格普通编辑事件
+		table.on('edit(dataTable)', function(obj){	
+			var reg = /^([0-9]*)$/
+			var check_result = true;
+			if(reg.test(obj.value)) {
+				if(parseInt(obj.value) > parseInt(obj.data.stock)){
+					layer.msg('最大数量为:'+obj.data.stock);
+					check_result = false;
+				}
+			}else{
+				layer.msg('请输入大于0的正整数')
+				check_result = false;
+			}
+
+			if(check_result == false){
+				obj.td.find('.layui-table-cell').html(obj.oldValue);
+				obj.td.find('.layui-table-cell .layui-input').val(obj.oldValue);
+				var update = {};
+				update[obj.field] = obj.oldValue;
+				obj.update(update);
+			}
+			
+		});	
+	
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});	
+	
+	})
+</script>
+{/block}
+
+

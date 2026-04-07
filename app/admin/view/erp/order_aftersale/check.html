@@ -1,0 +1,489 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.pear-btn .layui-icon-delete{font-size: 18px;float: right;}
+.red{color:red;}
+#production-timeline,#production-form{display:none;}
+.production-timeline .count{color: rgb(51, 51, 51);margin-right:20px;}
+.production-timeline ul li{color: rgb(153, 153, 153);}
+.production-timeline .layui-text p{margin-top:0px;font-size:13px;}
+.layui-tab-title .btn{float:right;position: relative;
+line-height: 40px;min-width: 65px;padding: 0 15px;text-align: center;cursor: pointer;display: inline-block;vertical-align: middle;font-size: 14px;}
+.lack_num {background:red;color:#fff;cursor: pointer;}
+
+.btn .layui-select-title .layui-input {height: 28px;margin-top: -8px;}
+.btn .layui-form-select dl dt,.btn .layui-form-select dl dd {line-height: 28px;}
+.btn .layui-form-select dl {top: 28px;}
+.btn .layui-select-title .layui-input {height: 32px;margin-top: -3px;}
+.btn .layui-form-select dl dt,.btn .layui-form-select dl dd {line-height: 32px;}
+.btn .layui-form-select dl {top: 32px;}
+.btn.layui-select-title .layui-input {height: 38px;margin-top: 0;}
+.btn .layui-form-select dl dt,.btn .layui-form-select dl dd {line-height: 38px;text-align: left;}
+.btn .layui-form-select dl {top: 38px;}
+#mtable>div{width:48%;display:inline-block;float:left;}
+#mtable>div:last-child{float:right;}
+#mtable th{min-width:40px;}
+#mtable td{overflow:auto;}
+.layui-tab-content{padding: 0px;}
+</style>
+<form class="layui-form" action="" method="post" lay-filter="form-filter">
+	<div class="mainBox">
+		<div class="main-container">
+			<div class="layui-form-item" >	
+				<button type="button" class="pear-btn pear-btn-md pear-btn-success" lay-submit lay-filter="check"><i class="layui-icon layui-icon-ok-circle"></i>处理完成</button>
+			</div>
+			<div class="layui-form-item remove-div">
+				{volist name="model['order']" id="vo"}
+				<button type="button" plain="" class="pear-btn pear-btn-primary  pear-btn-xs" lay-submit lay-filter="remove" data-id="{$vo['id']}">{$vo['order_sn']}<i class="layui-icon layui-icon-delete"></i></button>
+				{/volist}
+			</div>	
+			<div class="layui-tab  layui-tab-brief" lay-filter="tab" id="tab">
+				<ul class="layui-tab-title">
+					<li data-jmreport="64" data-select="select-component" data-selectvalue="" class="layui-this">总表-组件</li>
+					<li data-jmreport="64" data-select="select-partn" data-selectvalue="" >总表-零件</li>
+					<li data-jmreport="64" data-select="select-component" data-selectvalue="">足料-组件</li>
+					<li data-jmreport="64" data-select="select-partn" data-selectvalue="">足料-零件</li>
+					<li data-jmreport="64" data-select="select-component" data-selectvalue="">欠料-组件</li>
+					<li data-jmreport="64" data-select="select-partn" data-selectvalue="">欠料-零件</li>
+					<div class="btn">	
+						<!--
+						<div class="layui-input-inline select-component select">
+							<select lay-filter="bill_type" id="bill_type_select">
+								<option value="">全部类别</option>
+								{volist name="bill_type" id="vo"}
+								<option value="{$vo['id']}">{$vo['name']}</option>
+								{/volist}
+							</select>
+						</div>
+						<div class="layui-input-inline select-partn select" style="display:none;">
+							<select lay-filter="produce_type" id="produce_type_select">
+								<option value="">全部生产物料类别</option>
+								{volist name="produce_type" id="vo"}
+								<option value="{$vo['id']}">{$vo['name']}</option>
+								{/volist}
+								<option value="0">未分类组</option>
+							</select>
+						</div>-->
+						<button type="button" class="layui-btn layui-btn-xs layui-btn-success" lay-submit lay-filter="out"><i class="layui-icon layui-icon-ok-circle"></i>申请领料</button>
+						<button type="button" class="layui-btn layui-btn-warm layui-btn-xs" lay-submit lay-filter="print-material">打印售后需求单</button>
+					</div>
+				</ul>	
+				<!-- 总表-组件 -->
+				<div class="layui-tab-content">
+					<div class="layui-tab-item layui-show">
+						<table class="layui-table component-table">
+							<thead>
+								<tr>
+									<th><input type="checkbox"  title="序号" lay-filter="checkbox-filter1"></th>
+									<th>物料编号</th>
+									<th>物料名称</th>	
+									<th>当前库存</th>
+									<th>需求数量</th>
+									<th>欠缺数量</th>						
+								</tr> 
+							</thead>
+							<tbody>
+								{volist name="model['bom1']" id="vo"}
+								<tr class="bill_type-">
+									<td><input type="checkbox" name="material_ids[]" checked value="{$vo['material_id']}" data-ids="{$vo['ids']}" title="{$i}" class="checkbox-filter checkbox-filter1"> </td>
+									<td>{$vo['material_sn']}</td>
+									<td>{$vo['material_name']}</td>
+									<td>{$vo['stock']}</td>
+									<td>{$vo['material_num']}</td>
+									<td {if $vo['lack_num']>0}class="lack_num" data-sn="{$vo['material_sn']}" data-id="{$vo['material_id']}"{/if}>{$vo['lack_num']}</td>								
+								</tr>
+								{/volist}
+							</tbody>
+						</table>
+					</div>
+					<!-- 总表-零件 -->
+					<div class="layui-tab-item">
+						<table class="layui-table partn-table">
+							<thead>
+								<tr>
+									<th><input type="checkbox"  title="序号" lay-filter="checkbox-filter2"></th>
+									<th>物料编号</th>
+									<th>物料名称</th>
+									<th>当前库存</th>
+									<th>需求数量</th>
+									<th>欠缺数量</th>							
+								</tr> 
+							</thead>
+							<tbody>
+								{volist name="model['bom2']" id="vo"}
+								<tr class="produce_type-">
+									<td><input type="checkbox" name="material_ids[]" checked value="{$vo['material_id']}"  data-ids="{$vo['ids']}" title="{$i}" class="checkbox-filter checkbox-filter2"></td>
+									<td>{$vo['material_sn']}</td>
+									<td>{$vo['material_name']}</td>
+									<td>{$vo['stock']}</td>
+									<td>{$vo['material_num']}</td>
+									<td {if $vo['lack_num']>0}class="lack_num" data-sn="{$vo['material_sn']}" data-id="{$vo['material_id']}"{/if}>{$vo['lack_num']}</td>									
+								</tr>
+								{/volist}
+							</tbody>
+						</table>
+					</div>
+					<!-- 足料-组件 -->
+					<div class="layui-tab-item">
+						<table class="layui-table component-table">
+							<thead>
+								<tr>
+									<th><input type="checkbox"  title="序号" lay-filter="checkbox-filter3"></th>
+									<th>物料编号</th>
+									<th>物料名称</th>	
+									<th>当前库存</th>
+									<th>需求数量</th>									
+								</tr> 
+							</thead>
+							<tbody>
+								{php}$index = 0;{/php}
+								{volist name="model['bom1']" id="vo"}
+								{if $vo['lack_num'] == 0}
+								{php}$index++;{/php}
+								<tr class="bill_type-">
+									<td><input type="checkbox" name="material_ids[]" checked value="{$vo['material_id']}"  data-ids="{$vo['ids']}" title="{$index}" class="checkbox-filter checkbox-filter3"></td>
+									<td>{$vo['material_sn']}</td>
+									<td>{$vo['material_name']}</td>
+									<td>{$vo['stock']}</td>
+									<td>{$vo['material_num']}</td>								
+								</tr>
+								{/if}
+								{/volist}
+							</tbody>
+						</table>
+					</div>
+					<!-- 足料-零件 -->					
+					<div class="layui-tab-item">
+						<table class="layui-table partn-table">
+							<thead>
+								<tr>
+									<th><input type="checkbox"  title="序号" lay-filter="checkbox-filter4"></th>
+									<th>物料编号</th>
+									<th>物料名称</th>
+									<th>当前库存</th>
+									<th>需求数量</th>									
+								</tr> 
+							</thead>
+							<tbody>
+								{php}$index = 0;{/php}
+								{volist name="model['bom2']" id="vo"}
+								{if $vo['lack_num'] == 0}
+								{php}$index++;{/php}
+								<tr class="produce_type-">
+									<td><input type="checkbox" name="material_ids[]" checked data-ids="{$vo['ids']}" value="{$vo['material_id']}" title="{$index}" class="checkbox-filter checkbox-filter4"></td>
+									<td>{$vo['material_sn']}</td>
+									<td>{$vo['material_name']}</td>
+									<td>{$vo['stock']}</td>
+									<td>{$vo['material_num']}</td>
+										
+								</tr>
+								{/if}
+								{/volist}
+							</tbody>
+						</table>
+					</div>
+					<!-- 欠料-组件 -->
+					<div class="layui-tab-item">
+						<table class="layui-table component-table">
+							<thead>
+								<tr>
+									<th>序号</th>
+									<th>物料编号</th>
+									<th>物料名称</th>	
+									<th>需求数量</th>
+									<th>欠缺数量</th>					
+								</tr> 
+							</thead>
+							<tbody>
+								{php}$index = 0;{/php}
+								{volist name="model['bom1']" id="vo"}
+								{if $vo['lack_num'] > 0}
+								{php}$index++;{/php}
+								<tr class="bill_type-">
+									<td><input type="checkbox" name="material_ids[]" checked data-ids="{$vo['ids']}" value="{$vo['material_id']}" title="{$index}" class="checkbox-filter checkbox-filter5"></td>
+									<td>{$vo['material_sn']}</td>
+									<td>{$vo['material_name']}</td>
+									<td>{$vo['material_num']}</td>
+									<td>{$vo['lack_num']}</td>								
+								</tr>
+								{/if}
+								{/volist}
+							</tbody>
+						</table>
+					</div>
+					<!-- 欠料-零件 -->
+					<div class="layui-tab-item">
+						<table class="layui-table partn-table">
+							<thead>
+								<tr>
+									<th>序号</th>
+									<th>物料编号</th>
+									<th>物料名称</th>
+									<th>需求数量</th>
+									<th>欠缺数量</th>
+									<th>单位</th>							
+								</tr> 
+							</thead>
+							<tbody>
+								{php}$index = 0;{/php}
+								{volist name="model['bom2']" id="vo"}
+								{if $vo['lack_num'] > 0}
+								{php}$index++;{/php}
+								<tr class="produce_type-">
+									<td><input type="checkbox" name="material_ids[]" checked data-ids="{$vo['ids']}" value="{$vo['material_id']}" title="{$index}" class="checkbox-filter checkbox-filter6"></td>
+									<td>{$vo['material_sn']}</td>
+									<td>{$vo['material_name']}</td>
+									<td>{$vo['material_num']}</td>
+									<td>{$vo['lack_num']}</td>								
+								</tr>
+								{/if}
+								{/volist}
+							</tbody>
+						</table>
+					</div>						
+				</div>
+			</div>
+		</div>
+	</div>
+</form>
+
+{/block}
+{block name="js"}
+<script src="/static/tool/jquery.min.js"></script>
+<script src="/static/tool/jQuery.print.min.js"></script>
+{/block}
+{block name="script"}
+<script>
+	var lack_produce = {:json_encode($model['lack_produce'])} ;
+	layui.use(['table', 'form', 'jquery','common','laydate','tableSelect'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		let laydate = layui.laydate;
+		let layer = layui.layer;
+		let element = layui.element;
+		var tableSelect = layui.tableSelect;
+		
+		element.on('tab(bom-1)', function(data){
+			if(data.index == 0){
+				$('.select-component').show();
+				$('.select-partn').hide();
+			}else{
+				$('.select-partn').show();
+				$('.select-component').hide();
+			}
+		});
+  
+		//一些事件触发
+		element.on('tab(tab)', function(data){
+			var n = $(this).data('select');
+			var v = $(this).data('selectvalue');
+			$('.btn .select').hide();
+			if(n == ''){
+				$('.btn').hide();
+			}else{
+				$('.btn').show();
+				$('.btn .'+n).show();
+				$('.btn .'+n+' select').val(v);
+				form.render('select');
+			}
+		});		
+		
+		form.on('submit(remove)', function(data) {	
+			if($('.remove-div button').length <= 1){
+				layer.msg('至少保留一个产品');return false;
+			}
+			var id = $(this).data('id');
+			layer.confirm('确认移除？',function(){
+				var arr = '{$id}'.split(",");	
+				var ids = [];
+				layui.each(arr, function (index, item) {
+					if(item != id){
+						ids.push(item);
+					}
+				})
+				location.replace('{:url('check')}?id='+ids.join(','));
+			});	
+			return false;
+		});		
+		
+		window.reloadLocation = function(res){
+			layer.alert(res.msg,{closeBtn:false},function(){
+				location.reload();
+			});	
+		}
+
+
+		form.on('submit(check)', function(data) {
+			layerConfirm('确认处理完成？','{:url('check')}',{id:'{$id}'},function(){
+				location.replace('{:url('view')}?id={$id}');
+			})
+			return false;
+		});		
+		
+		form.on('submit(out)', function(data) {
+			var material_ids = [];
+			$('.layui-show .checkbox-filter:checked').each(function(){
+				var item = $(this).val();
+				if(material_ids.indexOf(item) == -1){
+					material_ids.push(item);
+				}
+			})
+			if(material_ids.length == 0){
+				layer.msg('请选择物料');
+				return false;
+			}
+			layerConfirm('确认申请领料？','{:url('out')}',{id:'{$id}',material_ids:material_ids},function(){
+				//location.reload(true);
+			})
+			return false;
+		});		
+		
+		
+		$('.lack_num').click(function(){
+			var id = $(this).data('id');		
+			var html = '<div style="margin: 20px;"><table  class="layui-table"><thead><tr><th>序号</th><th>售后编号</th><th>欠缺数量</th></tr>';
+			var i=1;
+			layui.each(lack_produce[id], function (index, item) {
+				if(item.lack_num>0){
+					html += '<tr><td>'+(i)+'</td><td>'+item.order_sn+'</td><td>'+item.lack_num+'</td></tr>';
+					i++;
+				}
+				
+			})
+			html += '</table></div>';
+			
+			layer.open({
+				type: 1, 
+				title:$(this).data('sn')+'欠缺数量',
+				area: ['500px', '400px'],
+				content: html
+			});
+		})
+		
+
+		form.on('submit(print-material)', function(data) {
+			var ids = [];
+			$('.layui-show .checkbox-filter:checked').each(function(){
+				var item = $(this).data('ids');
+				if(ids.indexOf(item) == -1){
+					ids.push(item);
+				}
+			})
+			if(ids.length == 0){
+				layer.msg('请选择物料');
+				return false;
+			}
+			toPrintPage($('#tab .layui-tab-title .layui-this').data('jmreport'),{id:ids.join(',')})
+		});
+		
+		form.on('submit(print-lack)', function(data) {
+			toPrintPage($(data.elem).closest('ul').find('.layui-this').data('jmreport'),{id:'{$id}'})
+		});
+		
+		form.on('select(bill_type)', function(data){
+			$('.layui-show .checkbox-filter').prop('checked',false);
+			$('#tab .layui-tab-title .layui-this').data('selectvalue',data.value);
+			if(data.value){
+				$('#tab .layui-tab-content .layui-show .layui-table tbody tr').hide();
+				$('#tab .layui-tab-content .layui-show .layui-table .bill_type-'+data.value).show();
+			}else{
+				$('#tab .layui-tab-content .layui-show .layui-table tr').show();
+			}
+			form.render('checkbox');	
+		});      
+		
+		form.on('select(produce_type)', function(data){
+			$('#tab .layui-tab-title .layui-this').data('selectvalue',data.value);
+			if(data.value !== ''){
+				$('#tab .layui-tab-content .layui-show .layui-table tbody tr').hide();
+				$('#tab .layui-tab-content .layui-show .layui-table .produce_type-'+data.value).show();
+			}else{
+				$('#tab .layui-tab-content .layui-show .layui-table tr').show();
+			}
+			$('.layui-show .checkbox-filter').prop('checked',false);
+			form.render('checkbox');	
+		});		
+		
+		$('.print').click(function(){
+			$("#mtable").print();
+		})
+		
+
+		form.on('checkbox(checkbox-filter1)', function(data){
+			var bill_type = $('#bill_type_select').val()
+			if(bill_type){
+				$('.checkbox-filter1').prop('checked',false);
+				if(data.elem.checked == true){
+					$('.bill_type-'+bill_type+' .checkbox-filter1').prop('checked',data.elem.checked)
+				}
+			}else{
+				$('.checkbox-filter1').prop('checked',data.elem.checked)
+			}
+			form.render('checkbox');
+		});
+		form.on('checkbox(checkbox-filter2)', function(data){
+			var produce_type = $('#produce_type_select').val()
+			if(produce_type){
+				$('.checkbox-filter2').prop('checked',false);
+				if(data.elem.checked == true){
+					$('.produce_type-'+produce_type+' .checkbox-filter2').prop('checked',data.elem.checked)
+				}
+			}else{
+				$('.checkbox-filter2').prop('checked',data.elem.checked)
+			}
+			form.render('checkbox');	
+		});		
+		form.on('checkbox(checkbox-filter3)', function(data){
+			var bill_type = $('#bill_type_select').val()
+			if(bill_type){
+				$('.checkbox-filter3').prop('checked',false);
+				if(data.elem.checked == true){
+					$('.bill_type-'+bill_type+' .checkbox-filter3').prop('checked',data.elem.checked)
+				}
+			}else{
+				$('.checkbox-filter3').prop('checked',data.elem.checked)
+			}
+			form.render('checkbox');
+		});			
+		form.on('checkbox(checkbox-filter4)', function(data){
+			var produce_type = $('#produce_type_select').val()
+			if(produce_type){
+				$('.checkbox-filter4').prop('checked',false);
+				if(data.elem.checked == true){
+					$('.produce_type-'+produce_type+' .checkbox-filter4').prop('checked',data.elem.checked)
+				}
+			}else{
+				$('.checkbox-filter4').prop('checked',data.elem.checked)
+			}
+			form.render('checkbox');	
+		});	
+		form.on('checkbox(checkbox-filter5)', function(data){
+			var produce_type = $('#produce_type_select').val()
+			if(produce_type){
+				$('.checkbox-filter5').prop('checked',false);
+				if(data.elem.checked == true){
+					$('.produce_type-'+produce_type+' .checkbox-filter5').prop('checked',data.elem.checked)
+				}
+			}else{
+				$('.checkbox-filter5').prop('checked',data.elem.checked)
+			}
+			form.render('checkbox');	
+		});			
+		form.on('checkbox(checkbox-filter6)', function(data){
+			var produce_type = $('#produce_type_select').val()
+			if(produce_type){
+				$('.checkbox-filter6').prop('checked',false);
+				if(data.elem.checked == true){
+					$('.produce_type-'+produce_type+' .checkbox-filter6').prop('checked',data.elem.checked)
+				}
+			}else{
+				$('.checkbox-filter6').prop('checked',data.elem.checked)
+			}
+			form.render('checkbox');	
+		});			
+	})
+</script>
+{/block}
+
+

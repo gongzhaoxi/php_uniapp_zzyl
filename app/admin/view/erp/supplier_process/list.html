@@ -1,0 +1,132 @@
+{extend name="base" /}
+{block name="body"}
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="sn" placeholder="工艺编码" class="layui-input">	
+				</div>				
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="name" placeholder="工艺名称" class="layui-input">					
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<select name="supplier_id"  lay-search>
+						<option value="">供应商</option>
+						{foreach $supplier as $key=>$vo}
+						<option value="{$vo['id']}">{$vo['name']}</option>
+						{/foreach}
+					</select>
+				</div>					
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	<button class="pear-btn pear-btn-primary pear-btn-sm" lay-event="add"><i class="layui-icon layui-icon-add-1"></i>新增</button>
+	<button class="pear-btn pear-btn-danger pear-btn-sm" lay-event="batchRemove"><i class="layui-icon layui-icon-delete"></i>删除</button>
+</script>
+<script type="text/html" id="options">
+	<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="edit"><i class="layui-icon layui-icon-edit"></i></button>
+	<button class="pear-btn pear-btn-danger pear-btn-xs" lay-event="remove"><i class="layui-icon layui-icon-delete"></i></button>
+</script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('list')}',
+			page: true,
+			cols: [[
+				{type: 'checkbox'},
+				//{field: 'id',title: 'ID', sort: true, align: 'center',width: {:get_col_width('id',100)}, hide: getTableFieldIsHide('dataTable','id')},
+				{field: 'supplier_id',title: '供应商',align: 'center',width: {:get_col_width('supplier_id',150)},templet: function(d){return d.supplier?d.supplier.name:'';}, hide: getTableFieldIsHide('dataTable','supplier_id')},
+				{field: 'sn',title: '工艺编码',align: 'center',width: {:get_col_width('sn')}, hide: getTableFieldIsHide('dataTable','sn')},
+				{field: 'name',title: '工艺名称',align: 'center',width: {:get_col_width('name')}, hide: getTableFieldIsHide('dataTable','name')},
+				{field: 'last_price',title: '上次单价',align: 'center',width: {:get_col_width('last_price',120)}, hide: getTableFieldIsHide('dataTable','last_price')},
+				{field: 'price',title: '本次单价',align: 'center',width: {:get_col_width('price',120)}, hide: getTableFieldIsHide('dataTable','price')},
+				{field: 'unit',title: '单位',align: 'center',width: {:get_col_width('unit',120)}, hide: getTableFieldIsHide('dataTable','unit')},
+				{field: 'effective_date',title: '生效日期',align: 'center',width: {:get_col_width('effective_date',120)}, hide: getTableFieldIsHide('dataTable','effective_date')},
+				{field: 'status_desc',title: '状态',align: 'center',width: {:get_col_width('status_desc',100)}, hide: getTableFieldIsHide('dataTable','status_desc')},
+				{title: '操作',toolbar: '#options',align: 'center',width: 130,unresize:true}
+			]],
+			cellMinWidth: 100,
+			//skin: 'line',
+			toolbar: '#toolbar',
+			defaultToolbar: [{
+				title: '刷新',
+				layEvent: 'refresh',
+				icon: 'layui-icon-refresh',
+			}, 'filter']
+		});
+
+		table.on('sort(dataTable)', function(obj){
+			table.reload('dataTable', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+
+		table.on('tool(dataTable)', function(obj) {
+			if (obj.event === 'remove') {
+				layerConfirm('确定要删除?','{:url('remove')}',{ids:[obj.data['id']]},function(res){
+					obj.del();
+				})
+			} else if (obj.event === 'edit') {
+				openLayer('修改','{:url('edit')}?id='+obj.data['id'],'80%','90%');
+			}
+		});
+
+		table.on('toolbar(dataTable)', function(obj) {
+			if (obj.event === 'add') {
+				openLayer('新增','{:url('add')}','80%','90%');
+			}else if (obj.event === 'refresh') {
+				table.reload('dataTable');
+			} else if (obj.event === 'batchRemove') {
+				tableAction(obj.config.id,'确定要删除','{:url('remove')}');
+			}
+		});
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+		
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+		table.on('colToggled(dataTable)', function(obj){
+			setTableFieldIsHide(obj.config.id,obj.col.field,obj.col.hide);
+		});
+		
+	})
+</script>
+{/block}
+
+

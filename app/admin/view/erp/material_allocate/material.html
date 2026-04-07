@@ -1,0 +1,261 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.left .layui-inline{width:100px;}
+.right .short{width:130px;}
+</style>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<div class="layui-tab layui-tab-brief" >
+			<ul class="layui-tab-title">
+				<a href="{:url('erp.MaterialWarehouse/list')}"><li >车间库存</li></a>
+				<a href="{:url('erp.MaterialAllocate/list')}"><li >物料调拨</li></a>
+				<li class="layui-this">调拨明细</li></a>
+				<a href="{:url('erp.stat/useMaterial')}"><li>工位用量统计</li></a>
+			</ul>
+		</div>
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="" id="searchForm" lay-filter="searchForm">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="keyword" placeholder="物料编码/名称" class="layui-input">					
+				</div>	
+				<div class="layui-form-item layui-inline short" >
+					<select name="from_warehouse_id" lay-search >
+						<option value="">调出仓位</option>								
+						{foreach $warehouse as $key=>$vo}						
+						<option value="{$vo['id']}" >{$vo['name']}</option>							
+						{/foreach}								
+					</select>
+				</div>	
+				<div class="layui-form-item layui-inline short" >
+					<select name="to_warehouse_id" lay-search >
+						<option value="">调入仓位</option>								
+						{foreach $workstation as $key=>$vo}						
+						<option value="{$vo['id']}" >{$vo['name']}</option>							
+						{/foreach}								
+					</select>
+				</div>	
+				<div class="layui-form-item layui-inline short" >
+					<select name="create_admin" lay-search >
+						<option value="">创建人</option>								
+						{foreach $admins as $key=>$vo}						
+						<option value="{$vo['nickname']}" >{$vo['nickname']}</option>							
+						{/foreach}								
+					</select>
+				</div>	
+				<div class="layui-form-item layui-inline short" >
+					<select name="status" >
+						<option value="">状态</option>								
+						{foreach $material_status as $key=>$vo}						
+						<option value="{$key}" >{$vo}</option>							
+						{/foreach}								
+					</select>
+				</div>	
+				<div class="layui-form-item layui-inline short" >
+					<select name="send_status" >
+						<option value="">发出状态</option>								
+						{foreach $send_status as $key=>$vo}						
+						<option value="{$key}" {if $key == 0}selected{/if} >{$vo}</option>							
+						{/foreach}								
+					</select>
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="materialQuery"><i class="layui-icon layui-icon-search"></i>查询</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<table id="materialTable" lay-filter="materialTable"></table>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	<button class="pear-btn pear-btn-danger pear-btn-sm" lay-event="cancel">作废</button>
+	<!--<button class="pear-btn pear-btn-primary pear-btn-sm" lay-event="edit">修改</button>-->
+</script>
+<script type="text/html" id="photo">
+	{{#  if(d.photo_link){ }}<a onclick="layerPhotos('{{ d.photo_link }}','{{ d.id }}')" href="javascript:;"><i class="layui-icon layui-icon-link"></i> </a>  {{#  } }} 
+</script>
+
+<script type="text/html" id="options">
+	<div class="layui-btn-group">
+		{{#  if(d.send_status == 0){ }}
+		<button class="layui-btn layui-btn-xs" lay-event="send">确认发出</button>
+		{{#  } }} 
+		{{#  if(d.can_returned){ }}
+		<button class="layui-btn layui-btn-warm layui-btn-xs" lay-event="returned">未签收退库</button>
+		{{#  } }} 
+		{{#  if(d.can_cancel){ }}
+		<button class="layui-btn layui-btn-danger layui-btn-xs" lay-event="cancel">作废</button>
+		{{#  } }} 
+	</div>
+</script>
+
+
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+		form.on('submit(materialQuery)', function(data) {
+			table.reload('materialTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});		
+		
+		table.render({
+			elem: '#materialTable',
+			url: "{:url('material')}?send_status=0",
+			page: true,
+			scrollPos:'fixed',
+			height: 'full-250',
+			limit:100,
+			limits:[100,200,300,400,500],
+			cols: [[
+				{title: '操作',toolbar: '#options',align: 'center',width: 200,unresize:true},
+				{field: 'send_status_desc',title: '发出状态',align: 'center',unresize: false,width: {:get_col_width('send_status_desc',100)}, hide: getTableFieldIsHide('materialTable','send_status_desc')},
+				{field: 'send_by',title: '确认人',align: 'center',unresize: false,width: {:get_col_width('send_by',100)}, hide: getTableFieldIsHide('materialTable','send_by')},
+				{field: 'sn',title: '物料编码',align: 'center',unresize: false,width: {:get_col_width('sn',150)}, hide: getTableFieldIsHide('materialTable','sn')},
+				{field: 'name',title: '物料名称',align: 'left',unresize: false,width: {:get_col_width('name',250)}, hide: getTableFieldIsHide('materialTable','name')},
+				{field: 'unit',title: '单位',align: 'center',unresize: false,width: {:get_col_width('unit',80)}, hide: getTableFieldIsHide('materialTable','unit')},
+				{field: 'enter_order_sn',title: '入库单号',align: 'center',unresize: false,width: {:get_col_width('enter_order_sn',150)}, hide: getTableFieldIsHide('materialTable','enter_order_sn')},
+				{field: 'from_warehouse_id',title: '调出仓位',align: 'center',unresize: false,width: {:get_col_width('from_warehouse_id',100)},templet: function(d){return d.from_warehouse?d.from_warehouse.name:'';}, hide: getTableFieldIsHide('dataTable','from_warehouse_id')},
+				{field: 'to_warehouse_id',title: '调入仓位',align: 'center',unresize: false,width: {:get_col_width('to_warehouse_id',100)},templet: function(d){return d.to_warehouse?d.to_warehouse.name:'';}, hide: getTableFieldIsHide('dataTable','to_warehouse_id')},
+				{field: 'stock_num',title: '调拨数量',align: 'center',unresize: false,width: {:get_col_width('stock_num',100)}, hide: getTableFieldIsHide('materialTable','stock_num')},
+				//{field: 'signed_num',title: '签收数量',align: 'center',unresize: false,width: {:get_col_width('signed_num',100)}, hide: getTableFieldIsHide('materialTable','signed_num')},
+				//{field: 'no_signed_num',title: '未签收数量',align: 'center',unresize: false,width: {:get_col_width('no_signed_num',100)}, hide: getTableFieldIsHide('materialTable','no_signed_num')},
+				{field: 'create_admin',title: '创建人',align: 'center',unresize: false,width: {:get_col_width('create_admin',100)}, hide: getTableFieldIsHide('dataTable','create_admin')},
+				//{field: 'signed_username',title: '签收人',align: 'center',unresize: false,width: {:get_col_width('remark',100)}, hide: getTableFieldIsHide('materialTable','signed_username')},
+				{field: 'stock_date',title: '调拨日期',align: 'center',unresize: false,width: {:get_col_width('stock_date',120)}, hide: getTableFieldIsHide('dataTable','stock_date')},
+				//{field: 'signed_date',title: '签收日期',align: 'center',unresize: false,width: {:get_col_width('remark',120)}, hide: getTableFieldIsHide('materialTable','signed_date')},
+				//{field: 'status_desc',title: '状态',align: 'center',unresize: false,width: {:get_col_width('status_desc',100)}, hide: getTableFieldIsHide('materialTable','status_desc')},
+				{field: 'order_sn',title: '调拨单号',align: 'center',unresize: false,width: {:get_col_width('order_sn',150)}, hide: getTableFieldIsHide('dataTable','order_sn')},
+			]],
+			//skin: 'line',
+			toolbar: '#materialToolbar',
+			defaultToolbar: [{
+				title: '刷新',
+				layEvent: 'refresh',
+				icon: 'layui-icon-refresh',
+			}, 'filter'],
+		});
+
+		table.on('tool(materialTable)', function(obj) {
+			if (obj.event === 'cancel') {
+				layerConfirm('确认作废？','{:url('cancel')}',{id:obj.data['material_stock_id'],ids:obj.data['id']},function(){
+					table.reloadData('materialTable');
+				})
+			}else if (obj.event === 'returned') {		
+				layerConfirm('是否确定把未签收的物料退回到对应的列表中，退库将会增加对应物料的库存？','{:url('returned')}',{id:obj.data['material_stock_id'],ids:obj.data['id']},function(){
+					table.reloadData('materialTable');
+				})
+			}else if (obj.event === 'send') {		
+				layerConfirm('确认已发出？','{:url('send')}',{id:obj.data['material_stock_id'],ids:obj.data['id']},function(){
+					table.reloadData('materialTable');
+				})
+			}
+		});
+
+
+
+		table.on('toolbar(materialTable)', function(obj) {
+			if (obj.event === 'export') {
+				var index = layui.layer.load(1);
+				let column 	= [{text:'物料编码',key:'sn'},{text:'物料名称',key:'name'},{text:'单位',key:'unit'},{text:'入库单号',key:'enter_order_sn'},{text:'调拨数量',key:'stock_num'},{text:'签收数量',key:'signed_num'},{text:'未签收数量',key:'no_signed_num'},{text:'签收人',key:'signed_username'},{text:'签收日期',key:'signed_date'},{text:'状态',key:'status_desc'},{text:'退货状态',key:'returned_status_desc'}];
+				$.ajax({
+					type : "get",
+					url : "{:url('material')}?limit=10000&material_stock_id="+material_stock_id,
+					data: $('#searchForm').serialize(),
+					success : function(data) {
+						layui.layer.close(index);
+						if (data.count > 0) {
+							jsonToExcel(column, [column], data.data, order_sn+'调拨物料')
+						}else{
+							layui.layer.msg('暂无数据');
+						}
+					}
+				});
+			
+			}else if (obj.event === 'cancel') {
+				var checkStatus = table.checkStatus('materialTable');
+				if(checkStatus.data.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				
+				var id = [];
+				for(var i in checkStatus.data) {
+					if (checkStatus.data[i].can_cancel == true) {
+						id.push(checkStatus.data[i].id);
+					}else{
+						layer.msg(checkStatus.data[i].sn+'已作废或已签收');
+						return false;
+					}
+				}
+				if(id.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				
+				layerConfirm('确认作废？','{:url('cancel')}',{id:material_stock_id,ids:id},function(){
+					table.reload('materialTable');
+				})
+			}else if (obj.event === 'refresh') {
+				table.reload('materialTable');
+			}else if (obj.event === 'returned') {
+				var checkStatus = table.checkStatus('materialTable');
+				if(checkStatus.data.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				
+				var id = [];
+				for(var i in checkStatus.data) {
+					if (checkStatus.data[i].can_returned == true) {
+						id.push(checkStatus.data[i].id);
+					}else{
+						layer.msg(checkStatus.data[i].sn+'未签收或已退库或未签收数量为0');
+						return false;
+					}
+				}
+				if(id.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				
+				layerConfirm('是否确定把未签收的物料退回到对应的列表中，退库将会增加对应物料的库存？','{:url('returned')}',{id:material_stock_id,ids:id},function(){
+					table.reload('materialTable');
+				})
+			}
+		});
+		
+		table.on('colResized(materialTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field+'',width:obj.col.width,path:'{:request()->baseUrl()}2'},
+				success : function(data) {
+	
+				}
+			});
+		});
+
+		table.on('colToggled(materialTable)', function(obj){
+			setTableFieldIsHide(obj.config.id,obj.col.field,obj.col.hide);
+		});
+	})
+</script>
+{/block}
+
+

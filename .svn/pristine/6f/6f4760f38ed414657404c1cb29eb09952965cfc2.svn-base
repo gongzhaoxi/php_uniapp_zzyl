@@ -1,0 +1,935 @@
+ALTER TABLE `erp_supplier` ADD `code` VARCHAR(100) NOT NULL DEFAULT '' COMMENT '供应链组织码' AFTER `status`, ADD `file` TEXT NULL DEFAULT NULL COMMENT '资质证明' AFTER `code`;
+
+ALTER TABLE `erp_customer` ADD `region` VARCHAR(255) NOT NULL DEFAULT '' COMMENT '区域' AFTER `admin_id`;
+
+ALTER TABLE `erp_order` ADD `order_type` TINYINT(3) UNSIGNED NOT NULL DEFAULT '10' COMMENT '订单类型' AFTER `salesman_approve`;
+
+ALTER TABLE `erp_order` ADD `data_type` TINYINT(1) UNSIGNED NOT NULL DEFAULT '1' COMMENT '数据类型1为销售订单2为售后订单' AFTER `order_type`;
+
+ALTER TABLE `erp_order` ADD `sale_order_id` INT(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '关联销售单号' AFTER `data_type`;
+
+
+ALTER TABLE `erp_customer` ADD `invoice_title` VARCHAR(255) NOT NULL DEFAULT '' COMMENT '发票抬头' AFTER `region`, ADD `invoice_code` VARCHAR(255) NOT NULL DEFAULT '' COMMENT '税号' AFTER `invoice_title`;
+
+
+
+ALTER TABLE `erp_material_enter_material` ADD `warehouse_id` INT(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '仓位id' AFTER `remark`;
+
+
+CREATE TABLE IF NOT EXISTS `erp_material_warehouse` (
+  `id` int(11) NOT NULL,
+  `create_time` int(11) unsigned NOT NULL DEFAULT '0',
+  `update_time` int(11) unsigned NOT NULL DEFAULT '0',
+  `material_id` int(11) NOT NULL DEFAULT '0' COMMENT '物料id',
+  `warehouse_id` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '仓库id',
+  `stock` int(11) NOT NULL DEFAULT '0' COMMENT '库存数量'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=COMPACT COMMENT='物料仓库的库存';
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `erp_material_warehouse`
+--
+ALTER TABLE `erp_material_warehouse`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `erp_material_warehouse`
+--
+ALTER TABLE `erp_material_warehouse`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  
+  
+CREATE TABLE IF NOT EXISTS `erp_order_aftersale` (
+  `id` int(11) NOT NULL COMMENT 'id',
+  `order_id` int(11) NOT NULL COMMENT '订单id',
+  `material_id` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '物料id',
+  `material_num` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '物料数量',
+  `material_name` varchar(255) NOT NULL DEFAULT '' COMMENT '物料名称',
+  `material_type` tinyint(1) NOT NULL DEFAULT '1' COMMENT '物料类型',
+  `material_sn` varchar(255) NOT NULL DEFAULT '' COMMENT '物料编码',
+  `material_category` varchar(100) NOT NULL DEFAULT '' COMMENT '物料分类名称',
+  `create_time` int(11) DEFAULT NULL COMMENT '创建时间',
+  `update_time` int(11) DEFAULT NULL COMMENT '更新时间',
+  `delete_time` int(11) DEFAULT NULL COMMENT '删除时间',
+  `status` tinyint(1) unsigned NOT NULL DEFAULT '1' COMMENT '状态',
+  `remark` varchar(255) NOT NULL DEFAULT '' COMMENT '备注',
+  `pass_down_time` int(10) unsigned NOT NULL DEFAULT '0',
+  `order_sn` varchar(100) NOT NULL DEFAULT '',
+  `produce_status` tinyint(3) unsigned NOT NULL DEFAULT '10',
+  `order_shipping_id` int(11) unsigned NOT NULL DEFAULT '0'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='02-订单产品明细表';
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `erp_order_aftersale`
+--
+ALTER TABLE `erp_order_aftersale`
+  ADD PRIMARY KEY (`id`) USING BTREE;
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `erp_order_aftersale`
+--
+ALTER TABLE `erp_order_aftersale`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'id'; 
+  
+  
+  
+ALTER TABLE `admin_admin` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id'; 
+ALTER TABLE `admin_admin_log` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `admin_admin_permission` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `admin_admin_role` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `admin_photo` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `admin_role` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `admin_role_permission` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `article` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `article_category` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `dict_data` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `dict_type` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_customer` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_follow` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_follow_item` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_material` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_material_bom` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_material_change` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_material_check_material` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_material_discard_material` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_material_enter_material` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_material_out_material` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_material_plan` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_material_stock` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_material_stock_record` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_material_tree` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_material_warehouse` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_notice` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_order` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_order_accessory` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_order_aftersale` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_order_log` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_order_produce` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_order_produce_bom` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_order_produce_error` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_order_produce_follow` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_order_produce_process` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_order_produce_process_log` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_order_product` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_order_product_bom` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_order_remark` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_order_shipping` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_plan_material` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_process` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_product` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_production_setting` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_product_bom` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_product_project` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_supplier` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_user` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_user_auth` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_user_session` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+ALTER TABLE `erp_warehouse` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '系统id';
+
+
+
+
+
+
+
+
+
+
+ALTER TABLE `erp_material_enter_material` ADD `check_status` TINYINT(1) UNSIGNED NOT NULL DEFAULT '1' COMMENT '质检状态' AFTER `warehouse_id`;
+
+ALTER TABLE `erp_material_enter_material` ADD `code` VARCHAR(255) NOT NULL DEFAULT '' COMMENT '标签号' AFTER `check_status`;
+
+ALTER TABLE `erp_material_enter_material` ADD `is_prior` TINYINT(1) UNSIGNED NOT NULL DEFAULT '0' COMMENT '是否优先' AFTER `code`;
+
+ALTER TABLE `erp_material` ADD `qc_file` TEXT NULL DEFAULT NULL COMMENT 'QC品检作业指导书' AFTER `is_update`, ADD `produce_file` TEXT NULL DEFAULT NULL COMMENT '生产作业指导书' AFTER `qc_file`;
+
+
+
+
+
+ALTER TABLE `erp_material_enter_material` CHANGE `code` `code` TEXT CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT '标签号';
+
+
+
+ALTER TABLE `erp_material_change` ADD `warehouse_id` INT(10) UNSIGNED NOT NULL DEFAULT '0' COMMENT '仓位id' AFTER `create_admin`;
+
+ALTER TABLE `erp_material_stock` ADD `from_warehouse_id` INT(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '调出仓位' AFTER `department`, ADD `to_warehouse_id` INT(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '调入仓位' AFTER `from_warehouse_id`;
+  
+  
+  
+  
+  
+CREATE TABLE `erp_material_allocate_material` (
+  `id` int(11) NOT NULL,
+  `create_time` int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '创建时间',
+  `update_time` int(11) UNSIGNED DEFAULT '0',
+  `material_stock_id` int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT 'erp_material_stock表id',
+  `material_id` int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '物料id',
+  `stock_num` int(11) NOT NULL DEFAULT '0' COMMENT '调拨数量',
+  `signed_num` int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '已签收数量',
+  `status` tinyint(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '状态',
+  `enter_material_id` varchar(100) NOT NULL DEFAULT '' COMMENT 'erp_material_enter_material表id',
+  `enter_order_sn` varchar(100) NOT NULL DEFAULT '' COMMENT '入库单号',
+  `remark` varchar(255) NOT NULL DEFAULT '' COMMENT '备注',
+  `signed_date` varchar(30) NOT NULL DEFAULT '' COMMENT '签收日期',
+  `signed_username` varchar(50) NOT NULL DEFAULT '' COMMENT '签收人',
+  `returned_num` int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '退回数量'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='04-出库单明细' ROW_FORMAT=DYNAMIC;
+
+--
+-- 转储表的索引
+--
+
+--
+-- 表的索引 `erp_material_allocate_material`
+--
+ALTER TABLE `erp_material_allocate_material`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- 在导出的表使用AUTO_INCREMENT
+--
+
+--
+-- 使用表AUTO_INCREMENT `erp_material_allocate_material`
+--
+ALTER TABLE `erp_material_allocate_material`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;  
+  
+  
+  
+  
+  ALTER TABLE `erp_material_allocate_material` ADD `returned_status` TINYINT(1) UNSIGNED NOT NULL DEFAULT '1' COMMENT '退库状态' AFTER `returned_num`;
+  
+ ALTER TABLE `erp_material_warehouse` ADD `freeze_stock` INT(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '冻结库存' AFTER `stock`; 
+  
+ALTER TABLE `erp_user` ADD `warehouse_id` INT(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '工位仓默认出库仓位' AFTER `title`;
+  
+ALTER TABLE `erp_supplier` ADD `token` VARCHAR(100) NOT NULL DEFAULT '' AFTER `file`;  
+  
+  ALTER TABLE `erp_material_stock` ADD `send_supplier` TINYINT(1) UNSIGNED NOT NULL DEFAULT '0' COMMENT '是否供应商通知' AFTER `to_warehouse_id`;
+  
+  ALTER TABLE `erp_material_stock` CHANGE `send_supplier` `supplier_status` TINYINT(1) UNSIGNED NOT NULL DEFAULT '0' COMMENT '供应商状态';
+  
+  
+  
+  
+ CREATE TABLE IF NOT EXISTS `erp_material_stock_feedback` (
+  `id` int(11) NOT NULL COMMENT 'id',
+  `stock_id` int(11) NOT NULL COMMENT '订单id',
+  `content` varchar(255) NOT NULL DEFAULT '' COMMENT '反馈内容',
+  `type` tinyint(1) unsigned NOT NULL DEFAULT '1' COMMENT '1为平台2为供应商',
+  `operator` varchar(255) NOT NULL DEFAULT '' COMMENT '反馈人',
+  `create_time` int(11) DEFAULT NULL COMMENT '创建时间',
+  `system_id` tinyint(3) unsigned NOT NULL DEFAULT '1'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='供应商反馈表';
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `erp_material_stock_feedback`
+--
+ALTER TABLE `erp_material_stock_feedback`
+  ADD PRIMARY KEY (`id`) USING BTREE;
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `erp_material_stock_feedback`
+--
+ALTER TABLE `erp_material_stock_feedback`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'id'; 
+  
+  
+ALTER TABLE `erp_order_produce` ADD `produce_type` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' COMMENT '加工方式' AFTER `pass_down_time`;  
+  
+  
+ALTER TABLE `erp_material_allocate_material` ADD `system_id` TINYINT(3) UNSIGNED NOT NULL DEFAULT '1' AFTER `returned_status`;  
+ALTER TABLE `erp_order_produce` ADD `approve_status` TINYINT(1) UNSIGNED NOT NULL DEFAULT '0' COMMENT '审批状态' AFTER `system_id`;  
+
+
+
+ALTER TABLE `erp_order_produce` ADD `finish_username` VARCHAR(50) NOT NULL DEFAULT '' COMMENT '完工/入库人' AFTER `approve_status`;
+
+
+
+
+CREATE TABLE IF NOT EXISTS `erp_purchase_apply` (
+  `id` int(11) NOT NULL,
+  `create_time` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '创建时间',
+  `update_time` int(11) unsigned DEFAULT '0',
+  `data_id` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '物料id',
+  `apply_num` int(11) NOT NULL DEFAULT '0' COMMENT '申购数量',
+  `status` tinyint(3) unsigned NOT NULL DEFAULT '0' COMMENT '状态',
+  `remark` varchar(255) NOT NULL DEFAULT '' COMMENT '备注',
+  `delivery_date` varchar(30) NOT NULL DEFAULT '' COMMENT '要求交货日期',
+  `apply_date` varchar(30) NOT NULL DEFAULT '' COMMENT '申请日期',
+  `supplier_id` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '供应商id',
+  `data_type` tinyint(3) unsigned NOT NULL DEFAULT '1' COMMENT '数据类型',
+  `username` varchar(50) NOT NULL DEFAULT '' COMMENT '申购人',
+  `type` tinyint(1) unsigned NOT NULL DEFAULT '1' COMMENT '1物料2成品',
+  `system_id` tinyint(3) unsigned NOT NULL DEFAULT '1'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC COMMENT='采购申请表';
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `erp_purchase_apply`
+--
+ALTER TABLE `erp_purchase_apply`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `erp_purchase_apply`
+--
+ALTER TABLE `erp_purchase_apply`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+
+
+
+CREATE TABLE IF NOT EXISTS `erp_purchase_order` (
+  `id` int(11) NOT NULL,
+  `create_time` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '创建时间',
+  `update_time` int(11) unsigned DEFAULT '0',
+  `delete_time` int(10) unsigned DEFAULT NULL,
+  `status` tinyint(3) unsigned NOT NULL DEFAULT '0' COMMENT '状态',
+  `remark` varchar(255) NOT NULL DEFAULT '' COMMENT '备注',
+  `order_date` varchar(30) NOT NULL DEFAULT '' COMMENT '采购日期',
+  `supplier_id` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '供应商id',
+  `follow_admin_id` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '采购跟进人',
+  `type` tinyint(2) unsigned NOT NULL DEFAULT '1' COMMENT '1物料2成品',
+  `order_sn` varchar(50) NOT NULL DEFAULT '' COMMENT '采购单号',
+  `apply_ids` text COMMENT '申购id',
+  `create_admin` varchar(30) NOT NULL DEFAULT '' COMMENT '创建人',
+  `delivery_date` varchar(30) NOT NULL DEFAULT '' COMMENT '要求交货日期',
+  `supplier_status` tinyint(3) unsigned NOT NULL DEFAULT '0' COMMENT '供应商处理状态',
+  `overdue_reason` varchar(255) NOT NULL DEFAULT '' COMMENT '超期原因',
+  `system_id` tinyint(3) unsigned NOT NULL DEFAULT '1'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC COMMENT='采购单表';
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `erp_purchase_order`
+--
+ALTER TABLE `erp_purchase_order`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `erp_purchase_order`
+--
+ALTER TABLE `erp_purchase_order`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+
+CREATE TABLE IF NOT EXISTS `erp_purchase_order_data` (
+  `id` int(11) NOT NULL,
+  `order_id` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '申购单id',
+  `create_time` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '创建时间',
+  `update_time` int(11) unsigned DEFAULT '0',
+  `data_id` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '物料id',
+  `apply_num` int(11) NOT NULL DEFAULT '0' COMMENT '采购数量',
+  `status` tinyint(3) unsigned NOT NULL DEFAULT '0' COMMENT '状态',
+  `delivery_date` varchar(30) NOT NULL DEFAULT '' COMMENT '要求交货日期',
+  `supplier_id` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '供应商id',
+  `type` tinyint(1) unsigned NOT NULL DEFAULT '1' COMMENT '1物料2成品',
+  `apply_ids` text COMMENT '申购ids',
+  `warehous_num` int(11) NOT NULL DEFAULT '0' COMMENT '已回厂数',
+  `warehous_date` varchar(30) NOT NULL DEFAULT '' COMMENT '入库日期',
+  `warehous_overdue` varchar(255) NOT NULL DEFAULT '' COMMENT '入库时超期天数',
+  `system_id` tinyint(3) NOT NULL DEFAULT '1'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC COMMENT='采购申请表';
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `erp_purchase_order_data`
+--
+ALTER TABLE `erp_purchase_order_data`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `erp_purchase_order_data`
+--
+ALTER TABLE `erp_purchase_order_data`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  
+  
+  
+  
+  
+  
+  
+ CREATE TABLE IF NOT EXISTS `erp_purchase_order_feedback` (
+  `id` int(11) NOT NULL COMMENT 'id',
+  `order_id` int(11) NOT NULL COMMENT '订单id',
+  `content` varchar(255) NOT NULL DEFAULT '' COMMENT '反馈内容',
+  `type` tinyint(1) unsigned NOT NULL DEFAULT '1' COMMENT '1为平台2为供应商',
+  `operator` varchar(255) NOT NULL DEFAULT '' COMMENT '反馈人',
+  `create_time` int(11) DEFAULT NULL COMMENT '创建时间',
+  `system_id` tinyint(3) unsigned NOT NULL DEFAULT '1'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='采购单反馈表';
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `erp_purchase_order_feedback`
+--
+ALTER TABLE `erp_purchase_order_feedback`
+  ADD PRIMARY KEY (`id`) USING BTREE;
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `erp_purchase_order_feedback`
+--
+ALTER TABLE `erp_purchase_order_feedback`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'id';
+
+
+
+
+
+
+CREATE TABLE IF NOT EXISTS `erp_purchase_order_log` (
+  `id` int(11) NOT NULL COMMENT 'id',
+  `order_id` int(11) NOT NULL COMMENT '订单id',
+  `log` varchar(255) NOT NULL DEFAULT '' COMMENT '日志内容',
+  `data_type` varchar(100) NOT NULL DEFAULT '',
+  `operator` varchar(255) NOT NULL DEFAULT '' COMMENT '操作者',
+  `create_time` int(11) DEFAULT NULL COMMENT '创建时间',
+  `update_time` int(11) DEFAULT NULL COMMENT '更新时间',
+  `order_data_id` int(11) unsigned NOT NULL DEFAULT '0',
+  `system_id` tinyint(3) unsigned NOT NULL DEFAULT '1'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='采购单日志表';
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `erp_purchase_order_log`
+--
+ALTER TABLE `erp_purchase_order_log`
+  ADD PRIMARY KEY (`id`) USING BTREE;
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `erp_purchase_order_log`
+--
+ALTER TABLE `erp_purchase_order_log`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'id';
+
+
+  
+  
+ ALTER TABLE `erp_process` ADD `type` TINYINT(1) UNSIGNED NOT NULL DEFAULT '1' COMMENT '工序用途' AFTER `follow_id`; 
+  
+  
+  
+CREATE TABLE IF NOT EXISTS `erp_process_wage` (
+  `id` int(11) unsigned NOT NULL,
+  `process_id` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '工艺id',
+  `product_id` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '产品id',
+  `create_time` int(11) NOT NULL DEFAULT '0',
+  `update_time` int(10) unsigned NOT NULL DEFAULT '0' COMMENT '更新时间',
+  `delete_time` int(10) unsigned DEFAULT NULL COMMENT '删除时间',
+  `price` decimal(10,2) unsigned NOT NULL DEFAULT '0.00' COMMENT '单价',
+  `system_id` tinyint(3) unsigned NOT NULL DEFAULT '1' COMMENT '系统id'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC COMMENT='生产流程工序单价';
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `erp_process_wage`
+--
+ALTER TABLE `erp_process_wage`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `erp_process_wage`
+--
+ALTER TABLE `erp_process_wage`
+  MODIFY `id` int(11) unsigned NOT NULL AUTO_INCREMENT; 
+
+
+
+
+ALTER TABLE `erp_order_produce` ADD `cancel_produce` TINYINT(1) UNSIGNED NOT NULL DEFAULT '0' COMMENT '是否取消生产' AFTER `finish_username`;
+
+
+
+ALTER TABLE `erp_material_check_material` ADD `enter_material_id` INT(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT 'erp_material_enter_material表id' AFTER `system_id`, ADD `enter_order_sn` VARCHAR(100) NOT NULL DEFAULT '' COMMENT '入库单号' AFTER `enter_material_id`;
+
+
+
+ALTER TABLE `erp_material_check_material` ADD `warehouse_id` INT(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '仓位' AFTER `enter_order_sn`;
+
+
+
+ALTER TABLE `erp_material_enter_material` ADD `enter_batch_number` VARCHAR(100) NOT NULL DEFAULT '' COMMENT '入库批次号' AFTER `is_prior`;
+
+ALTER TABLE `erp_material_out_material` ADD `enter_batch_number` VARCHAR(100) NOT NULL DEFAULT '' COMMENT '入库批次号' AFTER `remark`;
+
+
+ALTER TABLE `erp_material_discard_material` ADD `enter_batch_number` VARCHAR(100) NOT NULL DEFAULT '' COMMENT '入库批次号' AFTER `remark`;
+
+ALTER TABLE `erp_material_check_material` ADD `enter_batch_number` VARCHAR(100) NOT NULL DEFAULT '' COMMENT '入库批次号' AFTER `remark`;
+
+ALTER TABLE `erp_material_out_material` ADD `warehouse_id` INT(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '仓库id' AFTER `remark`;
+
+
+ALTER TABLE `erp_material_change` ADD `enter_batch_number` VARCHAR(100) NOT NULL DEFAULT '' COMMENT '入库批次号' AFTER `warehouse_id`;
+
+
+ALTER TABLE `erp_material_discard_material` ADD `warehouse_id` INT(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '仓库id' AFTER `enter_batch_number`;
+
+
+ALTER TABLE `erp_material_allocate_material` ADD `enter_batch_number` VARCHAR(100) NOT NULL DEFAULT '' COMMENT '入库批次号' AFTER `returned_status`;
+
+
+
+
+
+ALTER TABLE `erp_product` ADD `qc_file` TEXT NULL DEFAULT NULL COMMENT 'QC品检作业指导书' AFTER `status`, ADD `produce_file` TEXT NULL DEFAULT NULL COMMENT '生产作业指导书' AFTER `qc_file`;
+
+
+
+ALTER TABLE `erp_order_produce_process`
+  DROP `error`,
+  DROP `photo`,
+  DROP `type`,
+  DROP `order_produce_bom_id`,
+  DROP `bom_sn`,
+  DROP `is_set`;
+
+
+ALTER TABLE `erp_order_produce_process` ADD `price` DECIMAL(10,2) UNSIGNED NOT NULL DEFAULT '0' COMMENT '价格' AFTER `system_id`;
+
+
+
+ALTER TABLE `erp_order_produce_process` ADD `order_id` INT(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '订单id' AFTER `order_produce_id`;
+
+
+ALTER TABLE `erp_order_produce_process` CHANGE `order_product_id` `product_id` INT(11) UNSIGNED NOT NULL DEFAULT '0';
+
+ALTER TABLE `erp_order_produce` ADD `report` TEXT NULL DEFAULT NULL COMMENT '产品检测报告' AFTER `cancel_produce`;
+
+
+
+ALTER TABLE `erp_process` ADD `description` VARCHAR(255) NOT NULL DEFAULT '' COMMENT '工艺要求' AFTER `system_id`;
+
+ALTER TABLE `erp_product` ADD `udi` VARCHAR(100) NOT NULL DEFAULT '' COMMENT 'UDI码' AFTER `produce_file`, ADD `version` VARCHAR(100) NOT NULL DEFAULT '' COMMENT '版本号' AFTER `udi`;
+
+
+
+ALTER TABLE `erp_order_produce` ADD `udi` VARCHAR(100) NOT NULL DEFAULT '' COMMENT 'UDI码' AFTER `report`, ADD `version` VARCHAR(100) NOT NULL DEFAULT '' COMMENT '版本号' AFTER `udi`;
+
+
+ALTER TABLE `erp_material_plan` ADD `assembled_num` INT(10) UNSIGNED NOT NULL DEFAULT '0' COMMENT '装配完成' AFTER `system_id`, ADD `inspect_num` INT(10) UNSIGNED NOT NULL DEFAULT '0' COMMENT '检验完成' AFTER `assembled_num`;
+
+ALTER TABLE `erp_material_plan` CHANGE `finish_num` `finish_num` INT(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '入库完成';
+
+
+
+
+ALTER TABLE `erp_order_produce_process` ADD `follow_name` VARCHAR(100) NOT NULL DEFAULT '' COMMENT '随工单名称' AFTER `price`;
+
+
+
+
+ALTER TABLE `erp_order_produce_process` ADD `approve_status` TINYINT(1) UNSIGNED NOT NULL DEFAULT '0' COMMENT '审核状态' AFTER `follow_name`;
+
+ALTER TABLE `erp_order_shipping` ADD `approve_status` TINYINT(1) UNSIGNED NOT NULL DEFAULT '0' COMMENT '审批状态' AFTER `system_id`;
+
+
+ALTER TABLE `erp_order_produce` ADD `is_returned` TINYINT(1) UNSIGNED NOT NULL DEFAULT '0' COMMENT '是否退货' AFTER `version`;
+
+ALTER TABLE `erp_product_stock` ADD `order_sn` VARCHAR(100) NOT NULL DEFAULT '' COMMENT '入库单号' AFTER `username`;
+
+
+
+
+
+
+ALTER TABLE `erp_order_shipping` ADD `data_type` TINYINT(1) UNSIGNED NOT NULL DEFAULT '1' AFTER `approve_status`;
+
+
+
+
+ALTER TABLE `erp_product_stock` ADD `is_returned` TINYINT(1) UNSIGNED NOT NULL DEFAULT '0' COMMENT '是否已退货入库' AFTER `order_sn`;
+
+
+ALTER TABLE `erp_material_enter_material` ADD `purchase_order_id` INT(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '采购单id' AFTER `enter_batch_number`, ADD `purchase_order_data_id` INT(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '采购单详情id' AFTER `purchase_order_id`;
+
+ALTER TABLE `erp_material_enter_material` DROP `code`;
+
+
+ALTER TABLE `erp_order_product` ADD `product_stock_id` INT(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '退库产品库存id' AFTER `project_price`;
+
+
+
+
+
+ALTER TABLE `erp_material` ADD `generality` TINYINT(1) UNSIGNED NOT NULL DEFAULT '1' COMMENT '通用性' AFTER `system_id`;
+
+
+
+
+
+
+2024-02-28
+
+ALTER TABLE `erp_product_bom` ADD `project_bom_id` INT(11) UNSIGNED NOT NULL DEFAULT '0' AFTER `project_id`;
+ALTER TABLE `erp_product_project` ADD `erp_project_id` INT(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '方案id' AFTER `type`;
+ALTER TABLE `erp_product_bom` ADD `erp_project_id` INT(11) UNSIGNED NOT NULL DEFAULT '0' AFTER `project_bom_id`;
+
+TRUNCATE erp_product_project;
+
+DELETE FROM `erp_product_bom` WHERE `project_id` > 0;
+
+
+
+
+CREATE TABLE IF NOT EXISTS `erp_project` (
+  `id` int(11) NOT NULL COMMENT 'id',
+  `name` varchar(100) NOT NULL DEFAULT '' COMMENT '方案名称',
+  `code` varchar(100) NOT NULL DEFAULT '' COMMENT '方案编号',
+  `create_time` int(10) NOT NULL COMMENT '创建时间',
+  `update_time` int(10) DEFAULT NULL COMMENT '修改时间',
+  `delete_time` int(10) DEFAULT NULL COMMENT '删除时间',
+  `cid` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '方案分类',
+  `status` tinyint(1) unsigned NOT NULL DEFAULT '1' COMMENT '状态',
+  `type` tinyint(3) unsigned NOT NULL DEFAULT '1' COMMENT '方案功能',
+  `system_id` tinyint(3) unsigned NOT NULL DEFAULT '1' COMMENT '系统id'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='01-配置方案表';
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `erp_project`
+--
+ALTER TABLE `erp_project`
+  ADD PRIMARY KEY (`id`) USING BTREE;
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `erp_project`
+--
+ALTER TABLE `erp_project`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'id';
+
+
+CREATE TABLE IF NOT EXISTS `erp_project_bom` (
+  `id` int(11) NOT NULL COMMENT 'id',
+  `material_id` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '关联的物料id',
+  `color_follow` tinyint(1) NOT NULL DEFAULT '0' COMMENT '颜色是否跟随产品',
+  `create_time` int(10) NOT NULL COMMENT '创建时间',
+  `update_time` int(10) DEFAULT NULL COMMENT '修改时间',
+  `delete_time` int(10) DEFAULT NULL COMMENT '删除时间',
+  `bill_type` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '清单类型',
+  `can_replace` tinyint(1) unsigned NOT NULL DEFAULT '0' COMMENT '可换配',
+  `num` int(11) unsigned NOT NULL DEFAULT '1' COMMENT '物料数量',
+  `data_type` tinyint(3) unsigned NOT NULL DEFAULT '1' COMMENT '1关联物料2换配物料3加配物料',
+  `project_id` int(11) unsigned NOT NULL DEFAULT '0',
+  `system_id` tinyint(3) unsigned NOT NULL DEFAULT '1' COMMENT '系统id'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='01-方案Bom对照表';
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `erp_project_bom`
+--
+ALTER TABLE `erp_project_bom`
+  ADD PRIMARY KEY (`id`) USING BTREE;
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `erp_project_bom`
+--
+ALTER TABLE `erp_project_bom`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'id';
+
+
+
+2024.03.02新增
+ALTER TABLE `erp_customer` ADD `salesman_id` INT(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '所属业务员' AFTER `invoice_code`;
+
+ALTER TABLE `erp_material_warehouse` ADD `safety_stock` INT(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '安全库存' AFTER `freeze_stock`, ADD `min_stock` INT(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '最低库存' AFTER `safety_stock`, ADD `max_stock` INT(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '最高库存' AFTER `min_stock`;
+
+
+ALTER TABLE `erp_user` ADD `permission` VARCHAR(255) NOT NULL DEFAULT '' COMMENT '权限' AFTER `system_id`;
+
+
+
+
+
+CREATE TABLE `erp_material_price` (
+  `id` int(11) UNSIGNED NOT NULL,
+  `create_time` int(11) NOT NULL DEFAULT '0',
+  `update_time` int(10) UNSIGNED NOT NULL DEFAULT '0' COMMENT '更新时间',
+  `delete_time` int(10) UNSIGNED DEFAULT NULL COMMENT '删除时间',
+  `status` tinyint(1) UNSIGNED NOT NULL DEFAULT '1',
+  `sort` int(11) UNSIGNED NOT NULL DEFAULT '50',
+  `supplier_id` int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '供应商id',
+  `effective_date` varchar(30) NOT NULL DEFAULT '' COMMENT '生效日期',
+  `last_price` decimal(10,2) UNSIGNED NOT NULL DEFAULT '0.00' COMMENT '上次单价',
+  `price` decimal(10,2) UNSIGNED NOT NULL DEFAULT '0.00' COMMENT '本次单价',
+  `material_id` int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '物料id'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='00-物料单价' ROW_FORMAT=DYNAMIC;
+
+--
+-- 转储表的索引
+--
+
+--
+-- 表的索引 `erp_material_price`
+--
+ALTER TABLE `erp_material_price`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- 在导出的表使用AUTO_INCREMENT
+--
+
+--
+-- 使用表AUTO_INCREMENT `erp_material_price`
+--
+ALTER TABLE `erp_material_price`
+  MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
+  
+  
+  
+  
+CREATE TABLE `erp_supplier_process` (
+  `id` int(11) UNSIGNED NOT NULL,
+  `name` varchar(100) NOT NULL DEFAULT '' COMMENT '工艺组名称',
+  `sn` varchar(50) NOT NULL DEFAULT '' COMMENT '工艺组编码',
+  `create_time` int(11) NOT NULL DEFAULT '0',
+  `update_time` int(10) UNSIGNED NOT NULL DEFAULT '0' COMMENT '更新时间',
+  `delete_time` int(10) UNSIGNED DEFAULT NULL COMMENT '删除时间',
+  `status` tinyint(1) UNSIGNED NOT NULL DEFAULT '1',
+  `sort` int(11) UNSIGNED NOT NULL DEFAULT '50',
+  `supplier_id` int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '供应商id',
+  `unit` varchar(30) NOT NULL DEFAULT '' COMMENT '单位',
+  `effective_date` varchar(30) NOT NULL DEFAULT '' COMMENT '生效日期',
+  `last_price` decimal(10,2) UNSIGNED NOT NULL DEFAULT '0.00' COMMENT '上次单价',
+  `price` decimal(10,2) UNSIGNED NOT NULL DEFAULT '0.00' COMMENT '本次单价'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='委外工艺' ROW_FORMAT=DYNAMIC;
+
+--
+-- 转储表的索引
+--
+
+--
+-- 表的索引 `erp_supplier_process`
+--
+ALTER TABLE `erp_supplier_process`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- 在导出的表使用AUTO_INCREMENT
+--
+
+--
+-- 使用表AUTO_INCREMENT `erp_supplier_process`
+--
+ALTER TABLE `erp_supplier_process`
+  MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+
+CREATE TABLE `erp_supplier_process_bom` (
+  `id` int(11) NOT NULL COMMENT 'id',
+  `material_id` int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '委外物料id',
+  `related_material_id` int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '出库坯料id',
+  `process_id` int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '委外工序',
+  `create_time` int(10) NOT NULL COMMENT '创建时间',
+  `update_time` int(10) DEFAULT NULL COMMENT '修改时间',
+  `delete_time` int(10) DEFAULT '0' COMMENT '删除时间',
+  `num` decimal(10,3) UNSIGNED NOT NULL DEFAULT '0.000' COMMENT '用量',
+  `remark` varchar(255) NOT NULL DEFAULT '' COMMENT '备注',
+  `material_unit` varchar(30) NOT NULL DEFAULT '' COMMENT '委外物料单位',
+  `related_material_unit` varchar(30) NOT NULL DEFAULT '' COMMENT '出库坯料单位'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='委外BOM用量';
+
+--
+-- 转储表的索引
+--
+
+--
+-- 表的索引 `erp_supplier_process_bom`
+--
+ALTER TABLE `erp_supplier_process_bom`
+  ADD PRIMARY KEY (`id`) USING BTREE;
+
+--
+-- 在导出的表使用AUTO_INCREMENT
+--
+
+--
+-- 使用表AUTO_INCREMENT `erp_supplier_process_bom`
+--
+ALTER TABLE `erp_supplier_process_bom`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'id';
+  
+  
+  
+  
+  
+  
+  
+  
+  ALTER TABLE `erp_purchase_order` ADD `follow_admin_username` VARCHAR(100) NOT NULL DEFAULT '' COMMENT '跟进人名称' AFTER `overdue_reason`, ADD `process_name` VARCHAR(100) NOT NULL DEFAULT '' COMMENT '委外工序' AFTER `follow_admin_username`;
+  
+  
+  
+  
+  
+ALTER TABLE `erp_purchase_order_data` ADD `material_price` DECIMAL(10,2) UNSIGNED NOT NULL DEFAULT '0' COMMENT '物料单价' AFTER `warehous_overdue`, ADD `process_id` INT(11) UNSIGNED NOT NULL DEFAULT '0' AFTER `material_price`, ADD `re_apply_num` INT(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '再委外数' AFTER `process_id`;
+
+
+
+
+
+
+CREATE TABLE `erp_purchase_order_out` (
+  `id` int(11) NOT NULL COMMENT 'id',
+  `order_id` int(11) NOT NULL COMMENT '采购单id',
+  `order_data_id` int(11) UNSIGNED NOT NULL DEFAULT '0',
+  `out_material_id` int(10) UNSIGNED NOT NULL DEFAULT '0' COMMENT '出库物料id',
+  `num` decimal(10,3) UNSIGNED NOT NULL DEFAULT '0.000' COMMENT '用量',
+  `create_time` int(11) DEFAULT NULL COMMENT '创建时间',
+  `theory_num` decimal(10,3) UNSIGNED NOT NULL DEFAULT '0.000' COMMENT '理论用量',
+  `stock_num` int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '出库数量',
+  `loss_rate` decimal(10,2) UNSIGNED NOT NULL DEFAULT '0.00' COMMENT '损耗率',
+  `order_material_id` int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '委外物料id',
+  `out_order_sn` varchar(100) NOT NULL DEFAULT '' COMMENT '关联出库单号',
+  `out_material_unit` varchar(30) NOT NULL DEFAULT '' COMMENT '出库坯料单位',
+  `order_material_unit` varchar(30) NOT NULL DEFAULT '' COMMENT '委外物料单位'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='委外出库物料';
+
+--
+-- 转储表的索引
+--
+
+--
+-- 表的索引 `erp_purchase_order_out`
+--
+ALTER TABLE `erp_purchase_order_out`
+  ADD PRIMARY KEY (`id`) USING BTREE;
+
+--
+-- 在导出的表使用AUTO_INCREMENT
+--
+
+--
+-- 使用表AUTO_INCREMENT `erp_purchase_order_out`
+--
+ALTER TABLE `erp_purchase_order_out`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'id';
+
+
+ALTER TABLE `erp_material` ADD `processing_way` TINYINT(1) UNSIGNED NOT NULL DEFAULT '1' COMMENT '加工方式' AFTER `supplier_id`; 
+  
+
+  
+  
+  
+  
+  
+  
+  ALTER TABLE `erp_purchase_apply` ADD `process_id` INT(11) UNSIGNED NOT NULL DEFAULT '0' AFTER `type`;
+  
+  
+
+
+
+
+
+
+
+
+
+
+
+
+20250725
+
+INSERT INTO `admin_permission` (`id`, `pid`, `title`, `href`, `icon`, `sort`, `type`, `status`) VALUES
+(430, 425, '物料采购订单', '/erp.PurchaseOrder/materialReport', '', 10, 1, 1),
+(431, 430, '物料采购单数据', '/erp.PurchaseOrder/materialData', '', 10, 2, 1),
+(432, 425, '成品库存', '/erp.ProductStock/report', '', 10, 1, 1),
+(433, 425, '不良品已出库记录', '/erp.MaterialScrapOut/report', '', 10, 1, 1);
+
+
+INSERT INTO `admin_permission` (`id`, `pid`, `title`, `href`, `icon`, `sort`, `type`, `status`) VALUES
+(434, 425, '物料进仓单', '/erp.materialEnter/report', '', 10, 1, 1),
+(435, 425, '车间领料单', '/erp.MaterialAllocate/report', '', 10, 1, 1),
+(436, 79, '售后领料单', '/erp.materialOut/report', '', 10, 1, 1),
+(437, 425, '售后领料单', '/erp.materialOut/report', '', 10, 1, 1),
+(438, 425, '随工单查询', '/erp.OrderProduce/statement', '', 10, 1, 1),
+(439, 438, '随工单查阅', '/erp.OrderProduce/follow', '', 10, 2, 1),
+(440, 438, '产品档案生产过程及检验记录', '/erp.OrderProduce/report', '', 10, 2, 1),
+(441, 425, '生产退料单', '/erp.materialEnter/backReport', '', 10, 1, 1),
+(442, 425, '订单确认表', '/erp.order/list', '', 10, 1, 1);

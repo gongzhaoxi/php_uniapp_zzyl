@@ -1,0 +1,125 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-input-block {margin-left: 150px;}
+.layui-form-label {width: 120px;}
+</style>
+<form class="layui-form" action="" method="post" data-reload="1" data-callback="submitCallBack">
+	<div class="mainBox">
+		<div class="main-container">
+			<blockquote class="layui-elem-quote">
+				物料信息
+				
+			</blockquote>
+			<input type="text" value="" ts-selected="" value="" lay-verify="required" id="material_codes"   autocomplete="off" class="layui-input" placeholder="请选择">
+			<table class="layui-table">
+				<thead>
+					<tr>
+						<th>物料编码</th>
+						<th>物料名称</th>
+						<th>单位</th>
+						<th>排产量</th>
+						<th>操作</th>
+					</tr> 
+				</thead>
+				<tbody id="tbody">
+	
+				</tbody>
+			</table>
+		</div>
+	</div>
+	<div class="bottom">
+		<div class="button-container">
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*"><i class="layui-icon layui-icon-ok"></i>提交</button>
+		</div>
+	</div>
+</form>
+{/block}
+{block name="script"}
+<script>
+var material_ids = [];
+layui.use(['tableSelect'], function () {
+	var $ = layui.jquery;
+	var tableSelect = layui.tableSelect;
+
+	window.submitCallBack = function (res){
+		location.replace('{:url('view')}?id='+res.data.id);
+	}
+	
+	window.deleteMaterial = function(_id){
+		var ids = [];
+		var codes = [];
+		
+		layui.each(material_ids, function (ind, id) {
+			if(_id == id){
+				$('#material_'+id).remove();	
+			}else{
+				ids.push(id);
+				codes.push($('#material_'+id+' td').eq(0).text());
+			}
+		})
+		material_ids = ids;
+	
+		$('#material_codes').attr('ts-selected',material_ids.join(','));
+		$('#material_codes').val(codes.join(','));
+	}
+	
+	
+	tableSelect.render({
+		elem: '#material_codes',
+		checkedKey: 'id',
+		searchKey: 'keyword',
+		searchPlaceholder: '物料编号/物料名称',
+		table: {
+			url: '{:url('common/material')}?type=2',
+				
+			cols: [[
+				{ type: 'checkbox' },
+				{field: 'sn',title: '物料编码',align: 'center',unresize: false,width: 200},
+				{field: 'name',title: '物料名称',align: 'left',unresize: false,width: 300},
+				{field: 'stock',title: '现有库存',align: 'center',unresize: false,width: 100},
+			]]
+		},
+		done: function (elem, data) {
+			var html = '';
+			var codes = [];
+			var ids  = [];
+			layui.each(data.data, function (index, item) {
+				if(material_ids.indexOf(item.id) == -1){
+					material_ids.push(item.id)
+					var stock_num = 1;
+					if($('#material_'+item.id).length){
+						stock_num = $('#material_'+item.id+' .stock_num').val();
+					}
+					html += '<tr id="material_'+item.id+'"><input type="hidden" class="material_id" name="material['+item.id+'][id]" value="'+item.id+'" >';
+					html += '	<td>'+item.sn+'</td>';
+					html += '	<td>'+item.name+'</td>';
+					html += '	<td>'+item.unit+'</td>';
+					//html += '	<td>'+item.num+'</td>';
+					html += '	<td><input type="text"  name="material['+item.id+'][num]" value="'+stock_num+'" class="layui-input num" lay-verify="required|number" placeholder="请输入数量"></td>';
+		
+					html += '	<td><button type="button" onclick="deleteMaterial('+item.id+')" class="layui-btn layui-btn-xs layui-btn-danger">删除</button></td>';
+					html += '</tr>';
+				}
+				codes.push(item.sn);
+				ids.push(item.id);
+			})
+			
+			var _material_ids = [];
+			
+			layui.each(material_ids, function (ind, id) {
+				if(ids.indexOf(id) == -1){
+					$('#material_'+id).remove();	
+				}else{
+					_material_ids.push(id);
+				}
+			})
+			material_ids = _material_ids;
+			
+			$('#tbody').append(html);	
+			$('#material_codes').val(codes.join(','));
+		}
+	})
+});
+</script>
+{/block}

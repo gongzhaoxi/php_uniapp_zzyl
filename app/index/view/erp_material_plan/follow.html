@@ -1,0 +1,168 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-table td, .layui-table th {padding: 9px 0px;}
+.item {min-height: 170px;}
+.item .layui-row{background: rgb(242, 242, 242);padding:20px;}
+.item .layui-row .layui-form-label{width: 60px;}
+.item .layui-row .layui-input-block {margin-left: 90px;}
+.item .layui-row .layui-form-item {margin-bottom: 10px !important;margin-top: 0px !important;}
+.layui-form-label{width:100px;}
+.layui-input-block {margin-left: 130px;}
+</style>
+<form class="layui-form" action="{:url('follow')}" method="post" data-reload="2">
+	<input type="hidden" name="plan_id" value="{$plan['id']}" >
+	<input type="hidden" name="process_id" value="{$process['id']}" >
+	<div class="mainBox">
+		<div class="main-container">
+			<div class="layui-form-item">
+				<label class="layui-form-label">未装配数量</label>
+				<div class="layui-input-block">
+					<div class="layui-form-mid layui-text-em">{$plan['num']- $plan['assembled_num']}</div>
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">本次完成数量</label>
+				<div class="layui-input-block">
+					<input type="text" maxlength="255" name="assembled_num" placeholder="" value="1" lay-verify="required|number"   autocomplete="off" class="layui-input">
+				</div>
+			</div>	
+			
+			<table class="layui-table" lay-skin="nob">
+				<colgroup>
+					<col>
+					<col>
+					<col>
+					<col>
+				</colgroup>
+				<tbody>
+					{if $follow}
+					<tr>
+						<td align="right">生产地点：</td>
+						<td colspan="2">
+							{$follow['address']}
+						</td>
+						<td align="right">{$follow['iso']}</td>
+					</tr>
+					<tr>
+						<td align="right">生产依据：</td>
+						<td colspan="3">
+							{$follow['according']}
+						</td>
+					</tr>
+					{/if}					
+					<tr>
+						<td align="right">组件型号：</td>
+						<td>{$plan['material']['sn']}</td>
+						<td align="right">组件名称：</td>
+						<td>{$plan['material']['name']}</td>
+					</tr>
+					<tr>
+						<td align="right">排产批次号：</td>
+						<td>{$plan['plan_sn']}</td>
+						<td align="right">生产数量：</td>
+						<td>{$plan['num']}</td>
+					</tr>					
+					<tr>
+						<td align="right">下达日期：</td>
+						<td>{$plan['start_date']}</td>
+						<td align="right"></td>
+						<td></td>
+					</tr>					
+				</tbody>
+			</table>
+			<blockquote class="layui-elem-quote">产品名称</blockquote>
+			<div id="productDiv" class="layui-row layui-col-space30 "></div>
+			<div style="clear:both;height:10px;"></div>
+			<blockquote class="layui-elem-quote">工序要求</blockquote>
+			<div id="processDiv" class="layui-row layui-col-space30 "></div>		
+		</div>
+	</div>
+	<div class="bottom">
+		<div class="button-container">
+			<button type="submit" class="layui-btn layui-btn-sm finish" data-form_url="{:url('finish')}" data-reload="1" lay-submit="" lay-filter="*">完成</button>
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm error" lay-submit="" lay-filter="*">保存</button>
+		</div>
+	</div>
+</form>
+{/block}
+{block name="script"}
+<script>
+var data_key = 0;
+
+var product = {:json_encode($follow_product)} ;
+var process = {:json_encode($follow_process)} ;
+
+layui.use(['form', 'jquery'], function() {
+	let form = layui.form;
+	let $ = layui.jquery;
+		
+	$.each(product, function(key, val) {     
+		$('#productDiv').append(getHtml(data_key,val));
+		data_key++;
+	});   
+
+	$.each(process, function(key, val) {     
+		$('#processDiv').append(getHtml(data_key,val));
+		data_key++;
+	});  
+	form.render();		
+			
+	function getHtml(index,value){
+		var html = '<div class="layui-col-md6 item">';						
+		html += '		<input type="hidden" name="data['+index+'][plan_follow_id]" value="'+value.produce_follow_id+'">';		
+		html += '		<input type="hidden" name="data['+index+'][image]"  value="'+value.image+'">';
+		html += '		<input type="hidden" name="data['+index+'][title]"  value="'+value.title+'">';
+		html += '		<input type="hidden" name="data['+index+'][type]"  value="'+value.type+'">';
+		html += '		<input type="hidden" name="data['+index+'][checked]"  value="'+value.checked+'">';
+		html += '		<input type="hidden" name="data['+index+'][is_num]"  value="'+value.is_num+'">';
+		html += '		<input type="hidden" name="data['+index+'][plan_id]"  value="'+value.plan_id+'">';
+		html += '		<input type="hidden" name="data['+index+'][process_id]"  value="'+value.process_id+'">';
+		html += '		<input type="hidden" name="data['+index+'][follow_id]"  value="'+value.follow_id+'">';
+		html += '		<input type="hidden" name="data['+index+'][num]"  value="'+value.num+'">';
+		html += '		<input type="hidden" name="data['+index+'][after_num]"  value="'+value.after_num+'">';
+
+		html += '		<div class="layui-row">';
+		html += '				<div class="layui-col-md2">';									
+		html += '					<div class="photos">';
+		html += '						<ul class="priview">';
+		html += '							<li class="item_img"><img onclick="window.top.layerPhotos(this)" src="'+value.image+'" data-href="'+value.image+'" class="img"></li>';
+		html += '						</ul>';
+		html += '					</div>';																
+		html += '				</div>';
+		html += '				<div class="layui-col-md9">	';									
+		html += '					<div class="layui-form-item">';
+		html += '						<label class="layui-form-label title"></label>';
+		html += '						<div class="layui-form-mid">'+value.title+'</div>';
+		html += '					</div>';	
+		if(value.is_num == 1){
+			html += '				<div class="layui-form-item">';
+			html += '					<label class="layui-form-label">编号</label>';
+			html += '					<div class="layui-input-block">';
+			html += '						<input type="text" maxlength="255" name="data['+index+'][num]" value="'+value.num+'" lay-verify="" placeholder="" autocomplete="off" class="layui-input">';
+			html += '					</div>';
+			html += '				</div>';	
+			html += '				<div class="layui-form-item">';
+			html += '					<label class="layui-form-label">换后编号</label>';
+			html += '					<div class="layui-input-block">';
+			html += '						<input type="text" maxlength="255" name="data['+index+'][after_num]" value="'+value.after_num+'" lay-verify="" placeholder="" autocomplete="off" class="layui-input">';
+			html += '					</div>';
+			html += '				</div>';			
+		}
+		html += '					<div class="layui-form-item">';
+		html += '						<label class="layui-form-label">备注</label>';
+		html += '						<div class="layui-input-block">';
+		html += '							<input type="text" maxlength="255" name="data['+index+'][remark]" value="'+value.remark+'" lay-verify="" placeholder="" autocomplete="off" class="layui-input">';
+		html += '						</div>';
+		html += '					</div>	';		
+		html += '				</div>';
+		html += '				<div class="layui-col-md1" style="text-align:right;">';
+		html += '					<input type="checkbox" name="data['+index+'][id]"  data-msg="请选择数据" value="'+value.id+'" title="" '+(value&&value.checked==1?'checked':'')+'>';
+		html += '				</div>';
+		html += '		</div>';
+		html += '	</div>';
+		return html;
+	}					
+})
+</script>
+{/block}

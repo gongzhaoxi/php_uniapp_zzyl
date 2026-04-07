@@ -1,0 +1,337 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+body{background: rgb(12, 48, 82);fill: rgb(12, 48, 82);color:#fff;}
+.main{margin:0 5px;}
+.main>.layui-row{width:100%;}
+
+.section1 .title{font-size:16px;margin:40px 0 20px 0;}
+.section1 .table1 td,.section1 .table1 th{border:none;}
+.section1 .table1{border-width: 1px;border-color: rgb(255, 255, 255,0.3);border-style: solid;background: rgb(31, 77, 121,0.3);color:#fff;margin:0;}
+.section1 .table1 th{color: rgb(97, 183, 189);}
+#echart1{width:100%;height:400px;margin-top:30px;}
+
+.section2{text-align: center;}
+.section2 .options{display:inline-block;border-color: rgb(146, 202, 255,0.45); border-width: 1px;border-style: solid; background: rgb(23, 70, 114,0.45);margin:20px 0 0 0;padding:10px 10px;border-radius: 8px;}
+.section2 .options li{display:inline-block;margin: 0 30px;font-size:22px;padding-bottom:5px;color:#fff;}
+.section2 .options .active{color: rgb(255, 239, 0);border-bottom:1px solid rgb(255, 239, 0);}
+
+.section3 .table1{background:none;}
+.section3 .table1 th{color: rgb(97, 183, 189);border:1px solid rgb(97, 183, 189);}
+.section3 .table1 td{color: rgb(255, 220, 0);border:1px solid rgb(97, 183, 189);}
+
+.section3 {margin-top:20px;font-size:16px;}
+.section3 .table2{background:none;}
+.section3 .table2 th{color: rgb(97, 183, 189);border:1px solid rgb(97, 183, 189);padding: 9px 0px;text-align:center;}
+.section3 .table2 td{color: rgb(255, 255, 255);border:1px solid rgb(97, 183, 189);padding: 9px 0px;text-align:center;}
+.section3 .title{margin:20px 0;}
+
+.section21{
+	margin: 30px 30px;
+
+}
+.container {
+	height: 200px;
+	margin: 0 auto;
+}
+.circle {
+	height: 160px;
+	border: #7efff5 solid 25px;
+	border-radius: 50%;
+	background: #132625;
+	position: relative;
+}
+.circle .data{
+	position: absolute;
+	width: 100%;
+	top:25%;
+}
+.circle .data .title{
+	color:#ccd4d3;
+	font-size:24px;
+	font-weight:600;
+}
+.circle .data .unit{
+	color: #ccd4d3;
+	font-size:14px;
+	margin: 2px 0 8px 0 ;
+}
+.circle .data .money{
+	color: rgb(255, 220, 0);
+	font-size:34px;
+	font-weight:600;
+}
+
+#echart2{width:100%;height:400px;}
+
+.aa,.bb{
+	float: left; 
+	overflow: hidden; 
+	font-size: 12px; 
+	color: #61b7bd; 
+	line-height: 30px;
+	border:none; 
+	border-right: 1px solid #61b7bd; 
+	border-bottom: 1px solid #61b7bd;
+	}
+.aa{ width: calc(40% - 1px);} 
+.bb{ width: calc(10% - 1px);}
+.coa{ color:#fff}
+.cob{ color:#7efff5;font-size: 16px !important;}
+.section3 .table2 td{ padding: 0px;}
+
+.dd{ font-size: 24px !important;}
+
+
+</style>
+<div class="main">
+	<div class="layui-row layui-col-space15">
+		<div class="layui-col-xs3 layui-col-sm3 layui-col-md3 section1">
+			<p class="title">机型接单统计（单位：台）</p>
+			<div class="layui-row">
+				<div class="layui-col-xs6 layui-col-sm6 layui-col-md6">
+					<table class="layui-table table1" style="border-right:none;">
+						<thead>
+							<tr>
+								<th>型号</th>
+								<th>销量</th>
+							</tr> 
+						</thead>
+						<tbody>
+							{php}
+							$num = ceil(count($list1['list'])/2);
+							foreach($list1['list'] as $k=>$vo){	
+								if($k<$num){
+									echo '<tr>';										
+									echo '<td>'.$vo['model'].$vo['specs'].'</td>';
+									echo '<td class="cob">'.$vo['num'].'</td>';
+									echo '</tr>';	
+								}									
+							}
+							{/php}
+						</tbody>
+					</table>
+				</div>
+				<div class="layui-col-xs6 layui-col-sm6 layui-col-md6">
+					<table class="layui-table table1" style="border-left:none;">
+						<thead>
+							<tr>
+								<th>型号</th>
+								<th>销量</th>
+							</tr> 
+						</thead>
+						<tbody>
+							{php}	
+							foreach($list1['list'] as $k=>$vo){	
+								if($k>=$num){	
+									echo '<tr>';										
+									echo '<td>'.$vo['model'].$vo['specs'].'</td>';
+									echo '<td class="cob">'.$vo['num'].'</td>';
+									echo '</tr>';	
+								}
+							}
+							{/php}
+						</tbody>
+					</table>
+				</div>				
+			</div>
+			<div id="echart1"></div>
+		</div>
+		<div class="layui-col-xs6 layui-col-sm6 layui-col-md6 section2">
+			<ul class="options">
+				<a href="{:url('summary')}?act=1"><li {if $act == '1'}class="active"{/if}>当天</li></a>
+				<a href="{:url('summary')}?act=2"><li {if $act == '2'}class="active"{/if}>本月</li></a>
+				<a href="{:url('summary')}?act=3"><li {if $act == '3'}class="active"{/if}>本年</li></a>
+			</ul>
+			<div class="layui-row layui-col-space15 section21">
+				<div class="layui-col-xs6 layui-col-sm6 layui-col-md6">
+					<div class='container'>
+						<div class='circle'>
+							<div class="data">
+								<p class="title">销售总金额</p>
+								<p class="unit">单位：RMB</p>
+								<p class="money">{:$count['count'][0]}</p>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="layui-col-xs6 layui-col-sm6 layui-col-md6">
+					<div class='container'>
+						<div class='circle'>
+							<div class="data">
+								<p class="title">销售总机型</p>
+								<p class="unit">单位：台</p>
+								<p class="money">{:$count['count'][1]}</p>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			
+			<div id="echart2"></div>
+			
+		</div>
+		<div class="layui-col-xs3 layui-col-sm3 layui-col-md3 section3">
+			<p class="title">各节点订单数量实时数据表（单位：台）</p>
+			<table class="layui-table table1">
+				<thead>
+					<tr>
+						<th>待上线数</th>
+						<th>总下达计划数</th>
+						<th>完成数</th>
+					</tr> 
+				</thead>
+				<tbody>					
+					<tr>
+						<td class="dd">{$count2[5]}</td>
+						<td class="dd">{$count2[4]}</td>
+						<td class="dd">{$count2[2]}</td>
+					</tr>					
+				</tbody>
+			</table>
+			<table class="layui-table table1">
+				<thead>
+					<tr>
+						<th>椅架完成</th>
+						<th>总装完成</th>
+						<th>检验合成</th>
+						<th>成品入库</th>
+					</tr> 
+				</thead>
+				<tbody>				
+					<tr>
+						<td class="dd">{$count2[0]}</td>
+						<td class="dd">{$count2[1]}</td>
+						<td class="dd">{$count2[2]}</td>
+						<td class="dd">{$count2[3]}</td>
+					</tr>					
+				</tbody>
+			</table>			
+			<p class="title">统计累计发货</p>
+			<div class="layui-row">
+				<div class="layui-col-xs6 layui-col-sm6 layui-col-md6" style=" width: 100%;">
+					<table class="layui-table table2" style="border-right:none;">
+							<tr>
+								<td>
+									<div class="aa"><strong>型号-款式</strong></div>
+									<div class="bb"><strong>销量</strong></div>
+									<div class="aa"><strong>型号-款式</strong></div>
+									<div class="bb"><strong>销量</strong></div>
+								</td>
+							</tr>
+							<tr>
+								<td>
+							{php}
+							foreach($list2 as $k=>$vo){	
+									echo '<div class="aa coa">'.$vo['model'].$vo['specs'].'</div>';
+									if($vo['num'] <>'0' ){
+									echo '<div class="bb cob">'.$vo['num'].'</div>';
+									}else{
+										echo '<div class="bb">'.$vo['num'].'</div>';
+									}
+							}
+							{/php}
+							</td>
+							</tr>
+					</table>
+				</div>				
+			</div>
+		</div>
+	</div>
+</div>
+{/block}
+{block name="js"}
+<script src="//cdn.bootcdn.net/ajax/libs/echarts/5.4.2/echarts.min.js"></script>
+{/block}
+{block name="script"}
+<script>
+	
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+	
+		var w1 = $('.section21 .container').width()*0.7;
+		var w2 = w1 - 25;
+		
+		$('.section21 .container').width(w1)
+		$('.section21 .container').height(w1)
+		$('.section21 .container .circle').width(w2);
+		$('.section21 .container .circle').height(w2);
+		
+		$('.section21 .container .data').css('top',(w2 - $('.section21 .container .data').height())/2);
+	
+		var option1 = {
+				backgroundColor:'rgb(12, 48, 82)',
+				tooltip: {
+					trigger: 'item'
+				},
+				legend: {
+					top: '0%',
+					left: 'center'
+				},
+				series: [
+				{
+					type: 'pie',
+					radius: '50%',
+					data: {:json_encode($list1['series'])},
+					label: {
+						normal: {
+							show: true,
+							textStyle:{color:'#ffffff',fontSize:"12"},
+							formatter: '{d}%'
+						}
+					},
+					emphasis: {
+						itemStyle: {
+							shadowBlur: 10,
+							shadowOffsetX: 0,
+							shadowColor: 'rgba(0, 0, 0, 0.5)'
+						}
+					}
+				}
+			  ]
+			};
+		var myChart1 = echarts.init(document.getElementById('echart1'), 'dark');	
+		myChart1.setOption(option1);
+
+		var option2 = {
+			backgroundColor:'rgb(12, 48, 82)',
+			tooltip: {
+				trigger: 'axis'
+			},
+			legend: {
+				bottom :0,
+				padding: [10, 0,0,0],
+				textStyle:{
+					color:'#ffffff',
+					fontSize:16
+				}
+			},
+			grid: {
+				left: '10',
+				right: '10',
+				bottom: '30',
+				containLabel: true
+			},
+			xAxis: {
+				type: 'category',
+				boundaryGap: false,
+				data: {:json_encode($count['xAxis'])}
+			},
+			yAxis: {
+				type: 'value'
+			},
+			series: {:json_encode($count['series'])}
+		};
+		var myChart2 = echarts.init(document.getElementById('echart2'), 'dark');	
+		myChart2.setOption(option2);
+
+		setInterval(function (){
+			location.reload();
+		},60*60*1000)	
+	})
+</script>
+{/block}
+
+

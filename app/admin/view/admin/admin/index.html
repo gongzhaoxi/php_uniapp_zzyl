@@ -1,0 +1,162 @@
+{extend name="base" /}
+{block name="body"}
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline">
+					<label class="layui-form-label">账号</label>
+					<div class="layui-input-inline">
+						<input type="text" name="username" placeholder="" class="layui-input">
+					</div>
+				</div>
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query">
+						<i class="layui-icon layui-icon-search"></i>
+						查询
+					</button>
+					<button type="reset" class="pear-btn pear-btn-md">
+						<i class="layui-icon layui-icon-refresh"></i>
+						重置
+					</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	<button class="pear-btn pear-btn-primary pear-btn-sm" lay-event="add"><i class="layui-icon layui-icon-add-1"></i>新增</button>
+	<button class="pear-btn pear-btn-danger pear-btn-sm" lay-event="batchRemove"><i class="layui-icon layui-icon-delete"></i>删除</button>
+	<button class="pear-btn pear-btn-sm" lay-event="recycle"><i class="layui-icon layui-icon-delete"></i>回收站</button>
+</script>
+<script type="text/html" id="options">
+	<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="edit"><i class="layui-icon layui-icon-edit"></i></button>
+	<button class="pear-btn pear-btn-warming pear-btn-xs" lay-event="role"><i class="layui-icon layui-icon-user"></i></button>
+	<button class="pear-btn pear-btn-warming pear-btn-xs" lay-event="permission"><i class="layui-icon layui-icon-vercode"></i></button>
+	<button class="pear-btn pear-btn-danger pear-btn-xs" lay-event="remove"><i class="layui-icon layui-icon-delete"></i></button>
+</script>
+<script type="text/html" id="status">
+	<input type="checkbox" name="status" value="{{d.id}}" lay-skin="switch" lay-text="启用|禁用" lay-filter="status" {{# if(d.status==1){ }} checked {{# } }}>
+</script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+		let cols = [[{
+					type: 'checkbox'
+				},
+				{
+					field: 'id',
+					title: 'ID', 
+					sort: true, 
+					align: 'center',
+					unresize: true
+				},{
+					title: '账号',
+					field: 'username',
+					align: 'center',
+					unresize: true,
+				},
+				{
+					title: '昵称',
+					field: 'nickname',
+					align: 'center',
+					unresize: true,
+				},
+				{
+					title: '状态',
+					field: 'enable',
+					align: 'center',
+					unresize: true,
+					templet: '#status'
+				},
+				{
+					field: 'create_time',
+					title: '创建时间',
+					unresize: true,
+					align: 'center'
+				}, 
+				{
+					field: 'update_time',
+					title: '更新时间',
+					unresize: true,
+					align: 'center'
+				}, 
+				{
+					title: '操作',
+					toolbar: '#options',
+					align: 'center',
+					unresize: true,
+					width: 200
+				}
+			]]
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('index')}',
+			page: true,
+			cols: cols,
+			cellMinWidth: 100,
+			skin: 'line',
+			toolbar: '#toolbar',
+			defaultToolbar: [{
+				title: '刷新',
+				layEvent: 'refresh',
+				icon: 'layui-icon-refresh',
+			}, 'filter', 'print', 'exports']
+		});
+
+		table.on('tool(dataTable)', function(obj) {
+			if (obj.event === 'remove') {
+				layerConfirm('确定要删除该管理员?','{:url('remove')}',{id:obj.data['id']},function(res){
+					obj.del();
+				})
+			} else if (obj.event === 'edit') {
+				openLayer('修改管理员','{:url('edit')}?id='+obj.data['id'],'80%','90%');
+			} else if (obj.event === 'role') {
+				openLayer('分配角色','{:url('role')}?id='+obj.data['id'],'80%','90%');
+			} else if (obj.event === 'permission') {
+				openLayer('分配直接权限','{:url('permission')}?id='+obj.data['id'],'80%','90%');
+			}
+		});
+
+		table.on('toolbar(dataTable)', function(obj) {
+			if (obj.event === 'add') {
+				openLayer('新增管理员','{:url('add')}','80%','90%');
+			} else if (obj.event === 'refresh') {
+				table.reload('dataTable');
+			} else if (obj.event === 'batchRemove') {
+				tableAction(obj.config.id,'确定要删除这些管理员','{:url('batchRemove')}');
+			} else if (obj.event === 'recycle') {
+				openLayer('回收站','{:url('recycle')}','80%','90%',function () {
+					table.reload('dataTable');
+				});
+			}
+		});
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+
+		form.on('switch(status)', function(data) {
+			ajaxActionCall('{:url('status')}',{status:data.elem.checked?1:2,id:this.value})
+		});
+
+	})
+</script>
+{/block}
+
+

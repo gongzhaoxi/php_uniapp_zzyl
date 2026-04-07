@@ -1,0 +1,59 @@
+<?php
+namespace app\common\enum;
+
+class ErpMaterialAllocateMaterialEnum
+{
+
+	const STATUS_HANDLE  				= 1; //待签收
+	const STATUS_SIGNED  				= 2; //已签收
+	const STATUS_CANCEL  				= 3; //已作废
+	
+	const RETURNED_STATUS_NO			= 1;//未退库
+	const RETURNED_STATUS_PART			= 2;//部分退库
+	const RETURNED_STATUS_ALL			= 3;//全部退库
+	
+	const SEND_STATUS_NO				= 0;//未发出
+	const SEND_STATUS_YES				= 1;//已发出
+	const SEND_STATUS_CANCEL			= 2;//作废
+
+	public static function getStatusDesc($value = true)
+    {
+        $desc = [
+			self::STATUS_HANDLE 	=> '待签收',
+			self::STATUS_SIGNED   	=> '已签收',
+            self::STATUS_CANCEL   	=> '已作废',
+        ];
+        if(true === $value){
+            return $desc;
+        }
+        return $desc[$value] ?? '';
+    }
+	
+	public static function getReturnedStatusDesc($value = true)
+    {
+        $desc = [
+			self::RETURNED_STATUS_NO 	=> '未退库',
+			self::RETURNED_STATUS_PART	=> '部分退库',
+			self::RETURNED_STATUS_ALL	=> '全部退库',
+        ];
+        if(true === $value){
+            return $desc;
+        }
+        return $desc[$value] ?? '';
+    }
+	
+	
+	public static function getSendStatusDesc($value = true)
+    {
+        $desc = [
+			self::SEND_STATUS_NO 	=> '未发出',
+			self::SEND_STATUS_YES	=> '已发出',
+			self::SEND_STATUS_CANCEL=> '作废',
+        ];
+        if(true === $value){
+            return $desc;
+        }
+        return $desc[$value] ?? '';
+    }	
+	
+}

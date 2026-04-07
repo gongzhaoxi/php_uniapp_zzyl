@@ -1,0 +1,178 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.error,.finish{display:none;}
+#codeTpl{display:none;}
+.layui-form-label{width:100px;}
+.layui-input-block {margin-left: 130px;}
+</style>
+<form class="layui-form" action="{:url('errors')}" method="post" lay-filter="demo-val-filter">
+	<input type="hidden" name="plan_id" value="{$model['id']}" >
+	<div class="mainBox">
+		<div class="main-container">
+			<table class="layui-table">
+				<colgroup>
+					<col>
+					<col>
+					<col>
+				</colgroup>
+				<tbody>
+					<tr>
+						<td>组件编码：{$model['material']['sn']}</td>
+						<td>组件名称：{$model['material']['name']}</td>
+						<td>已打印 <span id="code_count">{:$model['code']?count($model['code']):0}</span> 个标签<button type="button" class="layui-btn  layui-bg-orange layui-btn-xs print" style="margin-left:20px;" lay-event="">标签打印</button></td>
+					</tr>
+				</tbody>
+			</table>
+			<div class="layui-form-item">
+				<label class="layui-form-label">工序选择</label>
+				<div class="layui-input-block">
+					{foreach $process as $vo}
+					<input type="radio" name="process_id"  {if $vo['status'] == 1}disabled{/if}   value="{$vo['process_id']}"title="{$vo['process_name']}" lay-filter="process_id" lay-verify="checkbox" data-min="1" data-msg="请选择工序">
+					{/foreach}
+				</div>
+			</div>			
+			<div class="layui-form-item">
+				<label class="layui-form-label">进度结果</label>
+				<div class="layui-input-block">
+					<input type="radio" name="type" class="type"  value="1" title="已完成" lay-filter="type" checked>
+					<input type="radio" name="type" class="type" value="欠料" title="欠料" lay-filter="type">
+					<input type="radio" name="type" class="type" value="其他异常原因" title="其他异常原因" lay-filter="type">
+				</div>
+			</div>
+			<div class="layui-form-item error">
+				<label class="layui-form-label">异常说明</label>
+				<div class="layui-input-block">
+					<input type="text" maxlength="255" name="error" placeholder="选填" autocomplete="off" class="layui-input">
+				</div>
+			</div>
+			<div class="layui-form-item error">
+				<label class="layui-form-label">附图(选填)</label>
+				<div class="layui-input-block">
+					{:$form->photos('photo')}
+				</div>
+			</div>	
+			<div class="layui-form-item finish finish5">
+				<label class="layui-form-label">未装配数量</label>
+				<div class="layui-input-block">
+					<div class="layui-form-mid layui-text-em">{$model['num']- $model['assembled_num']}</div>
+				</div>
+			</div>
+			<div class="layui-form-item finish finish5">
+				<label class="layui-form-label">本次完成数量</label>
+				<div class="layui-input-block">
+					<input type="text" maxlength="255" name="assembled_num" placeholder="" value="1" lay-verify=""   autocomplete="off" class="layui-input input">
+				</div>
+			</div>			
+			<div class="layui-form-item finish finish6">
+				<label class="layui-form-label">未检验数量</label>
+				<div class="layui-input-block">
+					<div class="layui-form-mid layui-text-em">{$model['num']- $model['inspect_num']}</div>
+				</div>
+			</div>
+			<div class="layui-form-item finish finish6">
+				<label class="layui-form-label">本次检验数量</label>
+				<div class="layui-input-block">
+					<input type="text" maxlength="255" name="inspect_num" placeholder="" value="1" lay-verify=""   autocomplete="off" class="layui-input input">
+				</div>
+			</div>			
+			<div class="layui-form-item finish finish7">
+				<label class="layui-form-label">未入库数量</label>
+				<div class="layui-input-block">
+					<div class="layui-form-mid layui-text-em">{$model['num']- $model['finish_num']}</div>
+				</div>
+			</div>
+			<div class="layui-form-item finish finish7">
+				<label class="layui-form-label">本次入库数量</label>
+				<div class="layui-input-block">
+					<input type="text" maxlength="255" name="finish_num" placeholder="" value="1" lay-verify=""   autocomplete="off" class="layui-input input">
+				</div>
+			</div>				
+			<div class="layui-form-item finish finish7">
+				<label class="layui-form-label">入仓仓库</label>
+				<div class="layui-input-block">
+					<select name="warehouse_id">
+						{foreach $warehouse as $vo}
+						<option value="{$vo['id']}">{$vo['name']}</option>
+						{/foreach}
+					</select>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="bottom">
+		<div class="button-container">
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm next" lay-submit="" lay-filter="next">下一步</button>
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm error" lay-submit="" lay-filter="*">提交</button>
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm finish" data-form_url="{:url('finish')}" lay-submit="" lay-filter="*">提交</button>
+		</div>
+	</div>
+</form>
+<div type="text/html" id="codeTpl"></div>
+{/block}
+{block name="js"}
+<script src="/static/tool/jquery.min.js"></script>
+<script src="/static/tool/jQuery.print.min.js"></script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['form', 'jquery','table'], function() {
+		let form = layui.form;
+		let $ = layui.jquery;
+		let table = layui.table;	
+			
+		$('.print').click(function(){
+			ajaxActionCall('{:url('code')}',{id:{$model['id']}},function(res){
+				$('#code_count').html(parseInt($('#code_count').html())+1);
+				$('#codeTpl').html(res.data.code);
+				$("#codeTpl").print({
+					globalStyles: false,
+				});
+			},false)
+		})
+			
+		form.on('radio(process_id)', function(data){	
+			setAction();
+		});
+		
+		function setAction(){
+			$('.error').hide();
+			$('.next').hide();
+			$('.finish').hide();
+			$('.finish .input').attr('lay-verify','');
+			$('.type').removeAttr('disabled');
+			var data = form.val('demo-val-filter');
+			if(data.process_id == 6 || data.process_id == 7){
+				$('.type').eq(1).attr('disabled',true);
+				if(data.type == '欠料'){
+					$('.type').eq(0).prop('checked',true);
+				}
+			}
+			form.render();
+			
+			var data = form.val('demo-val-filter');
+			
+			if(data.type == 1){
+				$('.finish'+data.process_id).show();
+				$('.finish'+data.process_id+' .input').attr('lay-verify','required|number');
+				if(data.process_id == 5){
+					$('.bottom .next').show();
+				}else{
+					$('.bottom .finish').show();
+				}
+			}else{
+				$('.error').show();
+			}
+		}
+			
+		form.on('radio(type)', function(data){
+			setAction();
+		});
+		
+		form.on('submit(next)', function (data) {
+			location.href = '{:url('follow')}?id={$model['id']}&process_id='+data.field.process_id;
+			return false;
+		});	
+	})
+</script>
+{/block}

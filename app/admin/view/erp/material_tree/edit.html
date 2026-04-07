@@ -1,0 +1,93 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+	.pear-container{background-color:white;}
+</style>
+<form class="layui-form" action="">
+	<input type="hidden"  name="type" value="{$model->type??''}"  >
+	<input type="hidden"  name="id" value="{$model->id??''}"  >
+	<input type="hidden"  id="pid"  name="pid" value="{$model->pid??''}"  >
+	<div class="layui-form-item">
+		<label for="" class="layui-form-label">父级</label>
+		<div class="layui-input-block">
+			<ul id="demoTree" class="dtree" ></ul>
+		</div>
+	</div>
+	<div class="layui-form-item">
+		<label for="" class="layui-form-label">名称</label>
+		<div class="layui-input-block">
+			<input type="text" maxlength="50" name="title" value="{$model->title??''}" lay-verify="required" placeholder="请输入名称" class="layui-input" >
+		</div>
+	</div>
+	<div class="layui-form-item">
+		<label for="" class="layui-form-label">排序</label>
+		<div class="layui-input-block">
+			<input type="number" name="sort" value="{$model->sort??10}" lay-verify="required" placeholder="排序权重" class="layui-input" >
+		</div>
+	</div>
+	<div class="bottom">
+		<div class="button-container">
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="save">
+				<i class="layui-icon layui-icon-ok"></i>
+				提交
+			</button>
+			<button type="reset" class="layui-btn layui-btn-primary layui-btn-sm">
+				<i class="layui-icon layui-icon-refresh"></i>
+				重置
+			</button>
+		</div>
+	</div>
+</form>
+{/block}
+{block name="script"}
+<script>
+layui.use(['form','element','dtree','jquery'], function() {
+	var form = layui.form;
+	var element = layui.element;
+	var dtree = layui.dtree;
+	var $ = layui.jquery;
+	var demoTree = dtree.renderSelect({
+		elem: "#demoTree",
+		data:{:json_encode($tree)},
+		selectInitVal: "{$model->pid??'0'}", 
+		response:{
+            treeId: "id",			  //节点ID
+            parentId: "pid",	  //父节点ID
+            title: "title",			  //节点名称 
+            childName: "children",	  //子节点名称
+		}
+	});
+
+	dtree.on("node('demoTree')" ,function(param){
+		$('#pid').val(param.param.nodeId);
+	});
+
+	form.on('submit(save)', function(data){
+		$.ajax({
+			data:JSON.stringify(data.field),
+			dataType:'json',
+			contentType:'application/json',
+			type:'post',
+			success:function(res){
+				//判断有没有权限
+				if(res && res.code==999){
+					layer.msg(res.msg, {
+						icon: 5,
+						time: 2000, 
+					})
+					return false;
+				}else if(res.code==200){
+					layer.msg(res.msg,{icon:1,time:1000},function(){
+						parent.layer.close(parent.layer.getFrameIndex(window.name));//关闭当前页
+						top.location.reload();
+					});
+				}else{
+					layer.msg(res.msg,{icon:2,time:1000});
+				}
+			}
+		})
+		return false;
+	});
+});
+</script>
+{/block}

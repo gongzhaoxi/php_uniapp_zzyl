@@ -1,0 +1,108 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-form-item {margin-bottom: 5px;}
+.layui-tab .layui-tab-title{border:none;}
+</style>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="" id="searchForm" lay-filter="searchForm" style="border-bottom:1px solid rgb(233, 233, 233);margin-bottom:5px;">
+			<input type="hidden" name="month" id="month" value="{$month}" >		
+			<input type="hidden" name="region_type" id="region_type" value="{$region_type}" >	
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="year" id="year" value="{$year}" lay-verify="required" placeholder="选择年份" class="layui-input year">						
+				</div>				
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+					<button class="pear-btn pear-btn-md pear-btn-success" lay-submit lay-filter="export"><i class="layui-icon layui-icon-export"></i>导出</button>
+				</div>
+			</div>
+		</form>		
+		<div class="layui-tab layui-tab-brief" lay-filter="region_type">
+			<ul class="layui-tab-title">
+				<li {if $region_type == 1}class="layui-this"{/if} data-val="1">国内数据</li></a>
+				<li {if $region_type == 2}class="layui-this"{/if} data-val="2">国外数据</li>
+			</ul>
+		</div>
+		<div class="layui-btn-group nav" style="margin-top:15px;">
+			{php}
+			for($i=1;$i<=12;$i++){
+				if($month == $i){
+					echo '<button type="button" data-val="'.sprintf("%02d",$i).'" class="layui-btn layui-btn-sm  layui-bg-blue monthData">'.$i.'月</button> ';
+				}else{
+					echo '<button type="button" data-val="'.sprintf("%02d",$i).'" class="layui-btn layui-btn-sm  layui-btn-primary monthData">'.$i.'月</button> ';
+				}				
+			}
+			{/php}
+		</div>	
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common','element'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		let element = layui.element;
+		table.render({
+			title:'成品库存统计',
+			type: 'xls',
+			elem: '#dataTable',
+			url: '{:url('list')}?month={$year}-{:sprintf("%02d",$month)}',
+			page: true,
+			cols: [[
+				{field: 'sn',title: '设备型号',align: 'center',unresize: false,width: {:get_col_width('sn')}},
+				{field: 'last_num',title: '上月库存',align: 'center',unresize: false,width:{:get_col_width('last_num')}},
+				{field: 'warehouse_num',title: '本月入仓',align: 'center',unresize: false,width: {:get_col_width('warehouse_num')}},
+				{field: 'sale_num',title: '本月销售',align: 'center',unresize: false,width: {:get_col_width('sale_num')}},
+				{field: 'num',title: '本月库存',align: 'center',unresize: false,width: {:get_col_width('num')}},
+			]],
+			cellMinWidth: 100,
+			limit:1000,
+			height:'full-215',
+			//skin: 'line',
+			toolbar: false,
+			defaultToolbar: false
+		});
+		
+		$('.monthData').click(function(){
+			$('#month').val($('#year').val()+'-'+$(this).data('val'));
+			$('.nav .layui-bg-blue').removeClass('layui-bg-blue').addClass('layui-btn-primary');
+			$(this).addClass('layui-bg-blue');
+			table.reload('dataTable', {
+				where: form.val('searchForm'),
+				page:{curr: 1}
+			})
+		})
+		
+		form.on('submit(query)', function(data) {
+			$('#month').val($('#year').val()+'-'+$('.nav .layui-bg-blue').data('val'));
+			table.reload('dataTable', {
+				where: form.val('searchForm'),
+				page:{curr: 1}
+			})
+			return false;
+		});	
+		
+		element.on('tab(region_type)', function(data){
+			$('#region_type').val($(data.elem).find('li').eq(data.index).data('val'));
+			$('#month').val($('#year').val()+'-'+$('.nav .layui-bg-blue').data('val'));
+			table.reload('dataTable', {
+				where: form.val('searchForm'),
+				page:{curr: 1}
+			})
+		});
+		
+		form.on('submit(export)', function(data) {
+			table.exportFile('dataTable')
+			return false;
+		});			
+	})
+</script>
+{/block}
+
+

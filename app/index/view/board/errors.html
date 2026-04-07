@@ -1,0 +1,92 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.main{margin:0 5px;}
+.main>.layui-row{width:100%;}
+.main>.layui-row .layui-row{line-height:40px;}
+.title{font-size:18px;font-weight:600;text-align:center;color:#000;}
+.layui-table td{border-color:#000;}
+</style>
+<div class="main">
+	<div class="layui-row layui-col-space15">
+		<div class="layui-col-xs6 layui-col-sm6 layui-col-md6">
+			<div class="layui-row">
+				<div class="layui-col-xs3 layui-col-sm3 layui-col-md1">
+					{:date('m月d日')}
+				</div>
+				<div class="layui-col-xs9 layui-col-sm9 layui-col-md11">
+					<p class="title">车间物料缺料看板</p>
+				</div>				
+			</div>
+			<table class="layui-table table1">
+				<tbody>
+					<tr>
+						<td>报缺时间</td>
+						<td>物料编码</td>
+						<td>物料名称</td>
+						<td>报缺数量</td>
+						<td>报缺原因</td>
+						<td>联系人</td>
+					</tr>
+					{volist name="list1" id="vo"}
+					<tr>
+						<td>{:substr($vo['create_time'],-8)}</td>
+						<td>{$vo['material_sn']}</td>
+						<td>{$vo['material_name']}</td>
+						<td>{$vo['lack_num']}</td>
+						<td>{$vo['error']}</td>
+						<td>{$vo['username']}</td>
+					</tr>
+					{/volist}
+				</tbody>
+			</table>
+		</div>
+		<div class="layui-col-xs6 layui-col-sm6 layui-col-md6">
+			<div class="layui-row">
+				<div class="layui-col-xs12 layui-col-sm12 layui-col-md12">
+					<p class="title">制程检验不良看板</p>
+				</div>				
+			</div>
+			<table class="layui-table table1">
+				<tbody>
+					<tr>
+						<td>发现时间</td>
+						<td>产品编码</td>
+						<td>检验类型</td>
+						<td>不良原因1</td>
+						<td>不良原因2</td>
+						<td>不良原因3</td>
+						<td>不良原因4</td>
+					</tr>
+					{volist name="list2" id="vo"}
+					<tr>
+						<td>{:substr($vo['create_time'],-8)}</td>
+						<td>{$vo['produce_sn']}</td>
+						<td>{$vo['check_type']}</td>
+						<td>{$vo['error'][0]|default=''}</td>
+						<td>{$vo['error'][1]|default=''}</td>
+						<td>{$vo['error'][2]|default=''}</td>
+						<td>{$vo['error'][3]|default=''}</td>
+					</tr>
+					{/volist}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+		setInterval(function (){
+			location.reload();
+		},1*60*1000)	
+	})
+</script>
+{/block}
+
+

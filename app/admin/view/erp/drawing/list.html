@@ -1,0 +1,209 @@
+{extend name="base" /}
+{block name="body"}
+<div class="layui-card">
+	<div class="layui-card-body">
+		<div class="layui-row">
+			<div class="layui-col-md2">
+				<ul id="demoTree" class="dtree" ></ul>
+			</div>
+			<div class="layui-col-md10">
+				<form class="layui-form" action="" id="searchForm">
+					<div class="layui-form-item">
+						<div class="layui-form-item layui-inline">
+							<input type="text" name="sn" placeholder="物料编码" class="layui-input">					
+						</div>		
+						<div class="layui-form-item layui-inline">
+							<input type="text" name="name" placeholder="物料名称" class="layui-input">			
+						</div>						
+						<div class="layui-form-item layui-inline">
+							<select name="status" >
+								<option value="">状态</option>
+								<option value="1" selected>启用</option>
+								<option value="0">禁用</option>	
+							</select>
+						</div>
+						<div class="layui-form-item layui-inline">
+							<select name="check_status" >
+								<option value="">审核状态</option>
+								<option value="0">待初审</option>
+								<option value="1">待终审</option>	
+								<option value="2">已终审</option>
+							</select>
+						</div>						
+						<div class="layui-form-item layui-inline">
+							<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+						</div>
+					</div>
+				</form>
+				<table id="dataTable" lay-filter="dataTable"></table>
+			</div>
+		</div>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+<button class="pear-btn pear-btn-primary pear-btn-sm" lay-event="add"><i class="layui-icon layui-icon-add-1"></i>新增</button>
+	<button class="pear-btn pear-btn-success pear-btn-sm" lay-event="import"><i class="layui-icon layui-icon-upload"></i>导入</button>
+	<button class="pear-btn pear-btn-danger pear-btn-sm" lay-event="batchRemove"><i class="layui-icon layui-icon-delete"></i>删除</button>
+</script>
+<script type="text/html" id="pic">
+	<a onclick="layerPhotos('{{ d.pic }}','{{ d.id }}')" href="javascript:;"><img src="{{ d.pic }}" /> </a>
+</script>
+<script type="text/html" id="final_pic">
+	<a onclick="layerPhotos('{{ d.final_pic }}','{{ d.id }}')" href="javascript:;"><img src="{{ d.final_pic }}" /> </a>
+</script>
+<script type="text/html" id="options">
+	<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="edit"><i class="layui-icon layui-icon-edit"></i></button>
+	<button class="pear-btn pear-btn-danger pear-btn-xs" lay-event="remove"><i class="layui-icon layui-icon-delete"></i></button>
+</script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common','dtree'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		var dtree = layui.dtree;
+		var tree_id = '';
+
+		var demoTree = dtree.render({
+			elem: "#demoTree",
+			data:{:json_encode($tree)},
+			menubar:false,
+			//skin: "laySimple",  // layui主题风格
+			//icon: "-1",  // 隐藏二级图标
+			line: true,  // 显示树线
+			response:{
+				treeId: "id",			  //节点ID
+				parentId: "pid",	  //父节点ID
+				title: "title",			  //节点名称 
+				childName: "children",	  //子节点名称
+			}
+		});
+
+		dtree.on("node('demoTree')" ,function(param){
+			tree_id = param.param.nodeId;
+			table.reload('dataTable', {
+				where: {tree_id:param.param.nodeId},
+				page:{curr: 1}
+			})
+		});
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('list')}?status=1',
+			page: true,
+			limit:90,
+			height:'full-170',
+			cols: [[
+				{type: 'checkbox'},
+				{field: 'sn',title: '物料编码',align: 'left',unresize: false,width: {:get_col_width('sn',150)}, hide: getTableFieldIsHide('dataTable','sn')},
+				{field: 'name',title: '物料名称',sort: true,align: 'left',unresize: false,width: {:get_col_width('name',200)}, hide: getTableFieldIsHide('dataTable','name')},
+				{field: 'pic',title: '初始设计图纸',align: 'center',unresize: false,width: {:get_col_width('pic',130)},templet: '#pic', hide: getTableFieldIsHide('dataTable','pic')},
+				{field: 'designer',title: '设计师', align: 'center',unresize: false,width: {:get_col_width('designer',100)}, hide: getTableFieldIsHide('dataTable','designer')},
+				{field: 'first_check',title: '初审员',align: 'center',unresize: false,width: {:get_col_width('first_check')},templet: function(d){return d.first_check_time>0?d.first_check:('<button data-id="'+d.id+'" data-pic="'+d.pic+'" class="pear-btn pear-btn-success pear-btn-xs first_check">确认审核</button>');}, hide: getTableFieldIsHide('dataTable','first_check')},
+				{field: 'final_check',title: '终审员',align: 'center',unresize: false,width: {:get_col_width('final_check')},templet: function(d){return d.final_check_time>0||d.first_check_time==0?d.final_check:('<button data-pic="'+d.pic+'" data-id="'+d.id+'" class="pear-btn pear-btn-success pear-btn-xs final_check">确认审核</button>');}, hide: getTableFieldIsHide('dataTable','final_check')},
+				{field: 'final_pic',title: '终审设计图纸',align: 'center',unresize: false,width: {:get_col_width('final_pic',130)},templet: '#final_pic', hide: getTableFieldIsHide('dataTable','final_pic')},
+				{field: 'status_desc',title: '状态',align: 'center',unresize: false,width: {:get_col_width('status_desc',80)}, hide: getTableFieldIsHide('dataTable','status_desc')},
+				{title: '操作',toolbar: '#options',align: 'center',width: 110,unresize:true}
+				
+			]],
+			cellMinWidth: 100,
+			//skin: 'line',
+			toolbar: '#toolbar',
+			defaultToolbar: [{
+				title: '刷新',
+				layEvent: 'refresh',
+				icon: 'layui-icon-refresh',
+			}, 'filter']
+		});
+   
+		$("body").on("click",".first_check",function(){
+			if(!$(this).data('pic')){
+				layui.layer.msg('图纸不存在，不可审核');
+				return false;
+			}
+			layerConfirm('确定要初审?','{:url('firstCheck')}',{id:$(this).data('id')},function(res){
+				table.reload('dataTable');
+			})
+		});
+
+		$("body").on("click",".final_check",function(){
+			if(!$(this).data('pic')){
+				layui.layer.msg('图纸不存在，不可审核');
+				return false;
+			}
+			openLayer('终审图纸','{:url('finalCheck')}?id='+$(this).data('id'),'90%','90%');
+		});
+
+
+		table.on('sort(dataTable)', function(obj){
+			table.reload('dataTable', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+		
+
+		table.on('toolbar(dataTable)', function(obj) {
+			if (obj.event === 'add') {
+				openLayer('新增图纸','{:url('add')}','80%','90%');
+			}else if (obj.event === 'refresh') {
+				table.reload('dataTable');
+			} else if (obj.event === 'batchRemove') {
+				tableAction(obj.config.id,'确定要删除这些图纸','{:url('remove')}');
+			}else if (obj.event === 'import') {
+				openLayer('导入图纸','{:url('import')}','90%','90%');
+			}
+		});
+
+		table.on('tool(dataTable)', function(obj) {
+			if (obj.event === 'remove') {
+				layerConfirm('确定要删除该图纸?','{:url('remove')}',{ids:[obj.data['id']]},function(res){
+					obj.del();
+				})
+			} else if (obj.event === 'edit') {
+				openLayer('修改图纸','{:url('edit')}?id='+obj.data['id'],'80%','90%');
+			}
+		});
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+		
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+		table.on('colToggled(dataTable)', function(obj){
+			setTableFieldIsHide(obj.config.id,obj.col.field,obj.col.hide);
+		});
+	})
+</script>
+<style>
+.dtree{
+    overflow-x:hidden;
+    overflow-y: auto;
+    width: 0px;
+    width: 90%;
+    height: 93vh;
+}
+.layui-col-md2{
+    overflow:hidden;
+}
+</style>
+{/block}
+
+

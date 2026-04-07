@@ -1,0 +1,24 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-input-block {margin-left: 150px;}
+.layui-form-label {width: 120px;}
+</style>
+    <form class="layui-form" action="" method="post">
+        <div class="mainBox">
+            <div class="main-container">
+				<div class="layui-form-item">
+					<label class="layui-form-label">UDI标签</label>
+					<div class="layui-input-block">
+						{:$form->image('udi',$model['udi'])}
+					</div>
+				</div>
+            </div>
+        </div>
+        <div class="bottom">
+			<div class="button-container">
+				<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*"><i class="layui-icon layui-icon-ok"></i>提交</button>
+			</div>
+		</div>
+	</form>
+{/block}

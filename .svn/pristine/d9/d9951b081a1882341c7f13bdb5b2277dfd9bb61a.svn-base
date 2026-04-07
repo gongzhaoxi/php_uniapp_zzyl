@@ -1,0 +1,89 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-input-block {margin-left: 150px;}
+.layui-form-label {width: 120px;}
+</style>
+<form class="layui-form" action="" method="post" data-table="{$table}">
+	<input type="hidden"  name="material_id" id="material_id" value="{$material_id}">
+	<input type="hidden"  name="related_material_id" id="related_material_id">
+	<div class="mainBox">
+		<div class="main-container">
+			<div class="layui-form-item">
+				<label class="layui-form-label">零件</label>
+				<div class="layui-input-block">
+					<input type="text" readonly id="related_material_name" lay-verify="required" ts-selected="" placeholder="请选择,不可为空" autocomplete="off" class="layui-input">
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">颜色是否跟随产品</label>
+				<div class="layui-input-block">
+					<input type="radio" name="color_follow" value="1" title="是" >
+					<input type="radio" name="color_follow" value="0" title="否" checked>
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">数量</label>
+				<div class="layui-input-block">
+					<input type="text"  name="num" value="1" lay-verify="required|number" placeholder="请填写,不可为空" autocomplete="off" class="layui-input">
+				</div>
+			</div>			
+		</div>
+	</div>
+	<div class="bottom">
+		<div class="button-container">
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*"><i class="layui-icon layui-icon-ok"></i>提交</button>
+			<button type="reset" class="layui-btn layui-btn-primary layui-btn-sm"><i class="layui-icon layui-icon-refresh"></i>重置</button>
+		</div>
+	</div>
+</form>
+{/block}
+{block name="script"}
+<script>
+var category= {:json_encode($category)} ;
+layui.use(['tableSelect','form'], function () {
+	var $ = layui.jquery;
+	var tableSelect = layui.tableSelect;
+	var form = layui.form;
+	tableSelect.render({
+		elem: '#related_material_name',
+		checkedKey: 'id',
+		searchKey: 'keyword',
+		searchPlaceholder: '物料名称/编码',
+		table: {
+			url: '{:url('partn')}?no_id={$material_id}&status=1',		
+			cols: [[
+				{type: 'checkbox',width:100 },
+				{field: 'sn',title: '物料编码',align: 'left',unresize: false,width:300},
+				{field: 'name',title: '物料名称',align: 'left',unresize: false,width:300},
+				{field: 'category_name',title: '物料分类',align: 'left',unresize: false,width:150},
+			]],
+			done:function(res, curr, count){
+		
+				if($('.tableSelectBar select').length == 0){
+					var html = '<div class="layui-input-inline"><select name="cid">';
+					html+= '<option value=""></option>';
+					layui.each(category, function (index, item) {
+						html+= '<option value="'+item.id+'">'+item.name+'</option>';
+					})
+					html += '</select></div>';
+					$('.tableSelectBar .tableSelect_btn_search').before(html);
+					form.render('select');
+				}
+				
+			}
+		},
+		done: function (elem, data) {
+			var ids = [];
+			var names = [];
+			layui.each(data.data, function (index, item) {
+				ids.push(item.id);
+				names.push(item.name);
+			})
+			elem.val(names.join(','));
+			$('#related_material_id').val(ids.join(','));
+		}
+	})
+});
+</script>
+{/block}

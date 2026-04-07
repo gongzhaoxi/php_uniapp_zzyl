@@ -1,0 +1,505 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.left .layui-inline{width:100px;}
+.layui-table-cell {padding: 6px 5px;}
+</style>
+<div class="layui-row layui-col-space10">
+	<div class="layui-col-md5">
+		<div class="layui-card left">
+			<div class="layui-card-body">
+				<form class="layui-form" action="">
+					<div class="layui-form-item">
+						<div class="layui-form-item layui-inline">
+							<input type="text" name="order_sn" placeholder="采购单编号" class="layui-input">					
+						</div>
+						<div class="layui-form-item layui-inline">
+							<select name="supplier_id" lay-search="">
+								<option value="">供应商</option>
+								{foreach $supplier as $key=>$vo}
+								<option value="{$vo['id']}">{$vo['name']}</option>
+								{/foreach}
+							</select>				
+						</div>						
+						<div class="layui-form-item layui-inline">
+							<select name="status">
+								<option value="">状态</option>
+								{foreach $status as $key=>$vo}
+								<option value="{$key}" {if $default_status == $key}selected{/if}>{$vo}</option>
+								{/foreach}
+							</select>
+						</div>		
+						<div class="layui-form-item layui-inline">
+							<input type="text" name="material" placeholder="物料编号/物料名称" class="layui-input">					
+						</div>							
+						<div class="layui-form-item layui-inline" style="width:auto;">
+							<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+		<div class="layui-card">
+			<div class="layui-card-body">
+				<table id="dataTable" lay-filter="dataTable"></table>
+			</div>
+		</div>
+	</div>
+	<div class="layui-col-md7">
+		<div class="layui-card">
+			<div class="layui-card-body">
+				<form class="layui-form" action="" id="searchForm">
+					<div class="layui-form-item">
+						<div class="layui-form-item layui-inline">
+							<input type="text" name="keyword" placeholder="物料编码/名称" class="layui-input">					
+						</div>							
+						<div class="layui-form-item layui-inline">
+							<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="materialQuery"><i class="layui-icon layui-icon-search"></i>查询</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+		<div class="layui-card">
+			<div class="layui-card-body">
+				<div class="empty" style="margin-top: 50px;margin-left: 220px;margin-bottom: 80px;" width="184" height="152">
+					请点击左边“行”，选择入库单编号，查看明细！
+				</div>
+				<table id="materialTable" lay-filter="materialTable"></table>
+			</div>
+		</div>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	<button class="pear-btn pear-btn-warming pear-btn-sm  pear-btn-sm"  lay-event="print"><i class="layui-icon layui-icon-print"></i>打印采购单</button>
+</script>
+<script type="text/html" id="options">
+	{{#  if(d.can_edit){ }}<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="edit">编辑</button>{{#  } }}
+	{{#  if(d.can_recheck){ }}<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="recheck">反审</button>{{#  } }}
+	{{#  if(d.can_check){ }}<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="check">审批</button>{{#  } }}
+	{{#  if(d.can_send){ }}<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="send">发供应商</button>{{#  } }}
+	{{#  if(d.can_cancel){ }}<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="cancel">作废</button>{{#  } }}
+	<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="log">变更</button>
+	<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="copy">复制</button>
+</script>
+
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		let order_id;
+		var order_sn = '';
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('material')}?status={$default_status}',
+			page: true,
+			height: 'full-170',
+			cols: [[
+				{type: 'checkbox',unresize: true},
+				{field: 'order_sn',title: '采购单编号',align: 'center',unresize: false,width: {:get_col_width('order_sn',150)}, hide: getTableFieldIsHide('dataTable','order_sn')},
+				{field: 'supplier_name',title: '供应商',align: 'center',unresize: false,width: {:get_col_width('supplier_name',100)}, hide: getTableFieldIsHide('dataTable','supplier_name')},
+				{field: 'follow_admin_name',title: '采购跟进人',align: 'center',unresize: false,width: {:get_col_width('follow_admin_name',100)}, hide: getTableFieldIsHide('dataTable','follow_admin_name')},
+				{field: 'order_date',title: '采购日期',align: 'center',unresize: false,width: {:get_col_width('order_date',150)}, hide: getTableFieldIsHide('dataTable','order_date')},
+				{field: 'material_category',title: '物资类别',align: 'center',unresize: false,width: {:get_col_width('material_category',120)}, hide: getTableFieldIsHide('dataTable','material_category')},
+				{title: '操作',toolbar: '#options',align: 'center',unresize: true,width: 260,fixed: 'right'}
+			]],
+			limit:100,
+			limits:[100,200,300,400,500],
+			cellMinWidth: 60,
+			toolbar: '#toolbar',
+			defaultToolbar: [{
+					title: '刷新',
+					layEvent: 'refresh',
+					icon: 'layui-icon-refresh',
+			}, 'filter'],
+		});
+
+		table.on('sort(dataTable)', function(obj){
+			table.reload('dataTable', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+
+		table.on('tool(dataTable)', function(obj) {
+			if (obj.event === 'edit') {
+				openLayer('编辑采购单','{:url('MaterialEdit')}?id='+obj.data['id'],'80%','90%');
+			}else if (obj.event === 'check') {
+				layerConfirm('确认审批?','{:url('check')}',{id:obj.data['id']},function(res){
+					table.reload('materialTable');
+					table.reload('dataTable');
+				})
+			}else if (obj.event === 'recheck') {
+				layerConfirm('确认反审?','{:url('recheck')}',{id:obj.data['id']},function(res){
+					table.reload('materialTable');
+					table.reload('dataTable');
+				})
+			}else if (obj.event === 'send') {
+				layerConfirm('确认发供应商审核?','{:url('send')}',{id:obj.data['id']},function(res){
+					table.reload('materialTable');
+					table.reload('dataTable');
+				})
+			}else if (obj.event === 'log') {
+				openLayer('采购单日志','{:url('log')}?id='+obj.data['id'],'80%','90%');
+			}else if (obj.event === 'copy') {
+				layerConfirm('确认复制采购单?','{:url('copy')}',{id:obj.data['id']},function(res){
+					table.reload('materialTable');
+					table.reload('dataTable');
+				})
+			}else if (obj.event === 'cancel') {
+				layerConfirm('确认作废?','{:url('cancel')}',{id:obj.data['id']},function(res){
+					table.reload('materialTable');
+					table.reload('dataTable');
+				})
+			}
+		});	
+
+
+		table.on('toolbar(dataTable)', function(obj) {
+			if (obj.event === 'print') {
+				var checkStatus = table.checkStatus('dataTable');
+				if(checkStatus.data.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				var ids = [];
+				for(var i in checkStatus.data) {
+					ids.push(checkStatus.data[i].id);
+				}
+				toPrintPage(71,{id:ids.join(',')});
+				return false;
+			}else if (obj.event === 'refresh') {
+				table.reload('dataTable');
+			}
+		});
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+
+
+		form.on('submit(materialQuery)', function(data) {
+			if(!order_id){
+				layui.layer.msg('请先选择入库单');
+				return false;
+			}
+			table.reload('materialTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});		
+		
+		form.on('submit(print1)', function(data) {
+			if(!order_id){
+				layui.layer.msg('请先选择入库单');
+				return false;
+			}
+			toPrintPage(2,{id:order_id});
+			return false;
+		});	
+		
+		form.on('submit(print2)', function(data) {
+			if(!order_id){
+				layui.layer.msg('请先选择入库单');
+				return false;
+			}
+			toPrintPage(1,{id:order_id});
+			return false;
+		});		
+		
+		table.on('row(dataTable)',function (obj) {
+			window.renderData(obj.data)
+		})		
+		
+		window.renderData = function(order) {
+			$(".empty").hide();
+			order_id = order.id
+			order_sn = order.order_sn;
+			table.render({
+				elem: '#materialTable',
+				url: "{:url('materialData')}?"+$('#searchForm').serialize()+"&order_id="+order_id,
+				page: true,
+				height: 'full-170',
+				limit:100,
+				limits:[100,200,300,400,500],
+				cols: [[
+					//{type: 'checkbox'},
+					{field: 'sn',title: '物料编码',align: 'center',unresize: false,width: {:get_col_width('sn'.'2',150)}, hide: getTableFieldIsHide('materialTable','sn')},
+					{field: 'name',title: '物料名称',align: 'left',unresize: false,width: {:get_col_width('name'.'2',250)}, hide: getTableFieldIsHide('materialTable','name')},
+					{field: 'delivery_date',title: '要求交货日期',align: 'center',unresize: false,width: {:get_col_width('delivery_date'.'2',120)}, hide: getTableFieldIsHide('materialTable','delivery_date')},
+					{field: 'apply_num',title: '采购量',align: 'center',unresize: false,width: {:get_col_width('apply_num'.'2',100)}, hide: getTableFieldIsHide('materialTable','apply_num')},
+					{field: 'unit',title: '单位',align: 'center',unresize: false,width: {:get_col_width('unit'.'2',100)}, hide: getTableFieldIsHide('materialTable','unit')},
+					{field: 'material',title: '材料',align: 'center',unresize: false,width: {:get_col_width('material'.'2',100)}, hide: getTableFieldIsHide('materialTable','material')},
+					{field: 'surface',title: '表面',align: 'center',unresize: false,width: {:get_col_width('surface'.'2',100)}, hide: getTableFieldIsHide('materialTable','surface')},
+					{field: 'color',title: '颜色',align: 'center',unresize: false,width: {:get_col_width('color'.'2',100)}, hide: getTableFieldIsHide('materialTable','color')},
+					{field: 'remark',title: '备注',align: 'center',unresize: false,width: {:get_col_width('remark'.'2',150)}, hide: getTableFieldIsHide('materialTable','remark')},
+				]],
+				toolbar: '#materialTable',
+				defaultToolbar: [{
+					title: '刷新',
+					layEvent: 'refresh',
+					icon: 'layui-icon-refresh',
+				}, 'filter'],
+			});
+		}
+		
+		
+		// 单元格普通编辑事件
+		table.on('edit(materialTable)', function(obj){	
+			var reg = /^([0-9]*)$/
+			var check_result = true;
+			if(reg.test(obj.value)) {
+				var num =  parseInt(obj.data.stock_num) - parseInt(obj.data.quality_num) - parseInt(obj.data.stocked_num);
+				if(parseInt(obj.value) > num){
+					layer.msg('最大数量为:'+num);
+					check_result = false;
+				}
+			}else{
+				layer.msg('请输入大于0的正整数')
+				check_result = false;
+			}
+			if(check_result == false){
+				obj.td.find('.layui-table-cell').html(obj.oldValue);
+				obj.td.find('.layui-table-cell .layui-input').val(obj.oldValue);
+				var update = {};
+				update[obj.field] = obj.oldValue;
+				obj.update(update);
+			}else{
+				console.log(obj);
+				
+				if(obj.field == 'num'){
+					var update = {};
+					update['test_num'] = parseInt(obj.data.stock_num) - parseInt(obj.data.quality_num) - parseInt(obj.data.stocked_num) - parseInt(obj.value)  ;
+					obj.update(update);
+				}
+				if(obj.field == 'test_num'){
+					var update = {};
+					update['num'] = parseInt(obj.data.stock_num) - parseInt(obj.data.quality_num) - parseInt(obj.data.stocked_num) - parseInt(obj.value)  ;
+					obj.update(update);
+				}
+			}
+		});		
+		
+		
+		table.on('toolbar(materialTable)', function(obj) {
+			if (obj.event === 'export') {
+				var index = layui.layer.load(1);
+				let column 	= [{text:'物料编码',key:'material.sn'},{text:'物料名称',key:'material.name'},{text:'现有库存量',key:'material.stock'},{text:'总需入库量',key:'stock_num'},{text:'已入库量',key:'stocked_num'},{text:'待入库量',key:'quality_num'},{text:'单位',key:'material.unit'},{text:'物料分类',key:'material.category_name'},{text:'材料',key:'material.material'},{text:'表面',key:'material.surface'},{text:'颜色',key:'material.color'}];
+				$.ajax({
+					type : "get",
+					url : "{:url('material')}?limit=10000&order_id="+order_id,
+					data: $('#searchForm').serialize(),
+					success : function(data) {
+						layui.layer.close(index);
+						if (data.count > 0) {
+							jsonToExcel(column, [column], data.data, order_sn+'入库物料')
+						}else{
+							layui.layer.msg('暂无数据');
+						}
+					}
+				});
+			
+			}else if (obj.event === 'cancel') {
+				var checkStatus = table.checkStatus('materialTable');
+				if(checkStatus.data.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				
+				var id = [];
+				for(var i in checkStatus.data) {
+					if (checkStatus.data[i].can_cancel == true) {
+						id.push(checkStatus.data[i].id);
+					}else{
+						layer.msg(checkStatus.data[i].material.sn+'已作废或已全部入库');
+						return false;
+					}
+				}
+				
+				if(id.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				
+				layerConfirm('确认作废？','{:url('cancel')}',{'id':order_id,'ids':id},function(){
+					table.reload('materialTable');
+					table.reload('dataTable');
+				})
+			}else if (obj.event === 'refresh') {
+				table.reload('materialTable');
+			}else if (obj.event === 'print') {
+				if(!order_id){
+					layui.layer.msg('请先选择入库单');
+					return false;
+				}
+				var checkStatus = table.checkStatus('materialTable');
+				if(checkStatus.data.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				var ids = [];
+				for(var i in checkStatus.data) {
+					ids.push(checkStatus.data[i].id);
+				}
+				toPrintPage(6,{id:order_id,detail_ids:ids.join(',')});
+				return false;
+			}else if (obj.event === 'save') {			
+				var checkStatus = table.checkStatus('materialTable');
+				if(checkStatus.data.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				
+				var id = [];
+				for(var i in checkStatus.data) {
+					if (checkStatus.data[i].can_enter == true) {
+						id.push(checkStatus.data[i].id);
+					}else{
+						layer.msg(checkStatus.data[i].material.sn+'未品检或已全部入库或已作废');
+						return false;
+					}
+				}
+				
+				if(id.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				
+				layerConfirm('确认保存并增加库存？','{:url('confirm')}',{'id':order_id,'ids':id},function(){
+					table.reload('materialTable');
+					table.reload('dataTable');
+					getWarehouseStat();
+				})
+			}else if (obj.event === 'check') {			
+				var checkStatus = table.checkStatus('materialTable');
+				if(checkStatus.data.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				
+				var id = [];
+				var num = {};
+				var test_num = {};			
+				for(var i in checkStatus.data) {
+					if (checkStatus.data[i].can_check == true) {
+						id.push(checkStatus.data[i].id);
+						num[checkStatus.data[i].id] = checkStatus.data[i].num
+						test_num[checkStatus.data[i].id] = checkStatus.data[i].test_num
+					}else{
+						layer.msg(checkStatus.data[i].material.sn+'已全部品检或已作废');
+						return false;
+					}
+				}
+				
+				if(id.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				
+				layerConfirm('确认品检审核？','{:url('check')}',{'id':order_id,'ids':id,num:num,defective:test_num},function(){
+					table.reload('materialTable');
+				})
+			}else if (obj.event === 'return') {	
+				var checkStatus = table.checkStatus('materialTable');
+				if(checkStatus.data.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				var id = [];
+				for(var i in checkStatus.data) {
+					if (checkStatus.data[i].defective_num > 0) {
+						id.push(checkStatus.data[i].id);
+					}else{
+						layer.msg(checkStatus.data[i].material.sn+'已检次品量为0');
+						return false;
+					}
+				}
+				if(id.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				
+				layerConfirm('确认退货？','{:url('refund')}',{'id':order_id,'ids':id},function(){
+					table.reload('materialTable');
+					table.reload('dataTable');
+				})
+			}else if (obj.event === 'notice') {			
+				var checkStatus = table.checkStatus('materialTable');
+				if(checkStatus.data.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				var id = [];			
+				for(var i in checkStatus.data) {
+					if (checkStatus.data[i].can_notice == true) {
+						id.push(checkStatus.data[i].id);
+					}else{
+						layer.msg(checkStatus.data[i].material.sn+'已发起质检');
+						return false;
+					}
+				}
+				if(id.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				layerConfirm('确认发起质检？','{:url('notice')}',{'ids':id},function(){
+					table.reload('materialTable');
+				})
+			}
+			
+			
+		});
+		
+		
+		table.on('tool(materialTable)', function(obj) {
+			if (obj.event === 'report') {
+				openLayer('检验报告','{:url('erp.MaterialEnterMaterial/report')}?id='+obj.data['id'],'80%','90%');
+			} else if (obj.event === 'code') {
+				openLayer('标签编码列表','{:url('erp.MaterialEnterMaterial/code')}?id='+obj.data['id'],'80%','90%');
+			}
+		});			
+		
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field+'',width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+		
+		table.on('colResized(materialTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field+'2',width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+		table.on('colToggled(dataTable)', function(obj){
+			setTableFieldIsHide(obj.config.id,obj.col.field,obj.col.hide);
+		});
+		table.on('colToggled(materialTable)', function(obj){
+			setTableFieldIsHide(obj.config.id,obj.col.field,obj.col.hide);
+		});
+	})
+</script>
+{/block}
+
+

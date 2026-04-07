@@ -1,0 +1,211 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.error,.finish,.next{display:none;}
+</style>
+<input type="hidden" id="is_inspect" value="" >
+<form class="layui-form" action="{:url('errorAdd')}" method="post" lay-filter="demo-val-filter">
+	<input type="hidden" name="produce_sn" value="{$model['produce_sn']}" >
+	<div class="mainBox">
+		<div class="main-container">
+			<table class="layui-table">
+				<colgroup>
+					<col width="120">
+					<col width="80">
+					<col width="80">
+					<col width="80">
+					<col width="120">
+					<col width="120">
+					<col width="120">
+					<col width="120">
+					<col />
+				</colgroup>
+				<thead>
+					<tr>
+						<th>型号</th>
+						<th>款式</th>
+						<th>数量</th>
+						<th>产品编码</th>
+						<th>产品序列号</th>
+						<th>颜色</th>
+						<th>客户名称</th>
+						<th>下单日期</th>						
+						<th>订单状态</th>
+						<th>产品备注</th>
+						<th>配置方案</th>
+					</tr> 
+				</thead>
+				<tbody>
+					<tr>
+						<td>{$model['order_product']['product_model']}</td>
+						<td>{$model['order_product']['product_specs']}</td>
+						<td>1</td>
+						<td>{$model['produce_sn']}</td>
+						<td>{$model['produce_finish_sn']}</td>
+						<td>{$model['order_product']['color']}</td>
+						<td>{$model['order']['customer_name']}</td>
+						<?php
+						$time_str = $model['order']['create_time'];
+						$time = strtotime($time_str);//转化为unix时间戳
+						$create_time = date('Y-m-d',$time);//把时间戳转化为自己想要的格式
+						?>
+						<td>{$create_time}</td>
+						<td>{$model['order']['order_type_desc']}</td>
+						<td>{$model['order_product']['remark']}</td>
+						<td>{$model['order_product']['project_html']|raw}</td>
+					</tr>
+				</tbody>
+			</table>
+			<div class="layui-form-item">
+				<label class="layui-form-label">工序选择</label>
+				<div class="layui-input-block">
+					{foreach $process as $vo}
+					<input type="radio" name="process_id" autocomplete="off" data-end="{$vo['is_end']}" data-inspect="{$vo['is_inspect']}" {if $vo['status'] == 1}disabled{/if}  id="process_id_{$vo['process_id']}" value="{$vo['process_id']}" title="{$vo['process_name']}" lay-filter="process_id" lay-verify="checkbox" data-min="1" data-msg="请选择工序">
+					{/foreach}
+				</div>
+			</div>			
+			<div class="layui-form-item">
+				<label class="layui-form-label">进度结果</label>
+				<div class="layui-input-block">
+					<input type="radio" name="type" class="type" autocomplete="off"  value="1" title="已完成" lay-filter="type" checked>
+					<input type="radio" name="type" class="type" autocomplete="off" value="欠料" title="欠料" lay-filter="type">
+					<input type="radio" name="type" class="type" autocomplete="off" value="其他异常原因" title="其他异常原因" lay-filter="type">
+				</div>
+			</div>
+			<div class="layui-form-item error">
+				<label class="layui-form-label">异常说明</label>
+				<div class="layui-input-block">
+					<input type="text" maxlength="255" name="error" placeholder="选填" autocomplete="off" autocomplete="off" class="layui-input">
+				</div>
+			</div>
+			<div class="layui-form-item error">
+				<label class="layui-form-label">附图(选填)</label>
+				<div class="layui-input-block">
+					{:$form->photos('photo')}
+				</div>
+			</div>	
+		</div>
+	</div>
+	<div class="bottom">
+		<div class="button-container">
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm next" lay-submit="" lay-filter="next">下一步</button>
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm error" lay-submit="" lay-filter="*">提交</button>
+		</div>
+	</div>
+</form>
+<div class="layui-form-item layui-hide" >
+	<select id="warehouse_id_select">
+		{if !empty($warehouse)}
+		{foreach $warehouse as $vo}
+		<option value="{$vo['id']}">{$vo['name']}</option>
+		{/foreach}
+		{/if}
+	</select>
+</div>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['form', 'jquery','table'], function() {
+		let form = layui.form;
+		let $ = layui.jquery;
+		let table = layui.table;
+		var is_follow = 0;	
+		var is_inspect = 0;
+		var is_end = 0;
+			
+		table.init('parse-table-demo', {
+			totalRow:true,
+			width:$(window).width() - 150,
+			height: 'full-460'
+
+		});		
+			
+		form.on('radio(process_id)', function(data){
+			is_inspect = $(data.elem).data('inspect');
+			is_end = $(data.elem).data('end');
+	
+			if(is_inspect == 0){
+				ajaxActionCall('{:url('getProduceFollow')}',{'produce_sn':'{$model['produce_sn']}',process_id:data.value},function(res){
+					if(res.data.partn.length > 0 || res.data.component.length > 0){
+						is_follow = 1;
+						$('.next').html('下一步');
+					}else{
+						is_follow = 0;
+						$('.next').html('上报完工');
+					}
+					setAction();
+				},false)
+			}else{
+				$('.next').html('下一步');
+				setAction();
+			}
+		});
+		
+		function setAction(){
+			$('.error').hide();
+			$('.next').hide();
+			$('.type').removeAttr('disabled');
+			var data = form.val('demo-val-filter');
+			if(data.process_id == 4){
+				$('.type').eq(1).attr('disabled',true);
+				if(data.type == '欠料'){
+					$('.type').eq(0).prop('checked',true);
+				}
+			}
+			form.render();
+			
+			var data = form.val('demo-val-filter');
+			if(data.type == 1){
+				$('.next').show();
+			}else{
+				$('.error').show();
+			}
+		}
+		
+			
+		form.on('radio(type)', function(data){
+			setAction();
+		});
+		
+		form.on('submit(next)', function (data) {
+			if (typeof data.field.process_id === 'undefined') {
+				layer.msg('请选择工序');return false;
+			}
+			if(data.field.process_id == 4 && $('#process_id_31').prop('disabled') == false){
+				layer.msg('产品放行人未完成，不可报工！');return false;
+			}			
+			if(is_inspect == 1){
+				location.href = '{:url('productCheck')}?produce_sn={$model['produce_sn']}&process_id='+data.field.process_id;
+			}else if(is_follow == 1){
+				location.href = '{:url('processFinish')}?produce_sn={$model['produce_sn']}&process_id='+data.field.process_id;
+			}else if(is_end == 1){
+				layui.layer.open({
+					type: 1,
+					area: ['500px', '300px'],
+					title: '入库仓库',
+					content: '<form class="layui-form layui-padding-3" lay-filter="test"><select name="warehouse_id" id="warehouse_id">'+$('#warehouse_id_select').html()+'</select> <div style="margin-top:20px;" class="layui-form-item"><button class="layui-btn layui-btn-fluid confirm" type="button">确认</button></div></form>',
+					success: function (layero) {
+						form.render(layero.find('.layui-form select'));
+						layero.find('.confirm').click(function(){
+							var warehouse_id = layero.find('#warehouse_id').val();
+							if(warehouse_id){
+								ajaxActionCall('{:url('processFinish')}',{'produce_sn':'{$model['produce_sn']}',process_id:data.field.process_id,warehouse_id:warehouse_id},function(res){
+									location.reload();
+								})
+							}else{
+								layui.layer.msg('请选择入库仓库');
+							}
+						})
+					},
+				});
+			}else{
+				ajaxActionCall('{:url('processFinish')}',{'produce_sn':'{$model['produce_sn']}',process_id:data.field.process_id},function(res){
+					location.reload();
+				})
+			}
+			return false;
+		});	
+				
+	})
+</script>
+{/block}

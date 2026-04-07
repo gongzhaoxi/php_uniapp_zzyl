@@ -1,0 +1,16 @@
+{extend name="layout" /}
+{block name="body"}
+
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+	})
+</script>
+{/block}
+
+

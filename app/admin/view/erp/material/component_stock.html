@@ -1,0 +1,204 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.num{color:red;font-size:16px;}
+</style>
+{include file="erp/public/warehouse" /}
+
+<div class="layui-card">
+	<div class="layui-card-body">
+		<div class="layui-row">
+			<div class="layui-col-md2">
+				<ul id="demoTree" class="dtree" ></ul>
+			</div>
+			<div class="layui-col-md10">
+				<form class="layui-form" action="" id="searchForm">
+					<div class="layui-form-item">
+						<div class="layui-form-item layui-inline">
+							<input type="text" name="keyword" placeholder="物料名称/编码/备注" class="layui-input">					
+						</div>		
+						<div class="layui-form-item layui-inline">
+							<select name="status" >
+								<option value="">状态</option>
+								<option value="1">启用</option>
+								<option value="0">禁用</option>	
+							</select>
+						</div>	
+						<div class="layui-form-item layui-inline">
+							<select name="stock_search" >
+								<option value="">筛选方案</option>
+								<option value="1">现有库存量 < 安全库存</option>
+								<option value="2">现有库存量 < 最低库存</option>	
+								<option value="3">现有库存量 <= 0</option>	
+							</select>
+						</div>					
+						<div class="layui-form-item layui-inline">
+							<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+							<button type="reset" class="pear-btn pear-btn-md"><i class="layui-icon layui-icon-refresh"></i>重置</button>
+						</div>
+						<div class="layui-form-item layui-inline" style="float:right;">低于安全库存：<span class="num">{$bellow_safety_stock}</span> 种；低于最低库存值：<span class="num">{$bellow_min_stock}</span> 种</div>
+					</div>
+				</form>
+				<table id="dataTable" lay-filter="dataTable"></table>
+			</div>
+		</div>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	<button class="pear-btn pear-btn-primary pear-btn-sm" lay-event="export"><i class="layui-icon layui-icon-download-circle"></i>导出</button>
+</script>
+<script type="text/html" id="photo">
+{{#  if(d.final_pic && d.final_pic.length > 0){ }}
+<a onclick="layerPhotos('{{d.final_pic.join(',')}}','{{ d.id }}')" href="javascript:;"><img src="{{ d.final_pic[0] }}" /> </a>
+{{#  } }}
+</script>
+<script type="text/html" id="options">
+	<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="bom">bom</button>
+	
+</script>
+{/block}
+{block name="script"}
+<script>
+	var selected_ids = [];
+	var selected_items = [];
+	layui.use(['table', 'form', 'jquery','common','dtree'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		var dtree = layui.dtree;
+		var tree_id = '';
+
+		var demoTree = dtree.render({
+			elem: "#demoTree",
+			data:{:json_encode($tree)},
+			menubar:true,
+			//skin: "laySimple",  // layui主题风格
+			//icon: "-1",  // 隐藏二级图标
+			line: true,  // 显示树线
+			response:{
+				treeId: "id",			  //节点ID
+				parentId: "pid",	  //父节点ID
+				title: "title",			  //节点名称 
+				childName: "children",	  //子节点名称
+			}
+		});
+
+		dtree.on("node('demoTree')" ,function(param){
+			tree_id = param.param.nodeId;
+			table.reload('dataTable', {
+				where: {tree_id:param.param.nodeId},
+				page:{curr: 1}
+			})
+		});
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('componentStock')}',
+			page: true,
+			limit:90,
+			height:'full-270',			
+			cols: [[
+				{field: 'id',title: 'ID', sort: true, align: 'center',unresize: false,width: {:get_col_width('id',100)}, hide: getTableFieldIsHide('dataTable','id')},
+				{field: 'sn',title: '物料编码',align: 'center',unresize: false,width: {:get_col_width('sn',200)}, hide: getTableFieldIsHide('dataTable','sn')},
+				{field: 'name',title: '物料名称',align: 'left',unresize: false,width: {:get_col_width('name',250)}, hide: getTableFieldIsHide('dataTable','name')},
+				{field: 'stock',title: '现有库存',align: 'center',unresize: false,width: {:get_col_width('stock',120)}, hide: getTableFieldIsHide('dataTable','stock')},
+				{field: 'warehouse_id',title: '仓位',align: 'center',unresize: false,width: {:get_col_width('warehouse_id',100)},templet: function(d){return d.warehouse?d.warehouse.name:'';}, hide: getTableFieldIsHide('dataTable','warehouse_id')},
+				{field: 'safety_stock',title: '安全库存',align: 'center',unresize: false,width: {:get_col_width('safety_stock',120)}, hide: getTableFieldIsHide('dataTable','safety_stock')},
+				{field: 'min_stock',title: '最低库存',align: 'center',unresize: false,width: {:get_col_width('min_stock',100)}, hide: getTableFieldIsHide('dataTable','min_stock')},
+				{field: 'max_stock',title: '最高库存',align: 'center',unresize: false,width: {:get_col_width('max_stock',100)}, hide: getTableFieldIsHide('dataTable','max_stock')},
+				{field: 'category_name',title: '物料分类',align: 'center',unresize: false,width: {:get_col_width('category_name',120)}, hide: getTableFieldIsHide('dataTable','category_name')},
+				{field: 'unit',title: '单位',align: 'center',unresize: false,width: {:get_col_width('unit',100)}, hide: getTableFieldIsHide('dataTable','unit')},
+				{field: 'remark',title: '备注',align: 'left',unresize: false,width: {:get_col_width('remark',100)}, hide: getTableFieldIsHide('dataTable','remark')},
+				{field: 'photo',title: '图片',align: 'center',unresize: false,width: {:get_col_width('photo',100)},templet: '#photo', hide: getTableFieldIsHide('dataTable','photo')},
+				{field: 'status_desc',title: '状态',align: 'center',unresize: false,width: {:get_col_width('status_desc',100)}, hide: getTableFieldIsHide('dataTable','status_desc')},
+				{title: '操作',toolbar: '#options',align: 'center',unresize: true,width: 80,fixed: 'right'}
+			]],
+			cellMinWidth: 100,
+			//skin: 'line',
+			toolbar: '#toolbar',
+			defaultToolbar: [{
+				title: '刷新',
+				layEvent: 'refresh',
+				icon: 'layui-icon-refresh',
+			}, 'filter']
+		});
+
+		table.on('sort(dataTable)', function(obj){
+			table.reload('dataTable', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+
+		table.on('toolbar(dataTable)', function(obj) {
+			if (obj.event === 'export') {
+				/*
+				var index = layui.layer.load(1);
+				let column 	= [{text:'物料编码',key:'sn'},{text:'物料名称',key:'name'},{text:'物料分类',key:'category_name'},{text:'现有库存',key:'stock'},{text:'安全库存',key:'safety_stock'},{text:'最低库存',key:'min_stock'},{text:'最高库存',key:'max_stock'},{text:'仓位',key:'warehouse.name'},{text:'单位',key:'unit'},{text:'备注',key:'remark'}];
+				$.ajax({
+					type : "get",
+					url : "{:url('componentExport')}",
+					data: $('#searchForm').serialize(),
+					success : function(data) {
+						layui.layer.close(index);
+						if (data.count > 0) {
+							jsonToExcel(column, [column], data.data, '部件')
+						}else{
+							layui.layer.msg('暂无数据');
+						}
+					}
+				});*/
+				window.open("{:url('componentExport')}?"+$('#searchForm').serialize()+'&tree_id='+tree_id);
+			
+			}else if (obj.event === 'refresh') {
+				table.reload('dataTable');
+			}
+		});
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+		
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+		
+		table.on('tool(dataTable)', function(obj) {
+			if (obj.event === 'bom') {
+				openLayer('零件bom','{:url('erp.MaterialBom/list')}?material_id='+obj.data['id'],'80%','90%');
+			}
+		});	
+		table.on('colToggled(dataTable)', function(obj){
+			setTableFieldIsHide(obj.config.id,obj.col.field,obj.col.hide);
+		});
+	})
+</script>
+<style>
+.dtree{
+    overflow-x:hidden;
+    overflow-y: auto;
+    width: 0px;
+    width: 90%;
+    height: 75vh;
+}
+.layui-col-md2{
+    overflow:hidden;
+}
+</style>
+{/block}
+
+

@@ -1,0 +1,138 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.tool-button{}
+</style>
+<div class="layui-card" style="margin-bottom: 1px;">
+	<div class="layui-card-body" >
+		<form class="layui-form" action="" id="searchForm">
+			<div class="layui-form-item" style="margin-bottom: 5px;">			
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="customer_name" placeholder="客户名称/订货单位" class="layui-input">					
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="order_sn" placeholder="销售合同号" class="layui-input">	
+				</div>	
+				<div class="layui-form-item layui-inline" style="width:190px;">
+					<input type="text" name="create_time" placeholder="下单日期" class="layui-input rangedate">	
+				</div>	
+				<div class="layui-form-item layui-inline" style="width:190px;">
+					<input type="text" name="delivery_time" placeholder="交货日期" class="layui-input rangedate">	
+				</div>	
+				<div class="layui-form-item layui-inline" style="width:120px;">
+					<select name="region_type">
+						<option value="">订单属性</option>
+						{foreach $region_type as $key=>$vo}
+						<option value="{$key}">{$vo}</option>
+						{/foreach}
+					</select>			
+				</div>				
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+					<button type="reset" class="pear-btn pear-btn-md"><i class="layui-icon layui-icon-refresh"></i>重置</button>					
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">		
+		<div class=" order_status">
+			<a href="{:url('technician')}" class="layui-btn  layui-btn-primary {if $query['technician_approve'] === ''}pear-btn-warming{/if}">全部</a>
+			{foreach $order_status as $key=>$vo}
+			<a href="{:url('technician')}?technician_approve={$vo['value']}" class="layui-btn layui-btn-primary {if $query['technician_approve'] === $vo['value']}pear-btn-warming{/if}" id="order_status_{$key}">{$vo['name']}<i class="layui-icon">({$vo['count']})</i></a>
+			{/foreach}
+		</div>
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+<script type="text/html" id="options">
+	<div class="layui-btn-group">
+		<button class="layui-btn layui-btn-normal layui-btn-xs" lay-event="view">查看</button>
+	</div>
+</script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('list')}?technician_approve={$query['technician_approve']}&is_special=1',
+			page: true,
+			limit:100,
+			cols: [[
+				{field: 'region_type_desc',title: '订单性质',align: 'center',unresize: false,width: {:get_col_width('region_type_desc',100)}},
+				{field: 'customer_name',title: '客户名称/订货单位',align: 'center',unresize: false,width:{:get_col_width('customer_name')}},
+				{field: 'order_sn',title: '销售合同号',align: 'center',unresize: false,width: {:get_col_width('order_sn',140)}},
+				{field: 'address',title: '收货地址/国家',align: 'center',unresize: false,width: {:get_col_width('address',200)}},
+				{field: 'order_product_num',title: '订购总数量',align: 'center',unresize: false,width: {:get_col_width('order_product_num',120)}},
+				{field: 'order_amount',title: '合计金额',align: 'center',unresize: false,width: {:get_col_width('order_amount',100)}},
+				{field: 'salesman_id',title: '销售员',align: 'center',unresize: false,width: {:get_col_width('salesman_id',100)}, templet: function(d){return d.salesman&&d.salesman_id>0?d.salesman.username:'';}},
+				{field: 'create_date',title: '下单日期',align: 'center',unresize: false,width: {:get_col_width('create_date',120)}},
+				{field: 'delivery_time',title: '交货日期',align: 'center',unresize: false,width: {:get_col_width('delivery_time',120)}},
+				{field: 'technician_approve_desc',title: '审核状态',align: 'center',unresize: false,width: {:get_col_width('technician_approve_desc',100)}},
+				{title: '操作',toolbar: '#options',align: 'center',unresize: true,width: 140,fixed: 'right'}
+			]],
+			cellMinWidth: 100,
+			
+		});
+
+		table.on('sort(dataTable)', function(obj){
+			table.reload('dataTable', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+
+		table.on('tool(dataTable)', function(obj) {
+			if (obj.event === 'view') {
+				openLayer('查看订单','{:url('technicianView')}?id='+obj.data['id'],'90%','90%',function(){
+					table.reload('dataTable');
+					getOrderStat();
+				});
+			}
+		});
+
+		function getOrderStat(){
+			ajaxActionCall('{:url('common/orderTechnicianStat')}',{},function(res){
+				$.each(res.data,function (index,val) {
+					$('#order_status_'+index+' .layui-icon').html('('+val.count+')');
+				});			
+			},false)
+		}
+
+		table.on('toolbar(dataTable)', function(obj) {
+			
+		});
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+		
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});		
+
+	})
+</script>
+{/block}
+
+

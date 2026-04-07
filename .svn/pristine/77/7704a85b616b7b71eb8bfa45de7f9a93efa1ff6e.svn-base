@@ -1,0 +1,377 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-input-block {margin-left: 150px;}
+.layui-form-label {width: 120px;}
+</style>
+    <form class="layui-form" action="" method="post">
+		 <input type="hidden" name="id" value="{$model['id']}" >
+        <div class="mainBox">
+            <div class="main-container">
+ 				<div class="layui-form-item">
+					<label class="layui-form-label">工序用途</label>
+					<div class="layui-input-block">
+						<input type="radio" name="type" value="1" title="产品工序" {if $model['type'] == 1}checked{/if}>
+
+					</div>
+				</div>                
+				 <div class="layui-form-item">
+                    <label class="layui-form-label">工艺组编码</label>
+                    <div class="layui-input-block">
+                        <input type="text"  maxlength="50" name="sn" value="{$model['sn']}" placeholder="请输入,不可为空"  lay-verify="required" autocomplete="off"  class="layui-input">
+                    </div>
+                </div>               
+				<div class="layui-form-item">
+                    <label class="layui-form-label">工艺组名称</label>
+                    <div class="layui-input-block">
+                        <input type="text" maxlength="50" name="name" value="{$model['name']}" lay-verify="required" placeholder="请输入,不可为空" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+				<div class="layui-form-item">
+                    <label class="layui-form-label">工艺要求</label>
+                    <div class="layui-input-block">
+                        <input type="text" maxlength="255" name="description" value="{$model['description']}" lay-verify="" placeholder="" autocomplete="off" class="layui-input">
+                    </div>
+                </div>				
+                <div class="layui-form-item">
+                    <label class="layui-form-label">岗位员工</label>
+                    <div class="layui-input-block">
+                        <select name="user_id" xm-select="user_id" xm-select-search xm-select-search-type="dl" required  lay-verify="required" xm-select-height="36px" title="请选择">
+							<option value="">请选择</option>
+							{foreach $user as $k=>$vo}
+							<option value="{$vo['id']}" {if $model['user_id'] && in_array($vo['id'],$model['user_id'])}selected{/if}>{$vo['name']}</option>
+							{/foreach}
+						</select>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">岗位班长</label>
+                    <div class="layui-input-block">
+                        <select name="monitor" xm-select="monitor" xm-select-search xm-select-search-type="dl" required  lay-verify="required" xm-select-height="36px" title="请选择">
+							<option value="">请选择</option>
+							{foreach $user as $k=>$vo}
+							<option value="{$vo['id']}" {if $model['monitor'] && in_array($vo['id'],$model['monitor'])}selected{/if}>{$vo['name']}</option>
+							{/foreach}
+						</select>
+                    </div>
+                </div>				
+				<div class="layui-form-item">
+					<label class="layui-form-label">状态</label>
+					<div class="layui-input-block">
+						{if $model['id'] <> 5}
+						<input type="radio" name="status" value="1" title="启用" {if $model['status'] == 1}checked{/if}>
+						<input type="radio" name="status" value="0" title="禁用" {if $model['status'] == 0}checked{/if}>
+						{else}
+						<input type="radio" name="status" value="1" title="启用" checked>
+						{/if}
+					</div>
+				</div>	
+				<div class="layui-form-item">
+					<label class="layui-form-label">检验工艺</label>
+					<div class="layui-input-block">
+						<input type="radio" name="is_inspect" value="1" title="是" {if $model['is_inspect'] == 1}checked{/if}>
+						<input type="radio" name="is_inspect" value="0" title="否" {if $model['is_inspect'] == 0}checked{/if}>
+					</div>
+				</div>				
+				
+				<div class="layui-form-item">
+					<label class="layui-form-label">默认工艺</label>
+					<div class="layui-input-inline layui-input-wrap">
+						<input type="radio" name="is_default" value="1" title="是" {if $model['is_default'] == 1}checked{/if}>
+						<input type="radio" name="is_default" value="0" title="否" {if $model['is_default'] == 0}checked{/if}>
+					</div>
+					<div class="layui-form-mid layui-text-em">默认工艺不能删除(不懂勿改)</div>
+				</div>				
+				<div class="layui-form-item">
+					<label class="layui-form-label">结束工序</label>
+					<div class="layui-input-inline layui-input-wrap">
+						<input type="radio" name="is_end" value="1" title="是" {if $model['is_end'] == 1}checked{/if}>
+						<input type="radio" name="is_end" value="0" title="否" {if $model['is_end'] == 0}checked{/if}>
+					</div>
+					<div class="layui-form-mid layui-text-em">触发成品入库(不懂勿改)</div>
+				</div>				
+				<div class="layui-form-item">
+                    <label class="layui-form-label">排序</label>
+                    <div class="layui-input-block">
+                        <input type="text" value="{$model['sort']}" name="sort" lay-verify="required|number" placeholder="请输入,不可为空" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+				<div class="layui-form-item layui-hide">
+					<label class="layui-form-label">关联随工单管理</label>
+					<div class="layui-input-block">
+						<select name="follow_id" xm-select="follow_id" xm-select-search="" xm-select-radio="" xm-select-search-type="dl" >
+							{if $model['follow_id']}
+							<option selected value="{$model['follow_id']}">{$model['follow']['name']}</option>
+							{/if}
+						</select>
+					</div>
+				</div>	
+				<blockquote class="layui-elem-quote">
+					工序单价设置
+					<button type="button" style="float:right;" ts-selected="" id="add-wage"  class="layui-btn layui-btn-sm">添加</button>
+				</blockquote>
+				<div class="layui-form-item">
+					<table class="layui-table">
+						<colgroup>
+							<col>
+							<col>
+							<col>
+							<col width="150">
+							<col width="100">
+						</colgroup>
+						<thead>
+							<tr>
+								<th>产品编码</th>
+								<th>产品名称</th>
+								<th>型号/规格</th>
+								<th>款式</th>
+								<th>工序单价</th>
+								<th>操作</th>
+							</tr> 
+						</thead>
+						<tbody id="tbody">
+							{foreach $wage as $key=>$vo}
+							<tr id="product{$vo['product_id']}">
+								<td><input type="hidden" value="{$vo['product_id']}"  name="wage[{$key}][product_id]">{$vo['product']['sn']}</td>
+								<td>{$vo['product']['name']}</td>
+								<td>{$vo['product']['model']}</td>
+								<td>{$vo['product']['specs']}</td>
+								<td><input type="text" name="wage[{$key}][price]" value="{$vo['price']}" lay-verify="required|number" placeholder="请输入" autocomplete="off" class="layui-input"></td>
+								<td><button type="button" class="layui-btn layui-btn-sm layui-bg-red">删除</button></td>
+							</tr>
+							{/foreach}
+						</tbody>
+					</table>	
+				</div>
+				<blockquote class="layui-elem-quote">
+					绑定工艺组作业所需：零件、部件
+					<div class="layui-btn-group" style="float:right;">
+						<button type="button"   id="import-material" lay-options="{accept: 'file'}"  class="layui-btn layui-btn-sm  layui-bg-blue">导入</button>
+						<button type="button" ts-selected="" id="add-material"  class="layui-btn layui-btn-sm">添加</button>
+					</div>
+				</blockquote>
+				<div class="layui-form-item">
+					<table class="layui-table">
+						<colgroup>
+							<col>
+							<col>
+							<col width="100">
+						</colgroup>
+						<thead>
+							<tr>
+								<th>物料编码</th>
+								<th>物料名称</th>
+								<th>操作</th>
+							</tr> 
+						</thead>
+						<tbody id="materialtbody">
+							{foreach $material as $key=>$vo}
+							{if !empty($vo['material'])}
+							<tr id="material{$vo['material_id']}">
+								<td><input type="hidden" value="{$vo['material_id']}"  name="material[{$key}][material_id]">{$vo['material']['sn']}</td>
+								<td>{$vo['material']['name']}</td>
+								<td><button type="button" class="layui-btn layui-btn-sm layui-bg-red">删除</button></td>
+							</tr>
+							{/if}
+							{/foreach}
+						</tbody>
+					</table>	
+				</div>				
+            </div>
+        </div>
+        <div class="bottom">
+        <div class="button-container">
+            <button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*">
+                <i class="layui-icon layui-icon-ok"></i>
+                提交
+            </button>
+            <button type="reset" class="layui-btn layui-btn-primary layui-btn-sm">
+                <i class="layui-icon layui-icon-refresh"></i>
+                重置
+            </button>
+        </div>
+    </div>
+</form>
+{/block}
+{block name="script"}
+<script>
+layui.extend({
+	excel: 'excel/excel',
+}).use(['form', 'jquery', 'select','tableSelect','upload','excel'], function() {
+	let form = layui.form;
+	let $ = layui.jquery;
+	let select = layui.select;
+	let tableSelect = layui.tableSelect;
+	let len = {:$wage->count()};
+	let lenMaterial = {:$material->count()};
+	var upload = layui.upload;
+	let excel = layui.excel;
+	
+	upload.render({
+		elem: '#import-material', 
+		accept: 'file',
+		auto:false,
+		exts:'xlsx|xls',
+		choose: function(obj){
+			var _files = obj.pushFile();
+			var files = [];
+			$.each(_files, function(index, item) {
+				files.push(item);
+			});			
+			try {
+				excel.importExcel(files, {
+					fields: {
+						'sn': 'A'
+					}
+				}, function(data) {
+					console.log(data);
+					var sn = [];
+					$.each(data,function(k1,v1){
+						$.each(v1,function(k2,v2){
+							$.each(v2,function(k,v){	
+								if(k > 0 ){	
+									sn.push(v.sn);
+								}	
+							});
+						});
+					});
+					
+					$.ajax({
+						type: 'POST',
+						url:'{:url('common/material')}?status=1&limit=5000',
+						data: {'sns':sn},
+						dataType: 'json',
+						success: function(res){
+							if(res.count > 0){
+								$.each(res.data, function(index, item) {
+									if($('#material'+item.id).length == 0){
+										$('#materialtbody').append(getMaterialHtml(item));
+									}
+								});
+							}else{
+								layer.msg('没匹配到零部件');
+							}
+					
+							console.log(res);
+							return false;		     
+						},
+					});
+				});			
+			}catch (e) {
+				layer.alert(e.message);
+			}
+		},
+	});	
+	
+	
+	select.config('follow_id', {
+		searchType: "dl", 
+		keyName: 'name',
+		keyVal: 'id',  
+		searchName: 'name', 
+		searchUrl: '{:url('common/follow')}'
+	});
+	
+	tableSelect.render({
+		elem: '#add-wage',
+		checkedKey: 'id',
+		searchKey: 'keyword',
+		searchPlaceholder: '产品名称/编码',
+		table: {
+			url: '{:url('common/product')}',		
+			cols: [[
+				{type: 'checkbox' },
+				{field: 'id', title: 'id' },
+				{field: 'sn',title: '产品编码',align: 'center',unresize: false,width:150},
+				{field: 'name',title: '产品名称',align: 'center',unresize: false,width:350},
+				{field: 'model',title: '型号/规格',align: 'center',unresize: false,width:150},
+				{field: 'specs',title: '款式',align: 'center',unresize: false,width:150},
+			]]
+		},
+		done: function (elem, data) {
+			$.each(data.data, function(index, item) {
+				if($('#product'+item.id).length == 0){
+					$('#tbody').append(getHtml(item));
+				}
+			});
+		}
+	})	
+	
+	function getHtml(data){
+		var html = '';
+		html += '<tr id="product'+data.id+'">';
+		html += '	<td><input type="hidden" value="'+data.id+'"  name="wage['+len+'][product_id]">'+data.sn+'</td>';
+		html += '	<td>'+data.name+'</td>';
+		html += '	<td>'+data.model+'</td>';
+		html += '	<td>'+data.specs+'</td>';
+		html += '	<td><input type="text" name="wage['+len+'][price]" value="" lay-verify="required|number" placeholder="请输入" autocomplete="off" class="layui-input"></td>';
+		html += '	<td><button type="button" class="layui-btn layui-btn-sm layui-bg-red">删除</button></td>';
+		html += '</tr>';
+		len++;
+		return html;
+	}
+	
+	$("#tbody").on("click",".layui-bg-red",function(){
+		var obj = $(this).closest("tr");
+		layer.open({
+			shade: false,
+			content: '确认删除？',
+			btn: ['确定', '取消'],
+			yes: function (index) {
+				obj.remove();
+				layer.closeAll();
+			}
+		});
+	});	
+
+
+	tableSelect.render({
+		elem: '#add-material',
+		checkedKey: 'id',
+		searchKey: 'keyword',
+		searchPlaceholder: '物料名称/编码',
+		table: {
+			url: '{:url('common/material')}?status=1',		
+			cols: [[
+				{type: 'checkbox' },
+				{field: 'id', title: 'id' ,width:100},
+				{field: 'sn',title: '物料编码',align: 'center',unresize: false,width:150},
+				{field: 'name',title: '物料名称',align: 'center',unresize: false,width:350},
+			]]
+		},
+		done: function (elem, data) {
+			$.each(data.data, function(index, item) {
+				if($('#material'+item.id).length == 0){
+					$('#materialtbody').append(getMaterialHtml(item));
+				}
+			});
+		}
+	})	
+	
+	function getMaterialHtml(data){
+		var html = '';
+		html += '<tr id="material'+data.id+'">';
+		html += '	<td><input type="hidden" value="'+data.id+'"  name="material['+lenMaterial+'][material_id]">'+data.sn+'</td>';
+		html += '	<td>'+data.name+'</td>';
+		html += '	<td><button type="button" class="layui-btn layui-btn-sm layui-bg-red">删除</button></td>';
+		html += '</tr>';
+		lenMaterial++;
+		return html;
+	}
+	
+	$("#materialtbody").on("click",".layui-bg-red",function(){
+		var obj = $(this).closest("tr");
+		layer.open({
+			shade: false,
+			content: '确认删除？',
+			btn: ['确定', '取消'],
+			yes: function (index) {
+				obj.remove();
+				layer.closeAll();
+			}
+		});
+	});	
+
+})
+</script>
+{/block}

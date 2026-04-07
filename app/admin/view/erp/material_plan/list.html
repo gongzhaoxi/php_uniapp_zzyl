@@ -1,0 +1,216 @@
+{extend name="base" /}
+{block name="body"}
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="" id="searchForm">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="name" placeholder="物料名称" class="layui-input">					
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="plan_sn" placeholder="排产批次号" class="layui-input">	
+				</div>	
+				<div class="layui-form-item layui-inline" style="width:190px;">
+					<input type="text" name="start_date" placeholder="下达日期" class="layui-input rangedate">	
+				</div>	
+				<div class="layui-form-item layui-inline" style="width:120px;">
+					<select name="status">
+						<option  value="10,20">未入库</option>
+						{foreach $status as $key=>$vo}
+						<option value="{$key}">{$vo}</option>
+						{/foreach}
+						<option value="0">全部</option>
+					</select>			
+				</div>				
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+					<button type="reset" class="pear-btn pear-btn-md"><i class="layui-icon layui-icon-refresh"></i>重置</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	<button class="pear-btn pear-btn-primary pear-btn-sm" lay-event="add"><i class="layui-icon layui-icon-add-1"></i>新增</button>
+	<button class="pear-btn pear-btn-success pear-btn-sm" lay-event="start"><i class="layui-icon layui-icon-ok-circle"></i>下达生产</button>
+	<button class="pear-btn pear-btn-danger pear-btn-sm" lay-event="cancel"><i class="layui-icon layui-icon-error"></i>撤回下达</button>
+	<button class="pear-btn pear-btn-sm" lay-event="export"><i class="layui-icon layui-icon-download-circle"></i>导出</button>
+	<button class="pear-btn pear-btn-sm pear-btn-warming " lay-event="print1"><i class="layui-icon layui-icon-print"></i>打印领料单</button>
+	<button class="pear-btn pear-btn-sm pear-btn-warming " lay-event="print2"><i class="layui-icon layui-icon-print"></i>打印排产单</button>
+	<button class="pear-btn pear-btn-danger pear-btn-sm" lay-event="remove"><i class="layui-icon layui-icon-delete"></i>删除</button>
+</script>
+<script type="text/html" id="options">
+	{{#  if(d.status == 20){ }}<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="warehouse">一件全部入库</button> {{#  } }} 
+</script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('list')}?status=10,20',
+			page: true,
+			limit:90,
+			height:'full-170',
+			cols: [[
+				{type: 'checkbox'},
+				//{field: 'id',title: 'ID', sort: true, align: 'center',unresize: false,width: {:get_col_width('id',100)}, hide: getTableFieldIsHide('dataTable','id')},
+				{field: 'plan_sn',title: '排产批次号',align: 'center',unresize: false,width: {:get_col_width('plan_sn',120)}, hide: getTableFieldIsHide('dataTable','plan_sn')},
+				{field: 'start_date',title: '下达日期',align: 'center',unresize: false,width: {:get_col_width('start_date',120)}, hide: getTableFieldIsHide('dataTable','start_date')},
+				{field: 'sn',title: '物料编码',align: 'center',unresize: false,width: {:get_col_width('sn')}, hide: getTableFieldIsHide('dataTable','sn')},
+				{field: 'name',title: '物料名称',align: 'center',unresize: false,width: {:get_col_width('name')}, hide: getTableFieldIsHide('dataTable','name')},
+				{field: 'type_desc',title: '计划方式来源',align: 'center',unresize: false,width: {:get_col_width('type_desc',140)}, hide: getTableFieldIsHide('dataTable','type_desc')},
+				{field: 'num',title: '排产量',align: 'center',unresize: false,width: {:get_col_width('num',100)}, hide: getTableFieldIsHide('dataTable','num')},
+				{field: 'assembled_num',title: '装配完成',align: 'center',unresize: false,width: {:get_col_width('assembled_num',100)}, hide: getTableFieldIsHide('dataTable','assembled_num')},
+				{field: 'inspect_num',title: '检验完成',align: 'center',unresize: false,width: {:get_col_width('inspect_num',100)}, hide: getTableFieldIsHide('dataTable','inspect_num')},
+				{field: 'finish_num',title: '入库完成',align: 'center',unresize: false,width: {:get_col_width('finish_num',100)}, hide: getTableFieldIsHide('dataTable','finish_num')},
+				{field: 'status_desc',title: '状态',align: 'center',unresize: false,width: {:get_col_width('status_desc',100)}, hide: getTableFieldIsHide('dataTable','status_desc')},
+				//{title: '操作',toolbar: '#options',align: 'center',unresize: false,width: {:get_col_width('id',100)}}
+			]],
+			cellMinWidth: 100,
+			//skin: 'line',
+			toolbar: '#toolbar',
+			defaultToolbar: [{
+				title: '刷新',
+				layEvent: 'refresh',
+				icon: 'layui-icon-refresh',
+			}, 'filter']
+		});
+
+		table.on('sort(dataTable)', function(obj){
+			table.reload('dataTable', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+
+		table.on('tool(dataTable)', function(obj) {
+			if (obj.event === 'warehouse') {
+				layerConfirm('确定要一件全部入库?','{:url('warehouse')}',{id:obj.data['id']},function(res){
+					table.reload('dataTable');
+				})
+			}
+		});
+
+		table.on('toolbar(dataTable)', function(obj) {
+			if (obj.event === 'add') {
+				openLayer('新增','{:url('add')}','90%','90%',function(){
+					table.reload('dataTable');
+				});
+			}else if (obj.event === 'refresh') {
+				table.reload('dataTable');
+			} else if (obj.event === 'cancel') {
+				tableAction(obj.config.id,'确定要撤回下达','{:url('cancel')}');
+			} else if (obj.event === 'start') {
+				var checkStatus = table.checkStatus('dataTable');
+				if(checkStatus.data.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				var ids = [];
+				for(var i in checkStatus.data) {
+					if(checkStatus.data[i].status == 10){
+						ids.push(checkStatus.data[i].id);
+					}
+				}
+				if(ids.length == 0){
+					layer.msg('请选择未下达生产的订单');
+					return false;
+				}
+				openLayer('下达生产','{:url('view')}?id='+ids.join(','),'90%','90%',function(){
+					table.reload('dataTable');
+				});
+			}else if (obj.event === 'export') {
+				var index = layui.layer.load(1);
+				let column 	= [{text:'排产批次号',key:'plan_sn'},{text:'下达日期',key:'start_date'},{text:'物料编码',key:'sn'},{text:'物料名称',key:'name'},{text:'计划方式来源',key:'type_desc'},{text:'排产量',key:'num'},{text:'状态',key:'status_desc'}];
+				$.ajax({
+					type : "get",
+					url : "{:url('list')}?limit=100000",
+					data: $('#searchForm').serialize(),
+					success : function(data) {
+						layui.layer.close(index);
+						if (data.count > 0) {
+							jsonToExcel(column, [column], data.data, '下达部件库存计划')
+						}else{
+							layui.layer.msg('暂无数据');
+						}
+					}
+				});
+			}else if(obj.event === 'print1'){
+				var checkStatus = table.checkStatus('dataTable');
+				if(checkStatus.data.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				var ids = [];
+				for(var i in checkStatus.data) {
+					ids.push(checkStatus.data[i].id);
+				}
+				toPrintPage(31,{id:ids.join(',')})
+			}else if(obj.event === 'print2'){
+				var checkStatus = table.checkStatus('dataTable');
+				if(checkStatus.data.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				var ids = [];
+				for(var i in checkStatus.data) {
+					ids.push(checkStatus.data[i].id);
+				}
+				toPrintPage(33,{id:ids.join(',')})
+			} else if (obj.event === 'remove') {
+				var checkStatus = table.checkStatus('dataTable');
+				if(checkStatus.data.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+
+				for(var i in checkStatus.data) {
+					if(checkStatus.data[i].status != 10){
+						layer.msg('请选择未下达生产的订单');
+						return false;
+					}
+				}
+	
+				tableAction(obj.config.id,'确定删除?','{:url('remove')}');
+			}
+		});
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+		
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+		table.on('colToggled(dataTable)', function(obj){
+			setTableFieldIsHide(obj.config.id,obj.col.field,obj.col.hide);
+		});
+	})
+</script>
+{/block}
+
+

@@ -1,0 +1,107 @@
+{extend name="base" /}
+{block name="body"}
+<div class="layui-card">
+	<div class="layui-card-body">
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	<button class="pear-btn pear-btn-primary pear-btn-sm" lay-event="add"><i class="layui-icon layui-icon-add-1"></i>新增</button>
+	<button class="pear-btn pear-btn-sm" lay-event="recycle"><i class="layui-icon layui-icon-delete"></i>回收站</button>
+</script>
+<script type="text/html" id="options">
+	<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="edit"><i class="layui-icon layui-icon-edit"></i></button>
+	<button class="pear-btn pear-btn-warming pear-btn-xs" lay-event="permission"><i class="layui-icon layui-icon-vercode"></i></button>
+	<button class="pear-btn pear-btn-danger pear-btn-xs" lay-event="remove"><i class="layui-icon layui-icon-delete"></i></button>
+</script>
+{/block}
+{block name="script"}
+<script>
+layui.use(['table', 'form', 'jquery','common'], function() {
+	let table = layui.table;
+	let form = layui.form;
+	let $ = layui.jquery;
+	let common = layui.common;
+
+	let cols = [
+		[
+			{
+				field: 'id',
+				title: 'ID', 
+				sort: true, 
+				unresize: true,
+				align: 'center'
+			},{
+				field: 'name',
+				title: '角色名称',
+				unresize: true,
+				align: 'center'
+			}, {
+				field: 'desc',
+				title: '描述',
+				unresize: true,
+				align: 'center'
+			}, 
+			{
+				field: 'create_time',
+				title: '创建时间',
+				unresize: true,
+				align: 'center'
+			}, 
+			{
+				field: 'update_time',
+				title: '更新时间',
+				unresize: true,
+				align: 'center'
+			}, 
+			{
+				title: '操作',
+				toolbar: '#options',
+				unresize: true,
+				align: 'center',
+				width: 180
+			}
+		]
+	]
+
+	table.render({
+		elem: '#dataTable',
+		url: '{:url('index')}' + '',
+		page: true,
+		cols: cols,
+		cellMinWidth: 100,
+		skin: 'line',
+		toolbar: '#toolbar',
+		defaultToolbar: [{
+			title: '刷新',
+			layEvent: 'refresh',
+			icon: 'layui-icon-refresh',
+		}, 'filter', 'print', 'exports']
+	});
+
+	table.on('tool(dataTable)', function(obj) {
+		if (obj.event === 'remove') {
+			layerConfirm('确定要删除该角色?','{:url('remove')}',{id:obj.data['id']},function(res){
+				obj.del();
+			})
+		} else if (obj.event === 'edit') {
+			openLayer('修改角色','{:url('edit')}?id='+obj.data['id'],'80%','90%');
+		} else if (obj.event === 'permission') {
+			openLayer('分配权限','{:url('permission')}?id='+obj.data['id'],'80%','90%');
+		}
+	});
+
+	table.on('toolbar(dataTable)', function(obj) {
+		if (obj.event === 'add') {
+			openLayer('新增角色','{:url('add')}','80%','90%');
+		} else if (obj.event === 'refresh') {
+			table.reload('dataTable');
+		} else if (obj.event === 'recycle') {
+			openLayer('回收站','{:url('recycle')}','80%','90%',function () {
+				table.reload('dataTable');
+			});
+		}
+	});
+})
+</script>
+{/block}

@@ -1,0 +1,89 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-form-item {margin-bottom: 5px;}
+.layui-tab .layui-tab-title{border:none;}
+</style>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="" id="searchForm" lay-filter="searchForm" style="border-bottom:1px solid rgb(233, 233, 233);margin-bottom:5px;">	
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="year" id="year" value="{$year}"  placeholder="选择年份" class="layui-input year">						
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+					<button class="pear-btn pear-btn-md pear-btn-success" lay-submit lay-filter="export"><i class="layui-icon layui-icon-export"></i>导出</button>
+				</div>
+			</div>
+		</form>		
+		<table class="layui-table" lay-filter="dataTable" id="mtable">
+			<thead>
+				<tr>
+					<th lay-data="{field:'index', width:80,fixed:'left'}">序号</th>
+					<th lay-data="{field:'name', width:{:get_col_width('name',130)},fixed:'left'}">代理商</th>
+					{volist name="product" id="vo"}
+					<th lay-data="{field:'product{$vo['id']}', width:{:get_col_width('product'.$vo['id'],130)}}">{$vo['sn']}</th>
+					{/volist}
+					<th lay-data="{field:'total', width:100,fixed:'right'}">合计</th>
+				</tr> 
+			</thead>
+			<tbody>
+				{volist name="data" id="vo"}
+				<tr>
+					<td>{$i}</td>
+					<td>{$vo['name']}</td>
+					{foreach $vo['num'] as $item}
+					<td>{$item}</td>
+					{/foreach}
+					<td>{$vo['total']}</td>
+				</tr>
+				{/volist}
+			</tbody>
+		</table>
+	</div>
+</div>
+
+{/block}
+{block name="js"}
+<script type="text/javascript" src="/static/tool/jquery.min.js"></script>
+<script type="text/javascript" src="/static/tool/jquery.table2excel.js"></script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common','element'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		let element = layui.element;
+
+		table.init('dataTable', {
+			title:'省份卖机情况',
+			height:'full-150',
+		});
+
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+		
+		form.on('submit(export)', function(data) {
+			$("#mtable").table2excel({
+				exclude: ".excludeThisClass",
+				name: "Worksheet Name",
+				filename: "省份卖机情况.xls", // do include extension
+				preserveColors: false // set to true if you want background colors and font colors preserved
+			});
+			return false;
+		});			
+	})
+</script>
+{/block}
+
+

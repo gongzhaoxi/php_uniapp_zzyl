@@ -1,0 +1,86 @@
+{extend name="base" /}
+{block name="body"}
+<form class="layui-form" action="" method="post">
+	<input type="hidden" value="{$model['id']}" name="order_produce_id" id="order_produce_id" />
+	<input type="hidden" value="{$model['order_id']}" name="order_id" id="order_id" />
+	<input type="hidden" value="{$model['order_product_id']}" name="order_product_id" id="order_product_id" />
+	<div class="mainBox">
+		<div class="main-container">
+			<table class="layui-table">
+				<tbody>
+					<tr><td align="center" colspan="4" rowspan="1"  >不合格/返工评审处理单</td></tr>
+					<tr>
+						<td align="center" >生产计划/任何号</td>
+						<td>{$model['produce_sn']}</td>
+						<td align="center" >产品名称/型号</td>
+						<td>{$model['order_product']['product_name']}{$model['order_product']['product_model']}</td>
+					</tr>
+					<tr>
+						<td align="center" >生产数量</td>
+						<td>1</td>
+						<td align="center" >不合格数量</td>
+						<td>1</td>
+					</tr>					
+					<tr>
+						<td align="center" >订单号</td>
+						<td  colspan="3" rowspan="1"  >{$model['order']['order_sn']}</td>
+					</tr>
+					<tr>
+						<td  colspan="4" rowspan="1" >
+							<p>不合格描述</p>
+							<textarea placeholder="不可为空" name="remark"   lay-verify="required" class="layui-textarea"></textarea>
+						</td>
+					</tr>
+					<tr>
+						<td align="center" >返工操作员/日期</td>
+						<td>
+							<select name="process_id" lay-filter="process_id"  lay-verify="required" lay-search>
+								<option value="">请选择</option>
+								{foreach $process as $vo}
+								<option value="{$vo['id']}">{$vo['name']}</option>
+								{/foreach}
+							</select>
+						</td>
+						<td><select name="user_id" id="user_id"  lay-filter="user_id" lay-search  lay-verify="required"></select></td>
+						<td>
+							<input type="hidden" value="" name="process_name" id="process_name" />
+							<input type="hidden" value="" name="username" id="username" />
+						</td>
+					</tr>					
+				</tbody>
+			</table>
+		</div>
+	</div>
+	<div class="bottom">
+		<div class="button-container" >
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*">保存</button>		
+		</div>
+	</div>
+</form>
+{/block}
+{block name="script"}
+<script>
+var process = {:json_encode($process)};
+layui.use(['form', 'jquery'], function() {
+	let form = layui.form;
+	let $ = layui.jquery;
+	form.on('select(process_id)', function(data){
+		var html = '<option value="">请选择</option>';
+		$.each(process, function(key, val) {     
+			if(val.id == data.value){
+				$.each(val.user, function(key2, val2) {     
+					html += '<option value="'+val2.id+'">'+val2.name+'</option>';
+				});
+				$('#process_name').val(val.name);
+			}
+		});
+		$('#user_id').html(html);
+		form.render('select');
+	});
+	
+	form.on('select(user_id)', function(data){
+		$('#username').val($(data.elem).find('option:selected').html());
+	});
+})
+</script>
+{/block}

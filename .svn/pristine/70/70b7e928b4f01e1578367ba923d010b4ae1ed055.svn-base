@@ -1,0 +1,21 @@
+<div class="header">
+	<h1><img src="{:config('web.sys_logo')}" style="max-height:40px;width: auto;" />{:config('web.board_title','置安数字化车间管理平台')}</h1>
+	<div class="time-display" id="currentTime">2025-11-27 22:55</div>
+</div>
+<style>
+	.top1 .header h1 {
+		color: #000;
+		background-color: rgba(255, 255, 255, 0.7);
+		clip-path: polygon(0% 0%, 100% 0%, 100% 0%, 95% 100%, 5% 100%);
+		padding: 5px 60px;
+	}
+	.top2 .header h1 {
+		color: #fff;
+		background-color: rgba(17, 32, 55, 0.8);
+		clip-path: polygon(0% 0%, 100% 0%, 100% 0%, 95% 100%, 5% 100%);
+		padding: 5px 60px;
+	}
+	.dashboard-container {
+		padding:0 20px;
+	}
+</style>

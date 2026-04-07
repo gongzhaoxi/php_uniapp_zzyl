@@ -1,0 +1,29 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-input-block {margin-left: 160px;}
+.layui-form-label {width: 130px;}
+</style>
+
+<div class="mainBox">
+	<div class="main-container">
+		<ul class="layui-timeline">
+			{volist name="list" id="vo"}
+			<li class="layui-timeline-item">
+				<i class="layui-icon layui-timeline-axis">&#xe63f;</i>
+				<div class="layui-timeline-content layui-text">
+					<h3 class="layui-timeline-title">{:$vo['create_time']} <span style="padding-left:50px;">操作人：{:$vo['operator']}</span></h3>
+					<p>{$vo['log']|str_xhtml|raw}</p>
+				</div>
+			</li>
+			{/volist}
+			<li class="layui-timeline-item"><i class="layui-icon layui-timeline-axis">&#xe63f;</i><div class="layui-timeline-content layui-text"><div class="layui-timeline-title"></div></div></li>
+		</ul>
+	</div>
+</div>
+
+
+{/block}
+{block name="script"}
+
+{/block}

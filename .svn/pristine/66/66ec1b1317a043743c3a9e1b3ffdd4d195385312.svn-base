@@ -1,0 +1,252 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+	html, body {
+		margin: 0;
+		padding: 0;
+		background-color: #0a0e27;
+		color: #fff;
+		font-family: 'Microsoft YaHei', Arial, sans-serif;
+		height: 100%;
+	}
+	.dashboard-container {
+		padding: 20px;
+		max-width: 1920px;
+		margin: 0 auto;
+		display: flex;
+		flex-direction: column;
+		box-sizing: border-box;
+	}
+	.header {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		margin-bottom: 0px;
+		position: relative;
+	}
+	.header h1 {
+		font-size: 28px;
+		color: #00d4ff;
+		margin: 0;
+	}
+	.time-display {
+		font-size: 16px;
+		color: #ccc;
+		position: absolute;
+		right: 0;
+	}
+	.layui-card {
+	  background-color: transparent;
+	}
+	
+	.layui-layer-content{
+		color:#000;
+	}
+	#alarmTableContainer table thead tr {
+		background-color: rgb(16, 31, 49) !important;
+		color: #fff;
+	}	
+	.layui-table[lay-even] tbody tr:nth-child(even) {
+		background-color:rgb(16, 31, 49);
+		color: #fff;
+	}
+	.layui-table[lay-even] tbody tr:nth-child(odd) {
+		background-color:rgb(7, 17, 35);
+		color: #fff;
+	}	
+
+</style>
+<div class="dashboard-container top2">
+	<!-- 页面头部 -->
+	{include file="board/top" /}
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="">
+			<div class="layui-form-item" style="text-align: right;">
+				<div class="layui-form-item layui-inline" style="float:left">{$title}：</div>
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="start_date" value="{$start_date}" placeholder="开始时间" class="layui-input date">	
+				</div>		
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="end_date" value="{$end_date}" placeholder="结束时间" class="layui-input date">	
+				</div>					
+				<div class="layui-form-item layui-inline">
+					<button class="layui-btn" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+				</div>
+			</div>
+		</form>
+		<div id="alarmTableContainer">
+			<table id="dataTable" lay-filter="dataTable"></table>
+		</div>
+	</div>
+</div>
+{/block}
+{block name="js"}
+
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		let alarmTableContainer = $('#alarmTableContainer');
+		
+		
+		showTime();	
+
+		function showTime() {
+			let show_day = new Array(
+				"星期日",
+				"星期一",
+				"星期二",
+				"星期三",
+				"星期四",
+				"星期五",
+				"星期六",
+				
+			);
+			let time = new Date();
+			let year = time.getFullYear();
+			let month = time.getMonth() + 1;
+			let date = time.getDate();
+			let day = time.getDay();
+			let hour = time.getHours();
+			let minutes = time.getMinutes();
+			let second = time.getSeconds();
+			month < 10 ? (month = "0" + month) : month;
+			// month = month + 1;
+			hour < 10 ? (hour = "0" + hour) : hour;
+			minutes < 10 ? (minutes = "0" + minutes) : minutes;
+			second < 10 ? (second = "0" + second) : second;
+			let now_time =
+			// "当前时间：" +
+			year +
+			"-" +
+			month +
+			"-" +
+			date +
+			"" +
+			" " +
+			show_day[day] +
+			" " +
+			hour +
+			":" +
+			minutes +
+			":" +
+			second;
+			
+			$('#currentTime').html(now_time);
+		};
+		
+		setInterval(function (){
+			showTime();	
+		},1000)		
+		
+		setInterval(function (){
+			location.reload();	
+		},3600*1000)			
+		
+		table.render({
+			elem: '#dataTable',
+			url: "{:url('')}?start_date={$start_date}&end_date={$end_date}",
+			page: false,
+			height: 'full-190',
+			limit:100000,
+			even:true,
+			totalRow:true,
+			cols: [[
+				{field: 'name',title: '工序',align: 'center',unresize: false,totalRow: '合计：'},
+				{field: 'process_count',title: '报工次数',align: 'center',unresize: false,totalRow: '{{= d.TOTAL_ROW.process_count }}'},
+				{field: 'error_count',title: '异常数',align: 'center',unresize: false,totalRow: '{{= d.TOTAL_ROW.error_count }}'},
+				{field: 'pass_rate',title: '合格率',align: 'center',unresize: false,totalRow: '{{= d.TOTAL_ROW.pass_rate }}'},
+			]],
+			toolbar: false,
+			defaultToolbar: false,
+			done:function(res, curr, count) {
+				if (res.data.length * $('.layui-table-main tr').height() > $('.layui-table-main').height()) {
+					scroller = new TableScroller(alarmTableContainer, 5000);
+					scroller.start();
+				}
+			},
+		});
+
+		// 表格滚动器
+		function TableScroller(tableContainer, interval) {
+			// 响应鼠标事件
+			let that = this;
+			tableContainer.on('mouseover', function () {
+				that.pause();
+			});
+			tableContainer.on('mouseleave', function () {
+				that.resume();
+			});
+		 
+			// 隐藏表格滚动条
+			let bodyContainer = tableContainer.find('.layui-table-body');
+			//bodyContainer.css('overflow-x', 'hidden');
+			//bodyContainer.css('overflow-y', 'hidden');
+		 
+			this.timerID = null;
+			this.interval = interval;
+			this._bodyTable = bodyContainer.find('table');
+			this._tbody = this._bodyTable.find('tbody');
+		 
+			this.start = function () {
+				let that = this;
+				that.timerID = setInterval(function () {
+					that._scroll(that._bodyTable, that._tbody, that.interval);
+				}, that.interval);
+			};
+			this.pause = function () {
+				let that = this;
+				if (that.timerID === null) {
+					return;
+				}
+		 
+				clearInterval(that.timerID);
+				that.timerID = null;
+			};
+			this.resume = function () {
+				let that = this;
+				if (that.timerID !== null || that.callback === null || that.interval === null) {
+					return;
+				}
+		 
+				that.timerID = setInterval(function () {
+					that._scroll(that._bodyTable, that._tbody, that.interval);
+				}, that.interval);
+			};
+			this.stop = function () {
+				let that = this;
+				if (this.timerID === null) {
+					return;
+				}
+		 
+				clearInterval(that.timerID);
+				that.callback = null;
+				that.interval = null;
+				that.timerID = null;
+			};
+			this._scroll = function (bodyTable, tbody, interval) {
+				let firstRow = tbody.find('tr:first');
+				let rowHeight = firstRow.height();
+				bodyTable.animate({top: '-' + rowHeight + 'px'}, interval * 0.5, function () {
+					tbody.append(firstRow.prop("outerHTML"));
+					bodyTable.css('top', '0px');
+					firstRow.remove();
+				});
+			}
+		};
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+			})
+			return false;
+		});	
+	})
+</script>
+{/block}
+
+

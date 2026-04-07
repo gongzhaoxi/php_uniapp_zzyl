@@ -1,0 +1,213 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+body{background: rgb(242, 242, 242);}
+.bg-white{background: #fff;;}
+.section1 .layui-col-md6,.section2{min-height:170px;}
+.section1 .layui-col-md6:first-child{background: rgb(0, 150, 136);color:#fff;}
+.section1 .layui-col-md6{text-align:center;padding: 20px;}
+.section1 .layui-col-md6 h2{font-size:22px;}
+.section1 .layui-col-md6 div{margin: 15px 0;font-size:18px;}
+.section1 .layui-col-md6 p{font-weight:900;font-size:34px;}
+
+.section2 .layui-tab{margin:0 10px;}
+.section2 .layui-row .layui-col-md6:first-child{background: rgb(24, 144, 255);color:#fff;text-align:center;padding: 20px;}
+.section2 .layui-row .layui-col-md6:last-child{background: rgb(24, 194, 255);color:#fff;text-align:center;padding: 20px;}
+.section2 .layui-row .layui-col-md6 p{font-weight:900;font-size:22px;margin-top:10px;}
+
+.section3 .title{padding:10px;}
+.section3 .title .time{float:right;}
+.section3 .echart{height:420px;}
+</style>
+<div class="layui-row layui-col-space5">
+	<div class="layui-col-md3 ">
+		<div class="layui-row section1 bg-white">
+			<div class="layui-col-md6">
+				<h2>{$date}</h2>
+				<div>总排产量</div>
+				<p>{$num}</p>
+			</div>			
+			<div class="layui-col-md6 bg-white">
+				<h2>{$date}</h2>
+				<div>止总排产量</div>
+				<p>{$total}</p>
+			</div>					
+		</div>
+	</div>			
+	<div class="layui-col-md9 ">
+		<div class="section2 bg-white">
+			<div class="layui-tab  layui-tab-brief">
+				<ul class="layui-tab-title">
+					<li class="layui-this">近七天生产汇总</li>
+					<li>近30天生产汇总</li>
+				</ul>
+				<div class="layui-tab-content">
+					<div class="layui-tab-item layui-show">
+						<div class="layui-row layui-col-space10">
+							{foreach $process1 as $vo}
+							<div class="layui-col-md3">
+								<div class="layui-row">
+									<div class="layui-col-md6">
+										<div>{$vo['name']}</div>
+										<p>{$vo['count']}</p>
+									</div>
+									<div class="layui-col-md6">
+										<div>人日均产值</div>
+										<p>{$vo['average']}</p>
+									</div>
+								</div>
+							</div>
+							{/foreach}						
+						</div>
+					</div>
+					<div class="layui-tab-item">
+						<div class="layui-row layui-col-space10">
+							{foreach $process2 as $vo}
+							<div class="layui-col-md3">
+								<div class="layui-row">
+									<div class="layui-col-md6">
+										<div>{$vo['name']}</div>
+										<p>{$vo['count']}</p>
+									</div>
+									<div class="layui-col-md6">
+										<div>人日均产值</div>
+										<p>{$vo['average']}</p>
+									</div>
+								</div>
+							</div>
+							{/foreach}						
+						</div>				
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<div class="layui-row layui-col-space10">
+	<div class="layui-col-md6 ">
+		<div class="bg-white section3">
+			<div class="layui-form-item title">
+				<div class="layui-form-mid layui-word-aux">成品排产与入库对比</div>
+				<div class="time"><input type="text" readonly name="date1" value="{$date1}" id="date1" placeholder="请选择" autocomplete="off" class="layui-input"></div>
+			</div>
+			<div class="echart" id="echart1"></div>
+		</div>
+	</div>
+	<div class="layui-col-md6 ">
+		<div class="bg-white section3">
+			<div class="layui-form-item title">
+				<div class="layui-form-mid layui-word-aux">同比工艺组产能统计</div>
+				<div class="time"><input type="text" readonly name="date2" value="{$date2}" id="date2" placeholder="请选择" autocomplete="off" class="layui-input"></div>
+			</div>
+			<div class="echart" id="echart2"></div>
+		</div>
+	</div>	
+</div>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['echarts', 'form', 'jquery','common','laydate'], function() {
+		let echarts = layui.echarts;
+		let form = layui.form;
+		let $ = layui.jquery;
+		let laydate = layui.laydate;
+
+		laydate.render({ 
+			elem: '#date1',
+			max: '{:date('Y-m-d')}',
+			done: function(value, date, endDate){
+				location.replace('{:url('capacity')}?date1='+value)
+			}
+		});
+		
+
+		laydate.render({ 
+			elem: '#date2',
+			max: '{:date('Y-m-d')}',
+			done: function(value, date, endDate){
+				location.replace('{:url('capacity')}?date2='+value)
+			}
+		});		
+		
+
+		var echart1 = echarts.init(document.getElementById('echart1'),null, {height: 400});
+
+		var	option1 = {
+				title: {
+					text: ''
+				},
+				tooltip: {
+					trigger: 'axis'
+				},
+				legend: {
+					y: 'bottom',
+					padding:[0,0,20,0],
+					data: ['排产', '入库']
+				},
+
+				toolbox: {
+					feature: {
+						saveAsImage: {title:'下载',name:'成品排产与入库对比'}
+					}
+				},
+				xAxis: {
+					type: 'category',
+					boundaryGap: false,
+					data: {:json_encode($x1)}
+				},
+				yAxis: {
+					type: 'value'
+				},
+				series: [
+					{
+						name: '排产',
+						type: 'line',
+						data: {:json_encode($y1_data1)}
+					},
+					{
+						name: '入库',
+						type: 'line',	
+						data: {:json_encode($y1_data2)}
+					},
+				]
+			};
+
+		echart1.setOption(option1);
+
+		var option2 =  {
+				title: {
+					text: ''
+				},
+				tooltip: {
+					trigger: 'axis'
+				},
+				legend: {
+					y: 'bottom',
+					padding:[0,0,20,0],
+					data: {:json_encode(array_column($series2,'name'))}
+				},
+
+				toolbox: {
+					feature: {
+						saveAsImage: {title:'下载',name:'同比工艺组产能统计'}
+					}
+				},
+				xAxis: {
+					type: 'category',
+					boundaryGap: false,
+					data: {:json_encode($x2)}
+				},
+				yAxis: {
+					type: 'value'
+				},
+				series: {:json_encode($series2)}
+			};
+
+		var echart2 = echarts.init(document.getElementById('echart2'),null, {height: 400});
+
+		echart2.setOption(option2);
+	})
+</script>
+{/block}
+
+

@@ -1,0 +1,328 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-table-cell { height:auto;}
+.bom{margin:10px;font-size:12px;line-height:30px;}
+.bom .title{font-weight:600;font-size:13px;}
+.more{color: rgb(24, 144, 255);font-size:12px;}
+.error-img{max-width:100px;max-height:100px;margin-right:10px;}
+.confirm-time{color: rgb(24, 144, 255);}
+.layui-inline{width:130px;}
+.short{width:110px}
+</style>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<div class=" shipping_status">
+			<a href="{:url('produce')}?no_out=1" class="layui-btn  layui-btn-primary {if $no_out == 1}layui-btn-warm{/if}">待出仓成品</a>
+			<a href="{:url('produce')}?no_out=0&&shipping_status=30" class="layui-btn  layui-btn-primary {if $shipping_status == '30'}layui-btn-warm{/if}">已出仓成品</a>
+		</div>
+		<form class="layui-form" action="" id="searchForm">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="customer_name" placeholder="客户名称/订货单位" class="layui-input">					
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="order_sn" placeholder="销售合同号" class="layui-input">	
+				</div>	
+				<div class="layui-form-item layui-inline short">
+					<input type="text" name="produce_sn" placeholder="产品编码" class="layui-input">	
+				</div>	
+				<div class="layui-form-item layui-inline short">
+					<input type="text" name="produce_finish_sn" placeholder="产品序列号" class="layui-input">	
+				</div>					
+				<div class="layui-form-item layui-inline">
+					<select name="region_type">
+						<option value="">订单属性</option>
+						{foreach $region_type as $key=>$vo}
+						<option value="{$key}">{$vo}</option>
+						{/foreach}
+					</select>
+				</div>
+				<div class="layui-form-item layui-inline short">
+					<input type="text" name="bom_sn" placeholder="溯源码" class="layui-input">	
+				</div>	
+				<div class="layui-form-item layui-inline" style="width:190px;">
+					<input type="text" name="out_warehouse_time" placeholder="出仓日期" class="layui-input rangedate">	
+				</div>		
+				<div class="layui-form-item layui-inline" style="width:190px;">
+					<input type="text" name="finish_date" placeholder="入库日期" class="layui-input rangedate">	
+				</div>
+				<div class="layui-form-item layui-inline short">
+					<select name="shipping_type">
+						<option value="">发货类型</option>
+						{foreach $shipping_type as $key=>$vo}
+						<option value="{$key}">{$vo}</option>
+						{/foreach}
+					</select>
+				</div>		
+				<div class="layui-form-item layui-inline short">
+					<input type="text" name="shipping_sn" placeholder="发货单号" class="layui-input">	
+				</div>
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	{if $shipping_status == '30'}
+		<button class="layui-btn layui-btn-warm layui-btn-sm" lay-event="print"><i class="layui-icon layui-icon-print"></i> 打印产品出仓（发货）单</button>
+		<button class="layui-btn layui-btn-primary layui-btn-sm" lay-event="export_out"><i class="layui-icon layui-icon-export"></i>导出</button>
+	{/if}
+	{if $no_out == 1}
+		<button class="layui-btn layui-btn-primary layui-btn-sm" lay-event="export"><i class="layui-icon layui-icon-export"></i>导出</button>
+		<button class="layui-btn layui-btn-sm" lay-event="notice"><i class="layui-icon layui-icon-print"></i> 发起发货通知</button>
+		<button class="layui-btn layui-btn-warm layui-btn-sm" lay-event="print1"><i class="layui-icon layui-icon-print"></i> 打印库存汇总表</button>
+	{/if}
+</script>
+<script type="text/html" id="options">
+	<div class="layui-btn-group">
+		 {{#  if(d.can_cancel){ }}<button class="layui-btn layui-btn-xs layui-btn-danger" lay-event="cancel">撤销通知</button>{{#  } }} 
+		 {{#  if(d.can_confirm){ }}<button class="layui-btn layui-btn-xs" lay-event="confirm">确认出库</button>{{#  } }} 
+	</div>
+</script>
+
+<script type="text/html" id="bom">
+	<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="bom">查看</button>
+</script>
+<script type="text/html" id="produce_bom">
+	<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="produce_bom">查看</button>
+</script>
+<script type="text/html" id="shipping">
+	<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="shipping">查看</button>
+</script>
+{/block}
+
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('produce')}?shipping_status={$shipping_status}&no_out={$no_out}',
+			page: true,
+			cols: [[
+				{type: 'checkbox'},
+				{field: 'region_type_desc',title: '订单性质',align: 'center',unresize: false,width: {:get_col_width('region_type_desc',90)}, hide: getTableFieldIsHide('dataTable','region_type_desc')},
+				{if $no_out == 1}
+				{field: 'order_shipping_id',title: '是否已发通知',align: 'center',unresize: false,width: {:get_col_width('order_shipping_id',130)}, templet: function(d){return d.order_shipping_id>0?'是':'否';}, hide: getTableFieldIsHide('dataTable','order_shipping_id')},
+				{/if}
+				{if $shipping_status == '30'}
+				{field: 'shipping_sn',title: '发货单号',align: 'center',unresize: false,width: {:get_col_width('shipping_sn',150)}, hide: getTableFieldIsHide('dataTable','shipping_sn')},
+				{/if}
+				{field: 'finish_date',title: '入库日期',align: 'center',unresize: false,width: {:get_col_width('finish_date',120)}, hide: getTableFieldIsHide('dataTable','finish_date')},
+				{field: 'out_warehouse_time',title: '出仓日期',align: 'center',unresize: false,width: {:get_col_width('out_warehouse_time',120)}, hide: getTableFieldIsHide('dataTable','out_warehouse_time')},
+				{field: 'produce_sn',title: '产品编码',align: 'center',unresize: false,width: {:get_col_width('produce_sn',170)}, hide: getTableFieldIsHide('dataTable','produce_sn')},
+				{field: 'produce_finish_sn',title: '产品序列号',align: 'center',unresize: false,width: {:get_col_width('produce_finish_sn',120)}, hide: getTableFieldIsHide('dataTable','produce_finish_sn')},
+				{field: 'model',title: '型号',align: 'center',unresize: false,width: {:get_col_width('model',100)}, templet: function(d){return d.order_product?d.order_product.product_model:'';}, hide: getTableFieldIsHide('dataTable','model')},
+				{field: 'specs',title: '款式',align: 'center',unresize: false,width: {:get_col_width('specs',80)}, templet: function(d){return d.order_product?d.order_product.product_specs:'';}, hide: getTableFieldIsHide('dataTable','specs')},
+				{field: 'num_desc',title: '数量',align: 'center',unresize: false,width: {:get_col_width('num_desc',80)}, hide: getTableFieldIsHide('dataTable','num_desc')},
+				{field: 'unit',title: '单位',align: 'center',unresize: false,width: {:get_col_width('unit',80)}, templet: function(d){return d.order_product?d.order_product.product_unit:'';}, hide: getTableFieldIsHide('dataTable','unit')},
+				{field: 'order_sn',title: '销售合同号',align: 'center',unresize: false,width: {:get_col_width('order_sn',140)}, hide: getTableFieldIsHide('dataTable','order_sn')},
+				{field: 'address',title: '收货地址/国家',align: 'center',unresize: false,width: {:get_col_width('address',150)}, hide: getTableFieldIsHide('dataTable','address')},
+				{field: 'contacts',title: '联系人',align: 'center',unresize: false,width: {:get_col_width('contacts',80)}, hide: getTableFieldIsHide('dataTable','contacts')},
+				{field: 'bom',title: '具体配置',align: 'center',unresize: false,width: {:get_col_width('bom',100)}, templet:'#bom', hide: getTableFieldIsHide('dataTable','bom')},
+				{field: 'salesman',title: '业务员',align: 'center',unresize: false,width: {:get_col_width('salesman',100)}, hide: getTableFieldIsHide('dataTable','salesman')},
+				{field: 'shipping_type_desc',title: '发货类型',align: 'center',unresize: false,width: {:get_col_width('shipping_type_desc',100)}, hide: getTableFieldIsHide('dataTable','shipping_type_desc')},
+				{field: 'order_remark',title: '备注',align: 'center',unresize: false,width: {:get_col_width('order_remark',150)}, hide: getTableFieldIsHide('dataTable','order_remark')},
+				{field: 'produce_bom',title: '溯源BOM',align: 'center',unresize: false,width: {:get_col_width('produce_bom',100)}, templet:'#produce_bom', hide: getTableFieldIsHide('dataTable','produce_bom')},	
+				{if $shipping_status == '30'}
+				{field: 'shipping',title: '物流信息',align: 'center',unresize: false,width: {:get_col_width('shipping',100)}, templet:'#shipping', hide: getTableFieldIsHide('dataTable','shipping')},
+				{/if}
+			]],
+			cellMinWidth: 80,
+			//skin: 'line',
+			toolbar: '#toolbar',
+			done: function(res, curr, count){
+                    // 解决操作栏因为内容过多换行问题
+                    $(".layui-table-main tr").each(function (index, val) {
+                        $($(".layui-table-fixed-l .layui-table-body tbody tr")[index]).height($(val).height());
+                        $($(".layui-table-fixed-r .layui-table-body tbody tr")[index]).height($(val).height());
+                    });
+			},
+			defaultToolbar: [{
+				title: '刷新',
+				layEvent: 'refresh',
+				icon: 'layui-icon-refresh',
+			}, 'filter']
+		});
+
+		table.on('sort(dataTable)', function(obj){
+			table.reload('dataTable', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+
+		table.on('tool(dataTable)', function(obj) {
+			if (obj.event === 'cancel') {
+				layerConfirm('确定要撤销通知?','{:url('cancel')}',{ids:[obj.data['id']]},function(res){
+					table.reload('dataTable');
+				})
+			} else if (obj.event === 'confirm') {
+				openLayer('确认出库','{:url('confirm')}?shipping_sn='+obj.data['shipping_sn'],'80%','90%');
+			}else if (obj.event === 'bom') {
+				layer.open({
+					type: 1, 
+					area: ['500px', '300px'],
+					content: '<div class="bom">'+obj.data.order_product.project_html+'</div>'
+				});
+			}else if (obj.event === 'produce_bom') {
+				openLayer('溯源BOM','{:url('produceBom')}?order_produce_id='+obj.data['id'],'80%','90%');
+			}else if (obj.event === 'shipping') {
+				var photo = obj.data.shipping_photo.split(',');
+				var phtot_html = '';
+				for(var i in photo) {
+					phtot_html += '<a onclick="layerPhotos(\''+photo[i]+'\')" href="javascript:;"><img style="max-width:100px;max-height:100px;" src="'+photo[i]+'" /></a>';
+				}	
+				layer.open({
+					type: 1, 
+					title:'物流信息',
+					area: ['500px', '300px'],
+					content: '<div class="bom layui-form"><div class="layui-form-item"><label class="layui-form-label">物流单据图片</label><div class="layui-input-block">'+phtot_html+'</div></div><div class="layui-form-item"><label class="layui-form-label">物流单号</label><div class="layui-form-mid layui-word-aux">'+obj.data.shipping_num+'</div></div></div>'
+				});
+			}
+			
+			
+		});
+
+		table.on('toolbar(dataTable)', function(obj) {
+			if (obj.event === 'export') {
+				var index = layui.layer.load(1);
+				let column 	= [{text:'订单性质',key:'region_type_desc'},{text:'发货单号',key:'shipping_sn'},{text:'入库日期',key:'finish_date'},{text:'产品编码',key:'produce_sn'},{text:'型号',key:'order_product.product_model'},{text:'款式',key:'order_product.product_specs'},{text:'数量',key:'num_desc'},{text:'单位',key:'order_product.product_unit'},{text:'销售合同号',key:'order_sn'},{text:'收货地址/国家',key:'address'},{text:'联系人',key:'contacts'},{text:'具体配置',key:'order_product.bom_html'},{text:'业务员',key:'salesman'},{text:'发货类型',key:'shipping_type_desc'},{text:'备注',key:'order_remark'}];
+				$.ajax({
+					type : "get",
+					url : "{:url('produce')}?shipping_status={$shipping_status}&no_out={$no_out}&limit=100000",
+					data: $('#searchForm').serialize(),
+					success : function(data) {
+						layui.layer.close(index);
+						if (data.count > 0) {
+							jsonToExcel(column, [column], data.data, $('.shipping_status .layui-btn-warm').text())
+						}else{
+							layui.layer.msg('暂无数据');
+						}
+					}
+				});
+			}else if (obj.event === 'export_out') {
+				var index = layui.layer.load(1);
+				let column 	= [{text:'合同号',key:'order_sn'},{text:'购货单位',key:'customer_name'},{text:'收货地址及人',key:'address'},{text:'产品型号',key:'product_model'},{text:'单位',key:'product_unit'},{text:'数量',key:'product_num'},{text:'配置说明',key:'project_html'},{text:'产品编号',key:'produce_sn'}];
+				$.ajax({
+					type : "get",
+					url : "{:url('produceOut')}?shipping_status={$shipping_status}&no_out={$no_out}&limit=100000",
+					data: $('#searchForm').serialize(),
+					success : function(data) {
+						layui.layer.close(index);
+						if (data.count > 0) {
+							jsonToExcel(column, [column], data.data, '产品出仓(发货)单')
+						}else{
+							layui.layer.msg('暂无数据');
+						}
+					}
+				});
+			}else if(obj.event === 'print'){
+				var checkStatus = table.checkStatus('dataTable');
+				if(checkStatus.data.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				var ids = [];
+				
+				var shipping_sn = []				
+				for(var i in checkStatus.data) {
+					ids.push(checkStatus.data[i].id);
+					shipping_sn.push(checkStatus.data[i].shipping_sn);	
+				}		
+				shipping_sn = $.unique(shipping_sn.sort());;			
+				if(shipping_sn.length > 1){
+					layui.layer.msg('不能打印');return;
+				}
+				toPrintPage(51,{id:ids.join(',')})
+				
+				return;
+	
+			}else if(obj.event === 'print1'){
+				toPrintPage(52,{id:'1'})
+				return;
+	
+			}else if (obj.event === 'refresh') {
+				table.reload('dataTable');
+			}else if(obj.event === 'notice'){
+				var checkStatus = table.checkStatus('dataTable');
+				if(checkStatus.data.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				var ids = [];
+				var address = [];
+				var customer_name = [];
+							
+				for(var i in checkStatus.data) {
+					ids.push(checkStatus.data[i].id);
+					if(customer_name.indexOf(checkStatus.data[i].customer_name) == -1){
+						customer_name.push(checkStatus.data[i].customer_name);
+					}
+					if(address.indexOf(checkStatus.data[i].address) == -1){
+						address.push(checkStatus.data[i].address);
+					}					
+					if(checkStatus.data[i].can_notice_shipping == false){
+						layui.layer.msg(checkStatus.data[i].produce_sn+'不能发起发货通知');return;
+					}
+				}
+				if(address.length > 1 || customer_name.length > 1){
+					layer.open({
+						shade: false,
+						content: '选取的产品地址或客户名称不同，是否继续？',
+						btn: ['确定', '取消'],
+						yes: function (index) {
+							layer.close(index);
+							openLayer('发起发货通知','{:url('noticeShipping')}?address='+address[0]+'&ids='+ids.join(','),'80%','90%');
+						}
+					});
+				}else{
+					openLayer('发起发货通知','{:url('noticeShipping')}?address='+address[0]+'&ids='+ids.join(','),'80%','90%');return;
+					layerConfirm('确定发起发货通知?','{:url('noticeShipping')}',{ids:ids},function(res){
+						table.reload('dataTable');
+					})
+				}
+				return;
+			}
+		});
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+		
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+		table.on('colToggled(dataTable)', function(obj){
+			setTableFieldIsHide(obj.config.id,obj.col.field,obj.col.hide);
+		});
+	})
+</script>
+{/block}
+
+

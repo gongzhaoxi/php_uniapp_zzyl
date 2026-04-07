@@ -1,0 +1,51 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-input-block {margin-left: 150px;}
+.layui-form-label {width: 120px;}
+</style>
+<form class="layui-form" action="" method="post">
+	 <input type="hidden" name="id" value="{$model['id']}" >
+	 <div class="mainBox">
+		<div class="main-container">
+			<div class="layui-form-item">
+				<label class="layui-form-label">备注</label>
+				<div class="layui-input-block">
+					<input type="text" maxlength="255" name="remark" value="{$model['remark']}"   placeholder="请输入" autocomplete="off" class="layui-input">
+				</div>
+			</div>	
+			<div class="layui-form-item">
+				<label class="layui-form-label">递属产品</label>
+				<div class="layui-input-block">
+					<select name="order_product_id">
+						<option value="0">请选择</option>
+						{foreach $model->order->orderProduct as $k=>$vo}
+						<option {if $model['order_product_id'] == $vo['id']}selected{/if} value="{$vo['id']}">序号{$k+1}：{$vo['product_model']}{$vo['product_specs']}</option>
+						{/foreach}
+					</select>
+				</div>
+			</div>			
+			
+		</div>
+	</div>       
+	<div class="bottom">
+		<div class="button-container">
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*"><i class="layui-icon layui-icon-ok"></i>提交</button>
+			<button type="reset" class="layui-btn layui-btn-primary layui-btn-sm"><i class="layui-icon layui-icon-refresh"></i>重置</button>
+		</div>
+    </div>
+</form>
+{/block}
+{block name="script"}
+<script>
+	var index = 0;
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+
+	})
+</script>
+{/block}
+

@@ -1,0 +1,166 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.left .layui-inline{width:100px;}
+.layui-table-cell {padding: 6px 5px;}
+</style>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="order_sn" placeholder="采购单编号" class="layui-input">					
+				</div>
+				<div class="layui-form-item layui-inline">
+					<select name="supplier_id" lay-search="">
+						<option value="">供应商</option>
+						{foreach $supplier as $key=>$vo}
+						<option value="{$vo['id']}">{$vo['name']}</option>
+						{/foreach}
+					</select>				
+				</div>						
+				<div class="layui-form-item layui-inline">
+					<select name="follow_admin_id">
+						<option value="">跟进人</option>
+						{foreach $admins as $key=>$vo}
+						<option value="{$vo['id']}" {if $_admin['id'] == $vo['id']}selected{/if}>{$vo['username']}</option>
+						{/foreach}
+					</select>
+				</div>						
+				<div class="layui-form-item layui-inline" style="width:auto;">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="layui-row layui-col-space10">
+	<div class="layui-col-md5">
+		<div class="layui-card">
+			<div class="layui-card-body">
+				<table id="dataTable" lay-filter="dataTable"></table>
+			</div>
+		</div>
+	</div>
+	<div class="layui-col-md7">
+		<div class="layui-card">
+			<div class="layui-card-body">
+				<iframe id="productData" src="{:url('productData')}" frameborder="no"  height="500" border="0" marginwidth="0" marginheight="0" style="width: 100%;height: calc(100vh - 170px);" allowfullscreen="true"></iframe>				
+			</div>
+		</div>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	
+</script>
+<script type="text/html" id="options">
+	<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="remove">核消</button>
+	<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="feedback">反馈</button>
+</script>
+
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		let order_id;
+		var order_sn = '';
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('productFollow')}?follow_admin_id={$_admin['id']}',
+			page: true,
+			height: 'full-180',
+			cols: [[
+				//{type: 'checkbox',unresize: true},
+				{field: 'order_sn',title: '采购单编号',align: 'center',unresize: false,width: {:get_col_width('order_sn',150)}, hide: getTableFieldIsHide('dataTable','order_sn')},
+				{field: 'supplier_name',title: '供应商',align: 'center',unresize: false,width: {:get_col_width('supplier_name',100)}, hide: getTableFieldIsHide('dataTable','supplier_name')},
+				{field: 'order_date',title: '采购日期',align: 'center',unresize: false,width: {:get_col_width('order_date',150)}, hide: getTableFieldIsHide('dataTable','order_date')},
+				{field: 'overdue_reason',title: '超期原因',align: 'center',unresize: false,width: {:get_col_width('overdue_reason',100)},edit:true, hide: getTableFieldIsHide('dataTable','overdue_reason')},
+				{field: 'last_feedback',title: '供应商反馈',align: 'center',unresize: false,width: {:get_col_width('last_feedback',100)}, hide: getTableFieldIsHide('dataTable','last_feedback')},
+				{field: 'follow_admin_name',title: '采购跟进人',align: 'center',unresize: false,width: {:get_col_width('follow_admin_name',100)}, hide: getTableFieldIsHide('dataTable','follow_admin_name')},
+				{title: '操作',toolbar: '#options',align: 'center',unresize: true,width: 120,fixed: 'right'}
+			]],
+			limit:100,
+			limits:[100,200,300,400,500],
+			cellMinWidth: 60,
+			toolbar: '#toolbar',
+			defaultToolbar: [{
+					title: '刷新',
+					layEvent: 'refresh',
+					icon: 'layui-icon-refresh',
+			}, 'filter'],
+		});
+
+		table.on('tool(dataTable)', function(obj) {
+			if (obj.event === 'remove') {
+				layerConfirm('是否作废所选的采购单项，作废后将不能恢复，是否继续？?','{:url('remove')}',{id:obj.data['id']},function(res){
+					table.reload('materialTable');
+					table.reload('dataTable');
+				})
+			}else if (obj.event === 'feedback') {
+				openLayer('反馈','{:url('feedback')}?id='+obj.data['id'],'80%','90%');
+			}
+		});		
+
+
+		table.on('toolbar(dataTable)', function(obj) {
+			if (obj.event === 'refresh') {
+				table.reload('dataTable');
+			}
+		});
+
+		table.on('edit(dataTable)', function(obj){
+			var field = obj.field; 
+			var value = obj.value ;
+			var oldValue = obj.oldValue;
+			
+			var res = $.ajax({
+				url: '{:url('editOverdueReason')}',
+				type: 'POST',
+				data: {id:obj.data.id,'overdue_reason':value},
+				dataType: 'json',
+				async: false
+			});
+
+			layer.msg(res.responseJSON.msg);
+			
+			if(res.responseJSON.code != 200){
+				return obj.reedit();
+			}
+		});	
+
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+
+		table.on('row(dataTable)',function (obj) {
+			$('#productData').attr('src','{:url('productData')}?status=0,1&from=2&order_id='+obj.data.id)
+		})		
+
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field+'',width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+		table.on('colToggled(dataTable)', function(obj){
+			setTableFieldIsHide(obj.config.id,obj.col.field,obj.col.hide);
+		});
+		
+	})
+</script>
+{/block}
+
+

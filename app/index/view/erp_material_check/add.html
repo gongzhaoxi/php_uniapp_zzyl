@@ -1,0 +1,222 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-input-block {margin-left: 150px;}
+.layui-form-label {width: 120px;}
+</style>
+<form class="layui-form" action="" method="post" data-reload="7" data-callback="submitCallBack">
+	<input type="hidden"  name="order_id" id="order_id"  value="">
+	<input type="hidden"  name="material_type" id="material_type"  value="{$material_type}">
+	<select name="type" lay-verify="required" style="display:none;">
+	{foreach $type as $key=>$vo}
+	<option value="{$key}">{$vo}</option>
+	{/foreach}
+	</select>	
+	<div class="mainBox">
+		<div class="main-container">
+			<blockquote class="layui-elem-quote">单据单头信息</blockquote>
+			<div class="layui-form-item">	
+				<label class="layui-form-label">盘点日期</label>
+				<div class="layui-input-inline">
+					<input type="text"  readonly name="stock_date" value="{:date('Y-m-d')}" lay-verify="required" placeholder="请选择,不可为空" autocomplete="off" class="layui-input date">
+				</div>
+				<label class="layui-form-label">备注/用途说明</label>
+				<div class="layui-input-inline">
+					<input type="text" maxlength="255" name="remark"  placeholder="请输入" autocomplete="off" class="layui-input">
+				</div>				
+			</div>			
+			<blockquote class="layui-elem-quote">相关物料信息</blockquote>
+			<div class="layui-row layui-col-space10">
+				<div class="layui-col-md11">
+					<select id="selectId"  xm-select="selectId" xm-select-radio  xm-select-search=""></select>
+				</div>
+				<div class="layui-col-md1">
+					<button type="button" class="layui-btn showSearch">高级筛选</button>
+				</div>
+			</div>
+			<table class="layui-table">
+				<thead>
+					<tr>
+						<th>物料编码</th>
+						<th>物料名称</th>
+						<th>仓位</th>
+						<th>入库批次号</th>
+						<th>盘前库存量</th>
+						<th>盘后库存量</th>
+						<th>备注</th>
+						<th>操作</th>
+					</tr> 
+				</thead>
+				<tbody id="tbody">
+	
+				</tbody>
+			</table>
+		</div>
+	</div>
+	<div class="bottom">
+		<div class="button-container">
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*"><i class="layui-icon layui-icon-ok"></i>提交</button>
+			<button type="reset" class="layui-btn layui-btn-primary layui-btn-sm"><i class="layui-icon layui-icon-refresh"></i>重置</button>
+		</div>
+	</div>
+</form>
+{/block}
+{block name="script"}
+<script>
+var warehouses = {:json_encode($warehouse)};
+
+layui.use(['tableSelect','select'], function () {
+	var $ = layui.jquery;
+	var tableSelect = layui.tableSelect;
+	var select = layui.select;
+	var form = layui.form;
+	window.submitCallBack = function (res){
+		location.replace('{:url('edit')}?id='+res.data.id);
+	}
+	
+	window.deleteMaterial = function(_id){
+		$('#material_'+_id).remove();
+	}
+	
+	select.config("selectId",{
+		type:"post",
+		searchUrl:'{:url('common/materialStock?type='.$material_type)}&limit=50&status=1',    //请求地址
+		searchName: "keyword",
+		keyName:"name",
+		keyVal:"id" , 
+		beforeSuccess: function(id, url, searchVal, result){
+			$.each(result.data, function(index, item) {
+				item._name = item.name;
+				item.name = '物料编码：'+item.sn + ' | 物料名称：' + item.name + ' | 现有库存：' + item.stock + '';
+			});
+			return result;
+		}
+	},false)
+	
+	select.on('selectId', function(id, vals, item, isAdd, isDisabled){
+		if($('#material_'+item.id).length>0){
+			layer.msg('物料已添加');	
+			$('#material_'+item.id).find('.stock_after').focus();
+		}else if(item && item.id && item.name){
+			addMaterial(item);
+			form.render();
+		}
+		$('.xm-select-parent>.xm-form-select').removeClass('xm-form-selected');
+		return false;
+	});
+	
+	function addMaterial(item){
+		var stock_after = '';
+		var html = '<tr id="material_'+item.id+'"><input type="hidden"  name="material['+item.id+'][id]" value="'+item.id+'" >';
+		html += '	<td>'+item.sn+'</td>';
+		html += '	<td>'+(item._name?item._name:item.name)+'</td>';
+		
+		html += '	<td><select name="material['+item.id+'][warehouse_id]" lay-filter="warehouse_id" lay-verify="required|number" >';
+		var default_warehouse_id = 0;
+		$.each(warehouses, function(index, warehouse) {
+			//var stock = material_stock && material_stock[item.id] && material_stock[item.id][warehouse.id]?material_stock[item.id][warehouse.id]:0;
+			html += '	<option  value="'+warehouse.id+'">'+warehouse.sn+'</option>';
+			if(index == 0){
+				default_warehouse_id = warehouse.id;
+			}
+		});
+		html += '	</select></td>';
+		
+		var default_stock = 0;
+		html += '	<td><select name="material['+item.id+'][enter_material_id]" class="enter_material_id" onchange="changeEnter(this)" required lay-verify="required" lay-ignore>';
+		if(item.enter.length > 0){
+			layui.each(item.enter, function (index2, item2) {
+				html += '<option '+(index2==0?'selected':'')+' '+(default_warehouse_id==item2.warehouse_id?'':'style="display:none;"')+' data-warehouse="'+item2.warehouse_id+'" data-num="'+item2.num+'" value="'+item2.id+'" >'+item2.order_sn+'</option>';
+				if(index2 == 0){
+					default_stock = item2.num;
+				}
+			})
+		}else{
+			//html += '<option selected data-num="0" value="0" >无</option>';
+		}
+		
+		html += '	</select></td>';		
+		
+		html += '	<td><input class="layui-input stock_before" readonly type="text" lay-verify="required|number" name="material['+item.id+'][stock_before]" value="'+default_stock+'" ></td>';
+		html += '	<td><input type="text"  name="material['+item.id+'][stock_after]" value="'+stock_after+'" data-key="stock_after" class="layui-input stock_after" lay-verify="required|number" placeholder="请输入数量"></td>';
+		html += '	<td><input type="text"  name="material['+item.id+'][remark]" value="" class="layui-input remark" data-key="remark" placeholder=""></td>';
+		html += '	<td><button type="button" onclick="deleteMaterial('+item.id+')" class="layui-btn layui-btn-xs layui-btn-danger">删除</button></td>';
+		html += '</tr>';
+		$('#tbody').prepend(html);
+	
+			
+		$('#material_'+item.id).find('.stock_after').focus();
+	}
+	
+	form.on('select(warehouse_id)', function(data){
+		var tr = $(data.elem).closest('tr');
+		tr.find('.enter_material_id').val('');
+		tr.find('.enter_material_id option').hide();
+		tr.find('.enter_material_id option[data-warehouse="'+ data.value +'"]').show();
+		
+		tr.find('.enter_material_id option[data-warehouse="'+ data.value +'"]').eq(0).prop('selected', true);
+		tr.find('.enter_material_id option[data-warehouse="'+ data.value +'"]').eq(0).prop('selected', true);
+		
+		tr.find('.stock_before').val(tr.find('.enter_material_id option[data-warehouse="'+ data.value +'"]').eq(0).data('num'));
+	});	
+	
+	window.changeEnter = function(obj){
+		var tr = $(obj).closest('tr');
+		tr.find('.stock_before').val($(obj).find('option:selected').data('num'));
+	}
+	
+	
+	$(".layui-table").on("keydown",".layui-input",function(){
+		if (event.keyCode == 40) {
+			$(this).closest('tr').next().find('.'+$(this).data('key')).focus();
+		}else if (event.keyCode == 38) {
+			$(this).closest('tr').prev().find('.'+$(this).data('key')).focus();
+		}else if (event.keyCode == 13 || event.keyCode == 39) {
+			//右一个
+			$(this).closest('td').next().find('.layui-input').focus();
+		}else if (event.keyCode == 37) {
+			//左一个
+			$(this).closest('td').prev().find('.layui-input').focus();
+		}
+	});
+	
+	$('.showSearch').click(function(){
+		layer.open({
+			type: 2
+			,title: '高级筛选'
+			,content: '{:url('common/materialStock')}?type={$material_type}&status=1'
+			,area: ['95%','95%']
+			,success: function(layero, index){
+				var iframeWindow = window['layui-layer-iframe'+ index];
+				layero.find('iframe').contents().find('#confirmSelect').click(function(){
+					selectFuc();
+					return false;
+				})
+				
+				layero.find('iframe').contents().find('body').on("keydown", function(event) {
+					if (event.which === 13) {
+						selectFuc();
+						return false;
+					}
+				});
+				
+				function selectFuc(){
+					if(iframeWindow.selected_ids.length == 0){
+						layui.layer.msg('请选择物料');
+					}else{
+						$.each(iframeWindow.selected_items,function(idx,item){
+							if($('#material_'+item.id).length == 0){
+								addMaterial(item);
+							}
+						})
+						form.render();
+						layui.layer.close(index);
+					}
+					return false;
+				}
+			}
+		});
+	})
+});
+</script>
+{/block}

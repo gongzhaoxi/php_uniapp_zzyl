@@ -1,0 +1,143 @@
+{extend name="base" /}
+{block name="body"}
+
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="" id="searchForm" lay-filter="searchForm">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline" style="width:190px;">
+					<input type="text" name="stock_date" value="" placeholder="实际到货日期" class="layui-input rangedate">					
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<select name="supplier_id"  lay-search>
+						<option value="">供应商</option>
+						{foreach $supplier as $vo}
+						<option value="{$vo['id']}" >{$vo['name']}</option>
+						{/foreach}
+					</select>
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="code" placeholder="进货检验报告编号" class="layui-input ">	
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="sn" placeholder="物料编号" class="layui-input ">	
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="enter_order_sn" placeholder="物料批号" class="layui-input ">	
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="material_code" placeholder="物料编号(序列号)" class="layui-input ">	
+				</div>					
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	<button class="pear-btn pear-btn-primary pear-btn-sm" lay-event="export"><i class="layui-icon layui-icon-export"></i>导出</button>
+</script>
+<script type="text/html" id="options">
+	<button class="pear-btn pear-btn-danger pear-btn-xs" lay-event="report">预览</button>
+</script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('list')}',
+			page: true,
+			limit:90,
+			height:'full-170',
+			cols: [[
+				//{field: 'supplier_name',title: '供应商名称',align: 'center',unresize: false,minWidth: {:get_col_width('supplier_name',150)}, hide: getTableFieldIsHide('dataTable','supplier_name')},
+				//{field: 'sn',title: '物料编号',align: 'center',unresize: false,width: {:get_col_width('sn',100)}, hide: getTableFieldIsHide('dataTable','sn')},
+				{field: 'name',title: '物料名称，型号规格',align: 'center',unresize: false,width: {:get_col_width('name',200)}, hide: getTableFieldIsHide('dataTable','name')},
+				{field: 'order_date',title: '下单日期',align: 'center',unresize: false,width: {:get_col_width('order_date',120)}, hide: getTableFieldIsHide('dataTable','order_date')},
+				{field: 'order_sn',title: '采购单号',align: 'center',unresize: false,width: {:get_col_width('order_sn',140)}, hide: getTableFieldIsHide('dataTable','order_sn')},
+				{field: 'apply_num',title: '订购数量',align: 'center',unresize: false,width: {:get_col_width('apply_num',100)}, hide: getTableFieldIsHide('dataTable','apply_num')},
+				{field: 'delivery_date',title: '预计到货日期',align: 'center',unresize: false,width: {:get_col_width('delivery_date',100)}, hide: getTableFieldIsHide('dataTable','delivery_date')},
+				{field: 'stock_date',title: '实际到货日期',align: 'center',unresize: false,width: {:get_col_width('stock_date',120)}, hide: getTableFieldIsHide('dataTable','stock_date')},
+				{field: 'code',title: '进货检验报告编号',align: 'center',unresize: false,width: {:get_col_width('code',120)}, hide: getTableFieldIsHide('dataTable','code')},
+				{field: 'enter_order_sn',title: '物料批号/编号',align: 'center',unresize: false,width: {:get_col_width('enter_order_sn',120)}, hide: getTableFieldIsHide('dataTable','enter_order_sn')},
+				{field: 'stock_num',title: '实际数量',align: 'center',unresize: false,width: {:get_col_width('stock_num',100)}, hide: getTableFieldIsHide('dataTable','stock_num')},
+				//{field: 'material_code',title: '物料编号(序列号)',align: 'center',unresize: false,width: {:get_col_width('material_code',120)}, hide: getTableFieldIsHide('dataTable','material_code')},
+				{field: 'pass_num',title: '合格数量',align: 'center',unresize: false,width: {:get_col_width('pass_num',100)}, hide: getTableFieldIsHide('dataTable','pass_num')},
+				{field: 'pass_rate',title: '合格率',align: 'center',unresize: false,width: {:get_col_width('pass_rate',100)}, hide: getTableFieldIsHide('dataTable','pass_rate')},
+				{field: 'unqualified_description',title: '主要不良原因',align: 'center',unresize: false,width: {:get_col_width('unqualified_description',150)}, hide: getTableFieldIsHide('dataTable','unqualified_description')},
+				{field: '',title: '填写人/日期',align: 'center',unresize: false,width: 160},
+				{title: '进货检验报告PDF',toolbar: '#options',align: 'center',width: 150,unresize:true,}
+				
+			]],
+			cellMinWidth: 80,
+			//skin: 'line',
+			toolbar: '#toolbar',
+			defaultToolbar: [{
+				title: '刷新',
+				layEvent: 'refresh',
+				icon: 'layui-icon-refresh',
+			}, 'filter']
+		});
+
+		table.on('sort(dataTable)', function(obj){
+			table.reload('dataTable', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+
+		table.on('tool(dataTable)', function(obj) {
+			if (obj.event === 'report') {
+				openLayer('检验报告','{:url('download')}?id='+obj.data['material_enter_material_id'],'80%','90%');
+			}
+		});
+
+		table.on('toolbar(dataTable)', function(obj) {
+			if (obj.event === 'refresh') {
+				table.reload('dataTable');
+			}else if (obj.event === 'export') {
+				var data = form.val('searchForm');
+				exportData('{:url('export')}',data);
+			}
+		});
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+		
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+		table.on('colToggled(dataTable)', function(obj){
+			setTableFieldIsHide(obj.config.id,obj.col.field,obj.col.hide);
+		});
+	})
+</script>
+{/block}
+
+

@@ -1,0 +1,102 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-tab .layui-tab-title {border-bottom-width: 0px;}
+.layui-tab-title .btn{position: relative;line-height: 40px;min-width: 65px;padding: 0 15px;text-align: center;cursor: pointer;display: inline-block;vertical-align: middle;font-size: 14px;}
+.layui-card-body .layui-form {margin-top: 0px;}
+</style>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<div class="layui-tab layui-tab-brief" lay-filter="docDemoTabBrief">
+			<ul class="layui-tab-title">
+				<li class="{if $query['act'] == 1}layui-this{/if}"><a href="{:url('shippingCount')}?act=1">当天</a></li>
+				<li class="{if $query['act'] == 2}layui-this{/if}"><a href="{:url('shippingCount')}?act=2">本月</a></li>
+				<li class="{if $query['act'] == 3}layui-this{/if}"><a href="{:url('shippingCount')}?act=3">本年</a></li>
+				<form class="layui-form btn" action="{:url('shippingCount')}" method="get">
+					<input type="hidden" name="act" value="" >
+					<div class="layui-input-inline"><input type="text" name="year" readonly autocomplete="off" value="{$query['year']|default=''}" lay-verify="required" placeholder="年份选择" class="layui-input year"></div>	
+					<div class="layui-input-inline"><input type="text" name="month" readonly autocomplete="off" id="month" value="{$query['month']|default=''}" placeholder="月份选择" class="layui-input "></div>	
+					<div class="layui-inline">
+						<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+						<a href="{:url('shippingCount')}" class="pear-btn pear-btn-md"><i class="layui-icon layui-icon-refresh"></i>重置</a>
+						<button class="pear-btn pear-btn-sm pear-btn-danger export" lay-event="export"><i class="layui-icon layui-icon-download-circle"></i>导出</button>
+					</div>	
+				</form>			
+			</ul>
+		</div>
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<table class="layui-table" id="mtable">
+			<thead>
+				<tr>
+					<th>型号-款式</th>
+					<th>台数</th>
+					<th>型号-款式</th>
+					<th>台数</th>
+					<th>型号-款式</th>
+					<th>台数</th>
+					<th>型号-款式</th>
+					<th>台数</th>
+					<th>型号-款式</th>
+					<th>台数</th>					
+				</tr> 
+			</thead>
+			<tbody>
+				{php}
+				$i = 0;
+				foreach($list as $vo){
+					if($i%5 == 0){
+						echo '<tr>';
+					}
+					echo '<td>'.$vo['model'].$vo['specs'].'</td>';
+					echo '<td>'.$vo['count'].'</td>';
+					if($i%5 == 4){
+						echo '</tr>';
+					}
+					$i++;
+				}
+				if($i%5 != 0){
+					echo '</tr>';
+				}
+				{/php}
+			</tbody>
+		</table>
+	</div>
+</div>
+{/block}
+{block name="js"}
+<script type="text/javascript" src="/static/tool/jquery.min.js"></script>
+<script type="text/javascript" src="/static/tool/jquery.table2excel.js"></script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common','laydate'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		let laydate = layui.laydate;
+		form.on('submit(query)', function(data) {
+			
+		});
+		$('.export').click(function(){
+			$("#mtable").table2excel({
+				exclude: ".excludeThisClass",
+				name: "Worksheet Name",
+				filename: "累计发货统计.xls", // do include extension
+				preserveColors: false // set to true if you want background colors and font colors preserved
+			});
+		})
+		
+		laydate.render({
+			elem: '#month',
+			type:'month',
+			format: 'MM'
+		});
+		
+	})
+</script>
+{/block}
+
+

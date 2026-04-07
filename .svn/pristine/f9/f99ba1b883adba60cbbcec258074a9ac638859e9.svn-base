@@ -1,0 +1,310 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.bom{margin:0 0 5px 0;font-size:12px;}
+.bom .title{font-weight:600;font-size:13px;}
+.layui-table-cell {height:auto;}
+.layui-card-body .short{width:130px;}
+</style>
+<div class="layui-card">
+	<div class="layui-card-body" style="padding: 5px 5px;">
+		<form class="layui-form" action="">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline short">
+					<input type="text" name="customer_name" value="{$query['customer_name']|default=''}" placeholder="客户名称/订货单位" class="layui-input">						
+				</div>	
+				<div class="layui-form-item layui-inline short">
+					<input type="text" name="address" value="{$query['address']|default=''}" placeholder="收货地址/国家" class="layui-input">						
+				</div>				
+				<div class="layui-form-item layui-inline" style="width:170px;">
+					<input type="text" name="order_sn" value="{$query['order_sn']|default=''}" placeholder="销售合同号,多个用','分隔" class="layui-input">	
+				</div>	
+				<div class="layui-form-item layui-inline short">
+					<input type="text" name="product_model" value="{$query['product_model']|default=''}" placeholder="型号" class="layui-input">	
+				</div>
+				<div class="layui-form-item layui-inline" style="width:190px;">
+					<input type="text" name="create_time" value="{$query['create_time']|default=''}" placeholder="下单日期" class="layui-input rangedate">	
+				</div>	
+				<div class="layui-form-item layui-inline" style="width:190px;">
+					<input type="text" name="delivery_time" value="{$query['delivery_time']|default=''}" placeholder="交货日期" class="layui-input rangedate">	
+				</div>
+				<div class="layui-form-item layui-inline short">
+					<input type="text" name="produce_finish_sn" value="{$query['produce_finish_sn']|default=''}" placeholder="产品序列号" class="layui-input">						
+				</div>				
+				<div class="layui-form-item layui-inline short" >
+					<select name="region_type">
+						<option value="">订单属性</option>
+						{foreach $region_type as $key=>$vo}
+						<option value="{$key}" {if isset($query['region_type']) && $query['region_type'] == $key}selected{/if}>{$vo}</option>
+						{/foreach}
+					</select>			
+				</div>				
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary"><i class="layui-icon layui-icon-search"></i>查询</button>
+					{if empty($hidden)}<button class="pear-btn pear-btn-md pear-btn-success" lay-submit lay-filter="check"><i class="layui-icon layui-icon-ok-circle"></i>物料排查</button>{/if}
+					<button class="pear-btn pear-btn-md" lay-submit lay-filter="export"><i class="layui-icon layui-icon-export"></i>导出</button>
+					{if empty($hidden)}<button class="pear-btn pear-btn-md pear-btn-warming" lay-submit lay-filter="purchase"><i class="layui-icon layui-icon-cart"></i>成品外发加工</button>{/if}
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="print11"><i class="layui-icon layui-icon-print"></i>打印确认单</button>
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="print15"><i class="layui-icon layui-icon-print"></i>打印国外确认单</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="" lay-filter="tableForm" id="tableForm">
+			<table class="layui-table" id="mtable" lay-filter="dataTable">
+				<thead>
+					<tr>
+						<th lay-data="{field:'id', width:50}" class="excludeThisClass"></th>
+						<th lay-data="{field:'delivery_time', width:{:get_col_width('delivery_time',110)}}">交货日期</th>
+						<th lay-data="{field:'customer_name', width:{:get_col_width('customer_name',120)}}">客户名称</th>						
+						<th lay-data="{field:'produce_sn',edit:true, width:{:get_col_width('produce_sn',120)}}">产品编码</th>
+						<th lay-data="{field:'produce_finish_sn',edit:true, width:{:get_col_width('produce_finish_sn',120)}}">产品序列号</th>
+						<th lay-data="{field:'product_model', width:{:get_col_width('product_model',120)}}">型号</th>
+						<th lay-data="{field:'product_specs', width:{:get_col_width('product_specs',100)}}">款式</th>
+						<th lay-data="{field:'color', width:{:get_col_width('color',100)}}">颜色</th>
+						<th lay-data="{field:'queue_num', width:{:get_col_width('queue_num',80)}}">数量</th>
+						<th lay-data="{field:'order_sn', width:{:get_col_width('order_sn',140)}}">销售合同号</th>
+						<th lay-data="{field:'order_create_time', width:{:get_col_width('order_create_time',120)}}">下单日期</th>
+						<th lay-data="{field:'nickname', width:{:get_col_width('nickname',80)}}">销售员</th>
+						<th lay-data="{field:'produce_type_desc', width:{:get_col_width('produce_type_desc',110)}}">加工方式</th>
+						<th lay-data="{field:'order_type_desc', width:{:get_col_width('order_type_desc',110)}}">订单类型</th>
+						<th lay-data="{field:'order_product_remark',edit:true, width:{:get_col_width('order_product_remark')}}">备注</th>
+						<th lay-data="{field:'produce_status_desc', width:{:get_col_width('produce_status_desc',110)}}">排产状态</th>
+						<th lay-data="{field:'check_status_desc', width:{:get_col_width('check_status_desc',110)}}">排查状态</th>
+						<th lay-data="{field:'check_time', width:{:get_col_width('check_time',110)}}">排查日期</th>
+					</tr> 
+				</thead>
+				<tbody>
+					{volist name="list" id="vo"}
+					<tr id="td{$vo['id']}" data-check="{$vo['check_status']}">
+						<td class="excludeThisClass"><input type="checkbox" name="id[]" value="{$vo['id']}" title="" lay-skin="primary"></td>
+						<td>{$vo['delivery_time']}</td>
+						<td>{$vo['customer_name']}</td>
+						<td>{$vo['produce_sn']}</td>
+						<td>{$vo['produce_finish_sn']}</td>
+						<td>{$vo['product_model']}</td>
+						<td>{$vo['product_specs']}</td>
+						<td>{$vo['color']}</td>
+						<td>{$vo['queue_num']}/{$vo['product_num']}</td>
+						<td>{$vo['order_sn']}</td>
+						<td>{:date('Y-m-d',$vo['order_create_time'])}</td>
+						<td>{$vo['nickname']}</td>
+						<td>{$vo['produce_type_desc']}</td>
+						<td>{$vo['order_type_desc']}</td>
+						<td>{$vo['remark']}</td>
+						<td>{$vo['produce_status_desc']}</td>
+						<td>{$vo['check_status_desc']}</td>
+						<td>{if $vo['check_time']}{:date('Y-m-d',$vo['check_time'])}{/if}</td>
+					</tr>
+					<tr>
+						<td colspan="17">
+							{$vo['project_html']|raw}
+						</td>
+					</tr>
+					{/volist}
+				</tbody>
+			</table>
+		</form>
+	</div>
+</div>
+
+<script type="text/html" id="toolbar">
+	<button class="pear-btn pear-btn-primary pear-btn-sm" lay-event="add"><i class="layui-icon layui-icon-add-1"></i>新增</button>
+	<button class="pear-btn pear-btn-danger pear-btn-sm" lay-event="batchRemove"><i class="layui-icon layui-icon-delete"></i>删除</button>
+	<button class="pear-btn pear-btn-sm" lay-event="recycle"><i class="layui-icon  layui-icon-close-fill"></i>回收站</button>
+</script>
+<script type="text/html" id="options">
+	<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="edit"><i class="layui-icon layui-icon-edit"></i></button>
+	<button class="pear-btn pear-btn-danger pear-btn-xs" lay-event="remove"><i class="layui-icon layui-icon-delete"></i></button>
+</script>
+{/block}
+{block name="js"}
+<script src="/static/tool/jquery.min.js"></script>
+<script src="/static/tool/jquery.table2excel.js"></script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+		table.init('dataTable', {
+			escape :false,
+			height: 'full-200',
+			done: function(res, curr, count){
+				$(".layui-table-main tr").each(function (index, val) {
+					$($(".layui-table-fixed-l .layui-table-body tbody tr")[index]).height($(val).height());
+					$($(".layui-table-fixed-r .layui-table-body tbody tr")[index]).height($(val).height());
+					if(parseInt($(this).data('index'))%2 == 1){
+						$(this).html('<td colspan="18"><div class="layui-table-cell">'+$(this).find('td').eq(0).find('.layui-table-cell').html()+'</div></td>');
+					}
+				});
+			}
+		});
+		table.on('edit(dataTable)', function(obj){
+			var field = obj.field; // 得到修改的字段
+			var value = obj.value // 得到修改后的值
+			var oldValue = obj.oldValue // 得到修改前的值 -- v2.8.0 新增
+			if(field == 'produce_sn'){
+				if(value.replace(/\s/g, '') === ''){
+					layer.tips('值不能为空', this, {tips: 1});
+					return obj.reedit();
+				}
+				var res = $.ajax({
+					url: '{:url('editSn')}',
+					type: 'POST',
+					data: {id:$(obj.tr).find('input[type="checkbox"]').val(),'produce_sn':value},
+					dataType: 'json',
+					async: false
+				});
+			}else if(field == 'produce_finish_sn'){
+				if(value.replace(/\s/g, '') === ''){
+					layer.tips('值不能为空', this, {tips: 1});
+					return obj.reedit();
+				}
+				var res = $.ajax({
+					url: '{:url('editFinishSn')}',
+					type: 'POST',
+					data: {id:$(obj.tr).find('input[type="checkbox"]').val(),'produce_finish_sn':value},
+					dataType: 'json',
+					async: false
+				});
+			}else if(field == 'order_product_remark'){
+				var res = $.ajax({
+					url: '{:url('editRemark')}',
+					type: 'POST',
+					data: {id:$(obj.tr).find('input[type="checkbox"]').val(),'remark':value},
+					dataType: 'json',
+					async: false
+				});
+			}
+
+			layer.msg(res.responseJSON.msg);
+			
+			if(res.responseJSON.code != 200){
+				return obj.reedit();
+			}
+		});		
+		
+
+		form.on('submit(check)', function(data) {	
+			var arr = $('#tableForm').serializeArray();
+			var ids = [];
+			var ids_no_check = [];
+			if(arr.length==0){
+				layer.msg('请选择订单');return false;
+			}
+			var load_index 	= layer.load(2);
+			/*
+			layui.each(arr, function (index, item) {
+				if($('#td'+item.value).data('check') == 10){
+					$.ajax({
+						url: '{:url('check')}?id=' + item.value,
+						success: function (result) {
+							ids.push(item.value);
+						},
+						async: false
+					});
+				}else{
+					ids.push(item.value);
+				}
+			})*/
+			
+			layui.each(arr, function (index, item) {
+				ids.push(item.value);
+				if($('#td'+item.value).data('check') == 10){
+					ids_no_check.push(item.value);
+				}
+			})
+			if(ids_no_check.length>0){
+				$.ajax({
+					url: '{:url('check')}?id=' + ids_no_check.join(','),
+					success: function (result) {
+						
+					},
+					async: false
+				});
+			}
+			
+			layer.close(load_index);
+	
+			openLayer('下达生产','{:url('start')}?id='+ids.join(','),'100%','100%',function(){
+				location.reload();		
+			});
+			return false;
+		});
+
+		form.on('submit(purchase)', function(data) {	
+			var arr = $('#tableForm').serializeArray();
+			if(arr.length==0){
+				layer.msg('请选择订单');return false;
+			}
+			var ids = [];
+			layui.each(arr, function (index, item) {
+				ids.push(item.value);
+			})			
+			layerConfirm('你所选的订单将发到成品委外进行采购，是否继续？','{:url('purchase')}',{ids:ids},function(){
+				location.reload();
+			})	
+			return false;
+		});
+
+		form.on('submit(export)', function(data) {
+			$("#mtable").table2excel({
+				exclude: ".excludeThisClass",
+				name: "Worksheet Name",
+				filename: "待排产订单.xls", // do include extension
+				preserveColors: false // set to true if you want background colors and font colors preserved
+			});
+			return false;
+		});
+		
+		
+		form.on('submit(print11)', function(data) {	
+			var arr = $('#tableForm').serializeArray();
+			var ids = [];
+			var ids_no_check = [];
+			if(arr.length==0){
+				layer.msg('请选择订单');return false;
+			}
+			if(arr.length!=1){
+				layer.msg('单次只能选择一个订单');return false;
+			}
+			toPrintPage(11,{id:arr[0]['order_id']})
+			return false;
+		});		
+		
+		form.on('submit(print15)', function(data) {	
+			var arr = $('#tableForm').serializeArray();
+			var ids = [];
+			var ids_no_check = [];
+			if(arr.length==0){
+				layer.msg('请选择订单');return false;
+			}
+			if(arr.length!=1){
+				layer.msg('单次只能选择一个订单');return false;
+			}
+			toPrintPage(15,{id:arr[0]['order_id']})
+			return false;
+		});
+		
+		
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+	})
+</script>
+{/block}
+
+

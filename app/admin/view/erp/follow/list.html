@@ -1,0 +1,125 @@
+{extend name="base" /}
+{block name="body"}
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="" id="searchForm">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="name" placeholder="名称" class="layui-input">
+				</div>
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+					<button type="reset" class="pear-btn pear-btn-md"><i class="layui-icon layui-icon-refresh"></i>重置</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	<button class="pear-btn pear-btn-primary pear-btn-sm" lay-event="add"><i class="layui-icon layui-icon-add-1"></i>新增</button>
+</script>
+<script type="text/html" id="options">
+	<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="edit"><i class="layui-icon layui-icon-edit"></i></button>
+	<button class="pear-btn pear-btn-danger pear-btn-xs" lay-event="remove"><i class="layui-icon layui-icon-delete"></i></button>
+</script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('list')}',
+			page: true,
+			limit:90,
+			height:'full-170',
+			cols: [[
+				{field: 'id',title: 'ID', sort: true, align: 'center',unresize: false,width: {:get_col_width('id',120)}, hide: getTableFieldIsHide('dataTable','id')},
+				{field: 'category_name',title: '随工单用途分类',align: 'center',unresize: false,width: {:get_col_width('category_name')}, hide: getTableFieldIsHide('dataTable','category_name')},
+				{field: 'code',title: '随工单编码',align: 'center',unresize: false,width: {:get_col_width('code')}, hide: getTableFieldIsHide('dataTable','code')},
+				{field: 'name',title: '随工单名称',align: 'center',unresize: false,width: {:get_col_width('name')}, hide: getTableFieldIsHide('dataTable','name')},
+				{field: 'iso',title: 'ISO文件档案号',align: 'center',unresize: false,width: {:get_col_width('iso')}, hide: getTableFieldIsHide('dataTable','iso')},
+				{field: 'address',title: '生产地点',align: 'center',unresize: false,width: {:get_col_width('address')}, hide: getTableFieldIsHide('dataTable','address')},
+				{field: 'according',title: '生产依据',align: 'center',unresize: false,width: {:get_col_width('according')}, hide: getTableFieldIsHide('dataTable','according')},
+				{field: 'remark',title: '备注',align: 'center',unresize: false,width: {:get_col_width('remark')}, hide: getTableFieldIsHide('dataTable','remark')},
+				{field: 'status_desc',title: '状态',align: 'center',unresize: false,width: {:get_col_width('status_desc',80)}, hide: getTableFieldIsHide('dataTable','status_desc')},
+				{title: '操作',toolbar: '#options',align: 'center',unresize: true,width: 120}
+			]],
+			cellMinWidth: 100,
+
+			toolbar: '#toolbar',
+			defaultToolbar: [{
+				title: '刷新',
+				layEvent: 'refresh',
+				icon: 'layui-icon-refresh',
+			}, 'filter', 'print', 'exports']
+		});
+
+		table.on('sort(dataTable)', function(obj){
+			table.reload('dataTable', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+
+		table.on('tool(dataTable)', function(obj) {
+			if (obj.event === 'remove') {
+				layerConfirm('确定要删除该随工单?','{:url('remove')}',{ids:[obj.data['id']]},function(res){
+					obj.del();
+				})
+			} else if (obj.event === 'edit') {
+				openLayer('修改随工单','{:url('edit')}?id='+obj.data['id'],'80%','90%');
+			}
+		});
+
+		table.on('toolbar(dataTable)', function(obj) {
+			if (obj.event === 'add') {
+				openLayer('新增随工单','{:url('add')}','80%','90%');
+			}else if (obj.event === 'refresh') {
+				table.reload('dataTable');
+			} else if (obj.event === 'batchRemove') {
+				tableAction(obj.config.id,'确定要删除这些随工单','{:url('remove')}');
+			} else if (obj.event === 'recycle') {
+				openLayer('回收站','{:url('recycle')}','90%','90%',function () {
+					table.reload('dataTable');
+				});
+			}
+		});
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+		
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+		table.on('colToggled(dataTable)', function(obj){
+			setTableFieldIsHide(obj.config.id,obj.col.field,obj.col.hide);
+		});
+	})
+</script>
+{/block}
+
+

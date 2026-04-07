@@ -1,0 +1,40 @@
+<!doctype html>
+<html class="no-js">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="description" content="">
+<meta name="keywords" content="">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{:config('web.title')}</title>
+<!-- Set render engine for 360 browser -->
+<meta name="renderer" content="webkit">
+<!-- No Baidu Siteapp-->
+<meta http-equiv="Cache-Control" content="no-siteapp"/>
+<!-- Add to homescreen for Chrome on Android -->
+<meta name="mobile-web-app-capable" content="yes">
+<!-- Add to homescreen for Safari on iOS -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Amaze UI"/>
+<link rel="stylesheet" href="/static/component/layui/css/layui.css" />
+<link rel="stylesheet" href="/static/amazeui/css/amazeui.min.css">
+<link rel="stylesheet" href="/static/amazeui/css/app.css">
+<!--[if (gte IE 9)|!(IE)]><!-->
+<script src="/static/tool/jquery.min.js"></script>
+<!--<![endif]-->
+<!--[if lte IE 8 ]>
+<script src="http://libs.baidu.com/jquery/1.11.3/jquery.min.js"></script>
+<script src="http://cdn.staticfile.org/modernizr/2.8.3/modernizr.js"></script>
+<script src="/static/amazeui/js/amazeui.ie8polyfill.min.js"></script>
+<![endif]-->
+<script src="/static/amazeui/js/amazeui.min.js"></script>
+<script src="/static/component/layui/layui.js"></script>
+{block name="css"}{/block}
+</head>
+<body>
+  {block name="body"}{/block}
+</body>
+{block name="js"}{/block}
+{block name="script"}{/block}
+</html>

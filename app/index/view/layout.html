@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>{:config('web.front_title')}</title>
+<meta name="renderer" content="webkit">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link href="/static/component/layui/css/layui.css" rel="stylesheet">
+<script src="/static/component/layui/layui.js"></script>
+<script src="/static/component/pear/pear.js"></script>
+<script>
+var jmreport = {:json_encode(config('web.jmreport'))};
+var print_add_url = '{:url('common/printAdd')}';
+</script>
+<style>
+.layui-layout-admin .layui-logo{width:auto;margin-left:20px;color:#fff;}
+.layui-layout-admin .layui-side,.layui-nav.layui-nav-tree{width: 100px;}
+.layui-layout-admin .layui-body{left: 100px;}
+.left .layui-nav-tree .layui-icon{display:block;font-size:30px;}
+.left .layui-nav-tree .layui-nav-item a{height:auto;text-align: center;padding:5px 0;line-height: initial;margin: 0 0 10px 0;color:#fff;}
+</style>
+<link href="/static/component/pear/css/module/dtree/font/dtreefont.css" rel="stylesheet">
+<link href="/static/component/pear/css/module/dtree/dtree.css" rel="stylesheet">
+{block name="css"}{/block}
+</head>
+<body>
+<div class="layui-layout layui-layout-admin">
+	<div class="layui-header">
+		<div class="layui-logo">{:config('web.front_title')}</div>
+		<ul class="layui-nav layui-layout-right">
+			<li class="layui-nav-item layui-hide" id="to_do_count" lay-unselect>
+				<a href="javascript:;">
+					待办信息
+					<span class="layui-badge"></span>
+				</a>
+			</li>
+			<li class="layui-nav-item layui-show-sm-inline-block">
+				<a href="javascript:;"><img src="/static/admin/images/default-head.png" class="layui-nav-img">{:request()->userInfo['name']}</a>
+				<dl class="layui-nav-child">
+					<dd><a href="javascript:void(0);" class="password">修改密码</a></dd>
+					<dd><a class="logout" href="javascript:;">退出登录</a></dd>
+				</dl>
+			</li>
+		</ul>
+	</div>
+	<div class="layui-side layui-bg-black left">
+		<div class="layui-side-scroll">
+			<ul class="layui-nav layui-nav-tree" lay-filter="test">
+				{if in_array(1,request()->userInfo['permission'])}<li class="layui-nav-item"><a href="{:url('ErpMaterialEnterMaterial/index')}"><i class="layui-icon layui-icon-form"></i> 零件检验</a></li>{/if}
+				{if in_array(2,request()->userInfo['permission'])}<li class="layui-nav-item"><a href="{:url('ErpOrderProduce/index')}"><i class="layui-icon layui-icon-file-b"></i>生产报工</a></li>{/if}
+				{if in_array(3,request()->userInfo['permission'])}<li class="layui-nav-item"><a href="{:url('ErpMaterialWarehouse/index')}"><i class="layui-icon layui-icon-list"></i>岗位仓</a></li>{/if}
+				{if in_array(4,request()->userInfo['permission'])}<li class="layui-nav-item"><a href="{:url('ErpPurchaseOrder/materialFollow')}"><i class="layui-icon layui-icon-app"></i>仓库管理</a></li>{/if}
+				{if in_array(5,request()->userInfo['permission'])}<li class="layui-nav-item"><a href="{:url('ErpOrderShipping/index')}"><i class="layui-icon layui-icon-note"></i>成品出库</a></li>{/if}
+				{if in_array(15,request()->userInfo['permission'])}<li class="layui-nav-item"><a href="{:url('ErpMaterial/index')}"><i class="layui-icon layui-icon-radio"></i>零件列表</a></li>{/if}
+				{if in_array(16,request()->userInfo['permission'])}<li class="layui-nav-item"><a href="{:url('ErpGuideBook/index')}"><i class="layui-icon layui-icon-read"></i>指导书</a></li>{/if}
+				{if in_array(17,request()->userInfo['permission'])}<li class="layui-nav-item"><a href="{:url('ErpDrawing/index')}"><i class="layui-icon layui-icon-carousel"></i>图纸集</a></li>{/if}
+			</ul>
+		</div>
+	</div>
+	<div class="layui-body">
+		{block name="body"}{/block}
+	</div>
+</div>
+<script src="/static/main.js?t={:time()}"></script>
+{block name="js"}{/block}
+{block name="script"}{/block}
+<script>
+	layui.use(['jquery'], function() {
+		let $ = layui.jquery;
+		$('.logout').click(function(){
+			layerConfirm('确认退出？','{:url('login/logout')}',{},function(){
+				location.replace('{:url('login/index')}');
+			})
+		})
+		
+		$('.password').click(function(){
+			openLayer('修改密码','{:url('index/pass')}','80%','90%',function(){
+				
+			});
+		})		
+		
+		$('#to_do_count').click(function(){
+			openLayer('待办信息','{:url('index/toDoList')}','80%','90%',function(){
+				getToDoCount();
+			});
+		})
+
+		window.getToDoCount = function(){
+			$.ajax({
+				url:'{:url('index/toDoCount')}',
+				dataType: 'json',
+				success: function(res){
+					if(res.data.count > 0){
+						$('#to_do_count').removeClass('layui-hide');
+						$('#to_do_count .layui-badge').html(res.data.count);
+					}else{
+						if(!$('#to_do_count').hasClass('layui-hide')){
+							$('#to_do_count').addClass('layui-hide');
+						}
+						$('#to_do_count .layui-badge').html('');
+					}
+				},
+				error : function() {
+					//alert('失败。');
+				}
+			});
+		}
+		
+		getToDoCount();
+		
+		setInterval(function(){
+			getToDoCount();
+		},2000)		
+		
+		$(window).load(function() {
+			$('input').attr('autocomplete','off');
+		}); 
+		
+	})
+</script>
+</body>
+</html>

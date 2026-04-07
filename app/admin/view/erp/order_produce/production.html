@@ -1,0 +1,41 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.pear-container {margin: 0;}
+.production-timeline .count{color: rgb(51, 51, 51);margin-right:20px;}
+.production-timeline ul li{color: rgb(153, 153, 153);}
+.production-timeline .layui-text p{margin-top:0px;font-size:13px;}
+</style>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<ul class="layui-timeline production-timeline">
+			{foreach $production as $key=>$vo}
+			<li class="layui-timeline-item">
+				<i class="layui-icon layui-timeline-axis">&#xe63f;</i>
+				<div class="layui-timeline-content layui-text">
+					<h3 class="layui-timeline-title">日期：{$vo['produce_date']}  </h3>
+					<ul>
+						<li>当天产量值：<span class="count">{$vo['produce_num']} 台</span>当天排产总量：<span class="count">{:count($vo['produce'])} 台</span></li>
+						<li>当天排产产品(编码)：</li>
+					</ul>
+					<p>{:implode('、',$vo['produce'])}</p>
+				</div>
+			</li>
+			{/foreach}
+		</ul>
+	</div>
+</div>
+
+
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+	})
+</script>
+{/block}
+
+

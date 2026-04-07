@@ -1,0 +1,114 @@
+{extend name="base" /}
+{block name="body"}
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="" id="searchForm">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="keyword" placeholder="工艺组编码/名称" class="layui-input">
+				</div>
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+					<button type="reset" class="pear-btn pear-btn-md"><i class="layui-icon layui-icon-refresh"></i>重置</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	<button class="pear-btn pear-btn-primary pear-btn-sm" lay-event="add"><i class="layui-icon layui-icon-add-1"></i>新增</button>
+</script>
+<script type="text/html" id="options">
+	<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="edit"><i class="layui-icon layui-icon-edit"></i></button>
+	{{#  if(d.is_default == 0){ }}<button class="pear-btn pear-btn-danger pear-btn-xs" lay-event="remove"><i class="layui-icon layui-icon-delete"></i></button>{{#  } }}
+</script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('list')}',
+			page: true,
+			limit:90,
+			height:'full-170',
+			cols: [[
+				
+				{field: 'id',title: 'ID', sort: true, align: 'center',unresize: true,width:80, hide: getTableFieldIsHide('dataTable','ID')},
+				{field: 'type_desc',title: '工序用途',align: 'center',unresize: true,width:100, hide: getTableFieldIsHide('dataTable','type_desc')},
+				{field: 'sn',title: '工艺组编码',align: 'center',unresize: true,width:120, hide: getTableFieldIsHide('dataTable','sn')},
+				{field: 'name',title: '工艺组名称',align: 'center',unresize: true, hide: getTableFieldIsHide('dataTable','name')},
+				{field: 'user_name',title: '授权岗位员工',align: 'left',unresize: true, hide: getTableFieldIsHide('dataTable','user_name')},
+				{field: 'status_desc',title: '状态',align: 'center',unresize: true,width:80, hide: getTableFieldIsHide('dataTable','status_desc')},
+				{field: 'sort',title: '排序',align: 'center',unresize: true,width:80, hide: getTableFieldIsHide('dataTable','sort')},
+				{field: 'create_time',title: '添加时间',unresize: true,align: 'center',width:170, hide: getTableFieldIsHide('dataTable','create_time')}, 
+				{title: '操作',toolbar: '#options',align: 'center',unresize: true,width: 120}
+			]],
+			cellMinWidth: 100,
+
+			toolbar: '#toolbar',
+			defaultToolbar: [{
+				title: '刷新',
+				layEvent: 'refresh',
+				icon: 'layui-icon-refresh',
+			}, 'filter', 'print', 'exports']
+		});
+
+		table.on('sort(dataTable)', function(obj){
+			table.reload('dataTable', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+
+		table.on('tool(dataTable)', function(obj) {
+			if (obj.event === 'remove') {
+				layerConfirm('确定要删除该工艺组?','{:url('remove')}',{ids:[obj.data['id']]},function(res){
+					obj.del();
+				})
+			} else if (obj.event === 'edit') {
+				openLayer('修改工艺组','{:url('edit')}?id='+obj.data['id'],'80%','90%');
+			}
+		});
+
+		table.on('toolbar(dataTable)', function(obj) {
+			if (obj.event === 'add') {
+				openLayer('新增工艺组','{:url('add')}','80%','90%');
+			}else if (obj.event === 'refresh') {
+				table.reload('dataTable');
+			} else if (obj.event === 'batchRemove') {
+				tableAction(obj.config.id,'确定要删除这些工艺组','{:url('remove')}');
+			} else if (obj.event === 'recycle') {
+				openLayer('回收站','{:url('recycle')}','90%','90%',function () {
+					table.reload('dataTable');
+				});
+			}
+		});
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+		table.on('colToggled(dataTable)', function(obj){
+			setTableFieldIsHide(obj.config.id,obj.col.field,obj.col.hide);
+		});
+	})
+</script>
+{/block}
+
+

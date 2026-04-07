@@ -1,0 +1,85 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-input-block {margin-left: 150px;}
+.layui-form-label {width: 120px;}
+</style>
+<form class="layui-form" action="" method="post">
+	<input type="hidden"  name="data_type" value="{$data_type}">
+	<div class="mainBox">
+		<div class="main-container">
+			<div class="layui-form-item">
+				<label class="layui-form-label">编码</label>
+				<div class="layui-input-block">
+					<input type="text" maxlength="100" name="code" lay-verify="required" placeholder="请输入编码,不可为空" autocomplete="off" class="layui-input">
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">名称</label>
+				<div class="layui-input-block">
+					<input type="text" maxlength="100" name="name" lay-verify="required" placeholder="请输入名称,不可为空" autocomplete="off" class="layui-input">
+				</div>
+			</div>
+			{if $data_type != 3}	
+			<div class="layui-form-item">
+				<label class="layui-form-label">类型</label>
+				<div class="layui-input-block">
+					<select name="material_category" lay-search >
+						<option value="重要物资" >重要物资</option>
+						<option value="一般物资" selected >一般物资</option>
+						<option value="辅助物资" >辅助物资</option>
+					</select>
+				</div>
+			</div>	
+			{/if}		
+			<div class="layui-form-item">
+				<label class="layui-form-label">版本号</label>
+				<div class="layui-input-block">
+					<input type="text" maxlength="100" name="version" lay-verify="required" placeholder="请输入" autocomplete="off" class="layui-input">
+				</div>
+			</div>				
+			<div class="layui-form-item">
+				<label class="layui-form-label">所属物资</label>
+				<div class="layui-input-block">
+					<select name="data_id" layui-saerch  xm-select="user_id" xm-select-search xm-select-search-type="dl" required  lay-verify="required" xm-select-height="36px">
+						<option value="0">通用</option>
+						{foreach $data as $key=>$vo}
+						<option value="{$vo['id']}" >{$vo['sn']}/{$vo['name']}</option>
+						{/foreach}
+					</select>
+				</div>
+			</div>	
+			<div class="layui-form-item">
+				<label class="layui-form-label">文件</label>
+				<div class="layui-input-block">
+					{:$form->file('attachment')}
+				</div>
+			</div>				
+			<div class="layui-form-item">
+				<label class="layui-form-label">状态</label>
+				<div class="layui-input-block">
+					<input type="radio" name="status" value="1" title="启用" checked>
+					<input type="radio" name="status" value="0" title="禁用" >
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="bottom">
+		<div class="button-container">
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*"><i class="layui-icon layui-icon-ok"></i>提交</button>
+		</div>
+	</div>
+</form>
+{/block}
+{block name="script"}
+<script>
+layui.use(['form','element','iconPicker','jquery','dtree'], function() {
+	var form = layui.form;
+	var element = layui.element;
+	var dtree = layui.dtree;
+	var $ = layui.jquery;
+
+
+});
+</script>
+{/block}

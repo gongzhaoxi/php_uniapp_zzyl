@@ -1,0 +1,96 @@
+{extend name="base" /}
+{block name="body"}
+
+<div class="layui-form" >
+	<div class="mainBox">
+		<div class="main-container">
+			<div class="layui-form-item">				
+				<div class="layui-input-inline ">
+					<select lay-filter="category">
+						<option value="">全部类别</option>
+						{volist name="category" id="vo"}
+						<option value="{$vo['id']}">{$vo['name']}</option>
+						{/volist}
+					</select>
+				</div>				
+			</div>
+			
+			<table class="layui-table data-table">
+				<thead>
+					<tr>
+						<th>序号</th>
+						<th>物料编号</th>
+						<th>物料名称</th>
+						<th>需求数量</th>
+						<th style="width:230px;">溯源码</th>
+						<th>单位</th>
+						<th>类别</th>											
+						<th>颜色</th>
+						{if $type == 2}
+						<th>材料</th>
+						<th>表面</th>
+						{/if}
+						<th>备注</th>
+						{if $type == 1}<th>零件BOM</th>{/if}
+					</tr> 
+				</thead>
+				<tbody>
+					{volist name="list" id="vo"}
+					<tr class="cid-{$vo['material']['cid']}" >
+						<td>{$i}</td>
+						<td>{$vo['material']['sn']}</td>
+						<td>{$vo['material']['name']}</td>
+						<td>{$vo['num']}</td>
+						<td>
+							{if $vo['process']}
+								<form class="layui-form" action="{:url('saveProcessBomSn')}" data-reload="2">
+									<input type="hidden" name="id"  value="{$vo['process']['id']}" >
+									<div class="layui-input-inline"><input type="text" name="bom_sn" required  lay-verify="required" value="{$vo['process']['bom_sn']}" placeholder="请输入" autocomplete="off" class="layui-input"></div>
+									<button type="button" class="layui-btn" lay-submit="" lay-filter="*">修改</button>
+								</form>
+							{/if}
+						</td>
+						<td>{$vo['material']['unit']}</td>
+						<td>{$vo['material']['category_name']}</td>
+						<td>{$vo['material_color']}</td>
+						{if $type == 2}
+						<td>{$vo['material']['material']}</td>
+						<td>{$vo['material']['surface']}</td>
+						{/if}						
+						<td>{$vo['material']['remark']}</td>
+						{if $type == 1}<td>{if $vo['material_type'] == 2}<button type="button" class="layui-btn  layui-btn-xs" data-order_produce_id="{$vo['id']}" data-order_product_bom_id="{$vo['order_product_bom_id']}" lay-submit lay-filter="detail">查看</button>{/if}</td>{/if}
+					</tr>
+					{/volist}
+				</tbody>
+			</table>			
+		</div>
+	</div>
+</div>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['form', 'jquery','common'], function() {
+		let form = layui.form;
+		let $ = layui.jquery;
+		let layer = layui.layer;
+		let element = layui.element;
+		
+		form.on('submit(detail)', function(data) {
+			openLayer('零件BOM','{:url('produceBom')}?order_produce_id='+$(this).data('order_produce_id')+'&type=2&order_product_bom_id='+$(this).data('order_product_bom_id'),'100%','100%');
+			return false;
+		});		
+		
+		form.on('select(category)', function(data){
+			if(data.value){
+				$('.data-table tbody tr').hide();
+				$('.data-table tbody .cid-'+data.value).show();
+			}else{
+				$('.data-table tbody tr').show();
+			}
+		});		
+		
+	})
+</script>
+{/block}
+
+

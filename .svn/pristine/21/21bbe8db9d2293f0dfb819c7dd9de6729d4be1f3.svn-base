@@ -1,0 +1,150 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.left .layui-inline{width:100px;}
+.layui-table-cell {padding: 6px 5px;}
+</style>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="order_sn" placeholder="采购单编号" class="layui-input">					
+				</div>
+				<div class="layui-form-item layui-inline">
+					<select name="status">
+						<option value="">状态</option>
+						{foreach $status as $key=>$vo}
+						<option value="{$key}" >{$vo}</option>
+						{/foreach}
+					</select>
+				</div>						
+				<div class="layui-form-item layui-inline" style="width:auto;">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="layui-row layui-col-space10">
+	<div class="layui-col-md5">
+		<div class="layui-card">
+			<div class="layui-card-body">
+				<table id="dataTable" lay-filter="dataTable"></table>
+			</div>
+		</div>
+	</div>
+	<div class="layui-col-md7">
+		<div class="layui-card">
+			<div class="layui-card-body">
+				<iframe id="productData" src="{:url('productData')}" frameborder="no"  height="500" border="0" marginwidth="0" marginheight="0" style="width: 100%;height: calc(100vh - 170px);" allowfullscreen="true"></iframe>				
+			</div>
+		</div>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	<button class="pear-btn pear-btn-warming pear-btn-sm  pear-btn-sm"  lay-event="print"><i class="layui-icon layui-icon-print"></i>打印采购单</button>
+</script>
+<script type="text/html" id="options">
+	{{#  if(d.can_cancel){ }}<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="cancel">撤销</button>{{#  } }}
+	{{#  if(d.can_confirm){ }}<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="confirm">确认</button>{{#  } }}
+	<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="log">变更</button>
+	<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="feedback">反馈</button>
+</script>
+
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('product')}',
+			page: true,
+			height: 'full-180',
+			cols: [[
+				{type: 'checkbox',unresize: true},
+				{field: 'order_sn',title: '采购单编号',align: 'center',unresize: false,width: {:get_col_width('order_sn',150)}},
+				{field: 'system_name',title: '客户',align: 'center',unresize: false,width: {:get_col_width('system_name',100)},},
+				{field: 'over_day',title: '超期(天)',align: 'center',unresize: false,width: {:get_col_width('over_day',100)}},
+				{field: 'last_feedback',title: '最新反馈',align: 'center',unresize: false,width: {:get_col_width('last_feedback',150)}},
+				{title: '操作',toolbar: '#options',align: 'center',unresize: true,width: 150,fixed: 'right'}
+			]],
+			limit:100,
+			limits:[100,200,300,400,500],
+			cellMinWidth: 60,
+			toolbar: '#toolbar',
+			defaultToolbar: [{
+					title: '刷新',
+					layEvent: 'refresh',
+					icon: 'layui-icon-refresh',
+			}, 'filter'],
+		});
+
+		table.on('tool(dataTable)', function(obj) {
+			if (obj.event === 'cancel') {
+				layerConfirm('确认撤销采购单?','{:url('cancel')}',{id:obj.data['id']},function(res){
+					table.reload('materialTable');
+					table.reload('dataTable');
+				})
+			}else if (obj.event === 'confirm') {
+				layerConfirm('确认采购单?','{:url('confirm')}',{id:obj.data['id']},function(res){
+					table.reload('materialTable');
+					table.reload('dataTable');
+				})
+			}else if (obj.event === 'log') {
+				openLayer('采购单日志','{:url('log')}?id='+obj.data['id'],'80%','90%');
+			}else if (obj.event === 'feedback') {
+				openLayer('反馈','{:url('feedback')}?id='+obj.data['id'],'80%','90%');
+			}
+		});		
+
+		table.on('toolbar(dataTable)', function(obj) {
+			if (obj.event === 'print') {
+				var checkStatus = table.checkStatus('dataTable');
+				if(checkStatus.data.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				var ids = [];
+				for(var i in checkStatus.data) {
+					ids.push(checkStatus.data[i].id);
+				}
+				toPrintPage(73,{id:ids.join(',')});
+				return false;
+			}else if (obj.event === 'refresh') {
+				table.reload('dataTable');
+			}
+		});
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+
+		table.on('row(dataTable)',function (obj) {
+			$('#productData').attr('src','{:url('productData')}?order_id='+obj.data.id)
+		})		
+
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field+'',width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+		
+	})
+</script>
+{/block}
+
+

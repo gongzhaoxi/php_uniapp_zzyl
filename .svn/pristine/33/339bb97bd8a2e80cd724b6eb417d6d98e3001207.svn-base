@@ -1,0 +1,104 @@
+{extend name="h5base" /}
+{block name="body"}
+<style>
+.layui-table td {padding: 8px 3px;}
+</style>
+
+<style>
+.am-table tbody tr td {vertical-align: top;border: none;font-size: 1.25rem;}
+</style>
+
+<div data-am-widget="titlebar" class="am-titlebar am-titlebar-default" ><h2 class="am-titlebar-title ">订单信息</h2></div>
+<table class="am-table">
+	<colgroup>
+		<col width="80">
+		<col>
+		<col width="80">
+		<col>
+	</colgroup>
+	<tbody>
+		<tr>
+			<td align="right">合同号：</td>
+			<td>{$model['order_sn']}</td>
+			<td align="right">客户名称：</td>
+			<td>{$model['customer_name']}</td>
+		</tr> 	
+		<tr>
+			<td align="right">下单日期：</td>
+			<td>{$model['create_date']}</td>
+			<td align="right">收货地址：</td>
+			<td>{$model['address']}</td>
+		</tr>
+	</tbody>
+</table>
+<div data-am-widget="titlebar" class="am-titlebar am-titlebar-default" ><h2 class="am-titlebar-title ">产品信息</h2></div>
+{foreach $model->orderProduct as $k1=>$v1}
+<div style="padding: 0 10px;margin-top:10px;">
+	<table class="am-table am-table-bordered am-table-radius" >
+		<colgroup>
+			<col width="80">
+			<col>
+			<col width="80">
+			<col>
+		</colgroup>
+		<tbody>
+			<tr>
+				<td align="right">产品名称：</td>
+				<td>{$v1['product_name']}</td>
+				<td align="right">型号：</td>
+				<td>{$v1['product_model']}</td>
+			</tr>
+			<tr>
+				<td align="right">颜色：</td>
+				<td>{$v1['color']}</td>
+				<td align="right">数量：</td>
+				<td>{$v1['product_num']}</td>
+			</tr>
+			<tr>	
+				<td align="right" style="vertical-align: top">方案配置：
+				<td colspan="3" >{$v1['project_html']|raw}</td>
+			</tr>
+			<tr>
+				<td colspan="4"><h3>排产信息：</h3></td>
+			</tr>
+			<tr>
+				<td colspan="4">
+					{foreach $v1['produce'] as $v2}
+					<table class="am-table am-table-bordered am-table-radius" style="background-color: rgb(247, 246, 246);">
+						<colgroup>
+							<col width="80">
+							<col>
+							<col width="80">
+							<col width="80">
+						</colgroup>
+						<tbody>
+							<tr>
+								<td align="right">产品编码：</td>
+								<td>{$v2['produce_sn']}</td>
+								<td align="right">生产状态：</td>
+								<td>{$v2['produce_status_desc']}</td>
+							</tr> 	
+							<tr>
+								<td align="right">排产日期：</td>
+								<td>{$v2['produce_date']}</td>
+								<td align="right">完工日期：</td>
+								<td>{$v2['finish_date']}</td>
+							</tr>
+							<tr>
+								<td align="right">发货状态：</td>
+								<td>{$v2['shipping']['shipping_status_desc']|default=''}</td>
+								<td align="right">出库日期：</td>
+								<td>{$v2['shipping']['out_warehouse_time']|default=''}</td>
+							</tr>						
+						</tbody>
+					</table>
+					{/foreach}
+				</td>
+			</tr>		
+		</tbody>
+	</table>
+</div>
+
+{/foreach}
+
+{/block}

@@ -1,0 +1,88 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-input-block {margin-left: 150px;}
+.layui-form-label {width: 120px;}
+</style>
+<form class="layui-form" action="" method="post">
+	 <input type="hidden" name="id" value="{$model['id']}" >
+	 <div class="mainBox">
+		<div class="main-container">
+			<div class="layui-form-item">
+				<label class="layui-form-label">供应商</label>
+				<div class="layui-input-block">
+					<select name="supplier_id" lay-verify="required"  lay-search>
+						<option value="">请选择</option>
+						{foreach $supplier as $key=>$vo}
+						<option {if $model['supplier_id'] == $vo['id']}selected{/if} value="{$vo['id']}">{$vo['name']}</option>
+						{/foreach}
+					</select>
+				</div>
+			</div>		
+			<div class="layui-form-item">
+				<label class="layui-form-label">物料</label>
+				<div class="layui-input-block">
+					<input type="hidden" name="material_id" id="material_id" value="{$model['material_id']}">
+					<input type="text" name="material_name" id="material_name" value="{$model['material']['name']}"  readonly lay-verify="required" ts-selected="{$model['material_id']}"  placeholder="请选择,不可为空" autocomplete="off" class="layui-input">
+				</div>
+			</div>				
+			<div class="layui-form-item">
+				<label class="layui-form-label">上次单价</label>
+				<div class="layui-input-block">
+					<input type="text"  name="last_price" lay-verify="required|number" value="{$model['last_price']}"  placeholder="请输入" autocomplete="off" class="layui-input">
+				</div>
+			</div>				
+			<div class="layui-form-item">
+				<label class="layui-form-label">本次单价</label>
+				<div class="layui-input-block">
+					<input type="text"  name="price" lay-verify="required|number" value="{$model['price']}"  placeholder="请输入" autocomplete="off" class="layui-input">
+				</div>
+			</div>								
+			<div class="layui-form-item">
+				<label class="layui-form-label">生效日期</label>
+				<div class="layui-input-block">
+					<input type="text" maxlength="30" name="effective_date" lay-verify="required"  value="{$model['effective_date']}"  placeholder="请输入" autocomplete="off" class="layui-input date">
+				</div>
+			</div>								
+			<div class="layui-form-item">
+				<label class="layui-form-label">状态</label>
+				<div class="layui-input-block">
+					<input type="radio" name="status" value="1" title="启用" {if $model['status'] == 1}checked{/if}>
+					<input type="radio" name="status" value="0" title="禁用" {if $model['status'] == 0}checked{/if}>
+				</div>
+			</div>				
+		</div>
+	</div>       
+	<div class="bottom">
+		<div class="button-container">
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*"><i class="layui-icon layui-icon-ok"></i>提交</button>
+		</div>
+    </div>
+</form>
+{/block}
+{block name="script"}
+<script>
+layui.use(['tableSelect'], function () {
+	var $ = layui.jquery;
+	var tableSelect = layui.tableSelect;
+	tableSelect.render({
+		elem: '#material_name',
+		checkedKey: 'id',
+		searchKey: 'keyword',
+		searchPlaceholder: '物料名称/编码',
+		table: {
+			url: '{:url('common/material')}',		
+			cols: [[
+				{type: 'radio' },
+				{field: 'sn',title: '物料编码',align: 'center',unresize: false,width:250},
+				{field: 'name',title: '物料编码',align: 'center',unresize: false,width:350},
+			]]
+		},
+		done: function (elem, data) {
+			elem.val(data.data[0]['name']);
+			$('#material_id').val(data.data[0]['id']);
+		}
+	})
+});
+</script>
+{/block}

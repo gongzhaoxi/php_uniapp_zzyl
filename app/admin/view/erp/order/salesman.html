@@ -1,0 +1,148 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.tool-button{}
+</style>
+<div class="layui-card" style="margin-bottom: 1px;">
+	<div class="layui-card-body" >
+		<form class="layui-form" action="" id="searchForm">
+			<div class="layui-form-item" style="margin-bottom: 5px;">			
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="customer_name" placeholder="客户名称/订货单位" class="layui-input">					
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="order_sn" placeholder="销售合同号" class="layui-input">	
+				</div>	
+				<div class="layui-form-item layui-inline" style="width:190px;">
+					<input type="text" name="create_time" placeholder="下单日期" class="layui-input rangedate">	
+				</div>	
+				<div class="layui-form-item layui-inline" style="width:190px;">
+					<input type="text" name="delivery_time" placeholder="交货日期" class="layui-input rangedate">	
+				</div>	
+				<div class="layui-form-item layui-inline" style="width:120px;">
+					<select name="region_type">
+						<option value="">订单属性</option>
+						{foreach $region_type as $key=>$vo}
+						<option value="{$key}">{$vo}</option>
+						{/foreach}
+					</select>			
+				</div>				
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+					<button type="reset" class="pear-btn pear-btn-md"><i class="layui-icon layui-icon-refresh"></i>重置</button>					
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">		
+		<div class=" order_status">
+			<a href="{:url('salesman')}" class="layui-btn  layui-btn-primary {if $query['salesman_approve'] === ''}pear-btn-warming{/if}">全部</a>
+			{foreach $order_status as $key=>$vo}
+			<a href="{:url('salesman')}?salesman_approve={$vo['value']}" class="layui-btn layui-btn-primary {if $query['salesman_approve'] === $vo['value']}pear-btn-warming{/if}" id="order_status_{$key}">{$vo['name']}<i class="layui-icon">({$vo['count']})</i></a>
+			{/foreach}
+		</div>
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+<script type="text/html" id="options">
+	<div class="layui-btn-group">
+		<button class="layui-btn layui-btn-normal layui-btn-xs" lay-event="view">查看</button>
+	</div>
+</script>
+<script type="text/html" id="toolbar">
+	<button class="pear-btn pear-btn-primary pear-btn-sm" lay-event="pass"><i class="layui-icon layui-icon-ok-circle"></i>审批</button>
+
+</script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('salesman')}?salesman_approve={$query['salesman_approve']}&technician_approve=1',
+			page: true,
+			limit:90,
+			height:'full-190',
+			cols: [[
+				{type: 'checkbox'},
+				{field: 'region_type_desc',title: '订单性质',align: 'center',unresize: false,width: {:get_col_width('region_type_desc',100)}, hide: getTableFieldIsHide('dataTable','region_type_desc')},
+				{field: 'customer_name',title: '客户名称/订货单位',align: 'center',unresize: false,width: {:get_col_width('customer_name')}, hide: getTableFieldIsHide('dataTable','customer_name')},
+				{field: 'order_sn',title: '销售合同号',align: 'center',unresize: false,width: {:get_col_width('order_sn',140)}, hide: getTableFieldIsHide('dataTable','order_sn')},
+				{field: 'address',title: '收货地址/国家',align: 'center',unresize: false,width: {:get_col_width('address',200)}, hide: getTableFieldIsHide('dataTable','address')},
+				{field: 'order_product_num',title: '订购总数量',align: 'center',unresize: false,width: {:get_col_width('order_product_num',120)}, hide: getTableFieldIsHide('dataTable','order_product_num')},
+				//{field: 'order_amount',title: '合计金额',align: 'center',unresize: false,width: {:get_col_width('order_amount',100)}, hide: getTableFieldIsHide('dataTable','order_amount')},
+				{field: 'salesman_id',title: '销售员',align: 'center',unresize: false,width: {:get_col_width('salesman_id',100)}, templet: function(d){return d.salesman&&d.salesman_id>0?d.salesman.username:'';}, hide: getTableFieldIsHide('dataTable','salesman_id')},
+				{field: 'create_date',title: '下单日期',align: 'center',unresize: false,width: {:get_col_width('create_date',120)}, hide: getTableFieldIsHide('dataTable','create_date')},
+				{field: 'delivery_time',title: '交货日期',align: 'center',unresize: false,width: {:get_col_width('delivery_time',120)}, hide: getTableFieldIsHide('dataTable','delivery_time')},
+				{field: 'salesman_approve_desc',title: '审核状态',align: 'center',unresize: false,width: {:get_col_width('salesman_approve_desc',100)}, hide: getTableFieldIsHide('dataTable','salesman_approve_desc')},
+				{title: '操作',toolbar: '#options',align: 'center',unresize: true,width: 140,fixed: 'right'}
+			]],
+			cellMinWidth: 100,
+			toolbar: '#toolbar',
+		});
+
+		table.on('sort(dataTable)', function(obj){
+			table.reload('dataTable', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+		table.on('toolbar(dataTable)', function(obj) {
+			if (obj.event === 'pass') {
+				tableAction(obj.config.id,'确认审批','{:url('salesmanPass')}');
+			} 
+		});
+		table.on('tool(dataTable)', function(obj) {
+			if (obj.event === 'view') {
+				openLayer('查看详情','{:url('salesmanView')}?id='+obj.data['id'],'90%','90%',function(){
+					table.reload('dataTable');
+					getOrderStat();
+				});
+			}
+		});
+
+		function getOrderStat(){
+			ajaxActionCall('{:url('common/orderSalesmanStat')}',{},function(res){
+				$.each(res.data,function (index,val) {
+					$('#order_status_'+index+' .layui-icon').html('('+val.count+')');
+				});			
+			},false)
+		}
+
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});	
+		
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});	
+		table.on('colToggled(dataTable)', function(obj){
+			setTableFieldIsHide(obj.config.id,obj.col.field,obj.col.hide);
+		});
+
+	})
+</script>
+{/block}
+
+

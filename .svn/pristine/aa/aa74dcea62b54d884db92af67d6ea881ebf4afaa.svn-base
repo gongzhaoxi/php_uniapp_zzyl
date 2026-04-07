@@ -1,0 +1,332 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-input-block {margin-left: 150px;}
+.layui-form-label {width: 120px;}
+</style>
+<form class="layui-form" action="" method="post" data-reload="1" data-callback="submitCallBack">
+	<div class="mainBox">
+		<div class="main-container">
+			<blockquote class="layui-elem-quote">单据单头信息</blockquote>
+			<div class="layui-form-item">	
+				<label class="layui-form-label">供应商</label>
+				<div class="layui-input-inline">
+					<select name="supplier_id" lay-search  lay-verify="required">
+						<option value=""></option>
+						{foreach $supplier as $key=>$vo}
+						<option value="{$vo['id']}" {if $supplier_id == $vo['id']}selected{/if}>{$vo['name']}</option>
+						{/foreach}
+					</select>
+				</div>				
+				<label class="layui-form-label">采购日期</label>
+				<div class="layui-input-inline">
+					<input type="text"  readonly name="order_date" value="{:date('Y-m-d')}" lay-verify="required" placeholder="请选择,不可为空" autocomplete="off" class="layui-input date">
+				</div>
+				<label class="layui-form-label">要求交货日期</label>
+				<div class="layui-input-inline">
+					<input type="text"  readonly name="delivery_date" id="delivery_date" value="{:date('Y-m-d',strtotime('+7 day'))}" placeholder="请选择,不可为空" autocomplete="off" class="layui-input">
+				</div>				
+				<label class="layui-form-label">委外工艺</label>
+				<div class="layui-input-inline">
+					<select name="process_id" lay-search  lay-verify="required">
+						<option value="">请选择</option>
+						{foreach $process as $key=>$vo}
+						<option value="{$vo['id']}">{$vo['name']}</option>
+						{/foreach}
+					</select>
+				</div>			
+			</div>	
+			<div class="layui-form-item">						
+				<label class="layui-form-label">备注</label>
+				<div class="layui-input-inline">
+					<input type="text" maxlength="255" name="remark"  placeholder="请输入" autocomplete="off" class="layui-input">
+				</div>	
+				<label class="layui-form-label">采购跟进人</label>
+				<div class="layui-input-inline">
+					<select name="follow_admin_id" lay-search  lay-verify="required">
+						{foreach $admins as $key=>$vo}
+						<option {if $vo['id'] == $_admin['id']}selected{/if} value="{$vo['id']}">{$vo['username']}</option>
+						{/foreach}
+					</select>
+				</div>				
+			</div>	
+			<blockquote class="layui-elem-quote">相关物料信息</blockquote>
+			<table class="layui-table" style="width:2000px;">
+				<colgroup>
+					<col width="80">
+					<col width="150">
+					<col width="150">
+					<col width="100">
+					<col width="150">
+					<col width="150">
+					<col width="150">
+					<col width="250">
+					<col width="100">
+					<col width="100">
+					<col width="100">
+					<col width="100">
+					<col width="150">
+					<col width="100">
+				</colgroup>
+				<thead>
+					<tr>
+						<th>序号</th>
+						<th>委外物料编码</th>
+						<th>委外物料名称</th>
+						<th>采购数量</th>
+						<th>要求交货日期</th>
+						<th>出库物料编码</th>
+						<th>出库物料名称</th>
+						<th>批次号</th>
+						<th>用量</th>
+						<th>理论用量</th>
+						<th>出库数量</th>
+						<th>损耗率</th>
+						<th>备注</th>
+						<th>操作</th>
+					</tr> 
+				</thead>
+				<tbody>
+					{volist name="data" id="vo"}
+					<tr class="apply_id_{$vo['id']}">
+						<input type="hidden"  name="material[{$vo['data_id']}][data_id]" value="{$vo['data_id']}" >
+						<input type="hidden"  name="material[{$vo['data_id']}][apply_ids]" value="{:implode(',',$vo['ids'])}" >
+						<input type="hidden"  name="apply_ids[]" value="{:implode(',',$vo['ids'])}" >
+						<td  rowspan="{$vo['rowspan']}" colspan="1">{$i}</td>
+						<td  rowspan="{$vo['rowspan']}" colspan="1">{$vo['sn']}</td>
+						<td  rowspan="{$vo['rowspan']}" colspan="1">{$vo['name']}</td>
+						<td  rowspan="{$vo['rowspan']}" colspan="1"><input type="text" data-old="{$vo['apply_num']}"   name="material[{$vo['data_id']}][apply_num]" value="{$vo['apply_num']}" data-key="apply_num" class="layui-input apply_num" lay-verify="required|number" placeholder="请输入数量"></td>
+						<td  rowspan="{$vo['rowspan']}" colspan="1"><input type="text"  name="material[{$vo['data_id']}][delivery_date]" value="{$vo['delivery_date']}" class="layui-input date delivery_date" lay-verify="required" data-key="delivery_date" placeholder=""></td>
+						{if $vo['bom'] }
+						<input type="hidden"  name="out_material[{$vo['data_id']}][{$vo['bom'][0]['related_material_id']}][id]" value="{$vo['bom'][0]['related_material_id']}" class="material_id" >
+						<input type="hidden"  name="out_material[{$vo['data_id']}][{$vo['bom'][0]['related_material_id']}][material_type]" value="{$vo['bom'][0]['material_type']}" class="material_type" >
+						<input type="hidden"  name="out_material[{$vo['data_id']}][{$vo['bom'][0]['related_material_id']}][out_material_id]" value="{$vo['bom'][0]['related_material_id']}" class="out_material_id" >
+						<input type="hidden"  name="out_material[{$vo['data_id']}][{$vo['bom'][0]['related_material_id']}][order_material_id]" value="{$vo['bom'][0]['material_id']}" class="order_material_id" >
+						<input type="hidden"  name="out_material[{$vo['data_id']}][{$vo['bom'][0]['related_material_id']}][out_material_unit]" value="{$vo['bom'][0]['related_material_unit']}" class="out_material_unit" >
+						<input type="hidden"  name="out_material[{$vo['data_id']}][{$vo['bom'][0]['related_material_id']}][order_material_unit]" value="{$vo['bom'][0]['material_unit']}" class="order_material_unit" >
+						<td>{$vo['bom'][0]['sn']}</td>
+						<td>{$vo['bom'][0]['name']}</td>
+						<td>
+							<select name="out_material[{$vo['data_id']}][{$vo['bom'][0]['related_material_id']}][enter_material_id]" class="enter_material_id" xm-select="material_{$vo['bom'][0]['related_material_id']}" data-id="{$vo['bom'][0]['related_material_id']}" required  required lay-verify="required" xm-select-checkbox>';
+								{if !empty($stock[$vo['bom'][0]['related_material_id']])}
+									{foreach $stock[$vo['bom'][0]['related_material_id']]['enter'] as $k2=>$item2}
+									<option {if $k2 == 0}selected{/if} data-num="{$item2['num']}" value="{$item2['id']}" >{$item2['order_sn']}({$item2['num']})</option>
+									{/foreach}
+								{/if}
+							</select>
+						
+						</td>
+						<td>
+							<input type="text" readonly name="out_material[{$vo['data_id']}][{$vo['bom'][0]['related_material_id']}][num]" value="{$vo['bom'][0]['num']}"  data-key="num" class="layui-input num" lay-verify="required|number" >
+						</td>
+						<td>
+							<input type="text" readonly name="out_material[{$vo['data_id']}][{$vo['bom'][0]['related_material_id']}][theory_num]" value="{$vo['bom'][0]['theory_num']}"  data-key="theory_num" class="layui-input theory_num" lay-verify="required|number" >
+						</td>
+						<td>
+							<input type="text" data-old="{$vo['bom'][0]['stock_num']}"  name="out_material[{$vo['data_id']}][{$vo['bom'][0]['related_material_id']}][stock_num]" value="{$vo['bom'][0]['stock_num']}"  data-key="stock_num" class="layui-input stock_num" lay-verify="required|number" placeholder="请输入数量">
+						</td>
+						<td>
+							<input type="text" readonly name="out_material[{$vo['data_id']}][{$vo['bom'][0]['related_material_id']}][loss_rate]" value="{$vo['bom'][0]['num']}"  data-key="loss_rate" class="layui-input loss_rate" lay-verify="required|number" >
+						</td>
+						{else}
+						<td></td>
+						<td></td>
+						<td></td>
+						<td></td>
+						<td></td>
+						<td></td>
+						<td></td>
+						{/if}
+						<td  rowspan="{$vo['rowspan']}" colspan="1"><input type="text"  name="material[{$vo['data_id']}][remark]" value="" class="layui-input remark"  data-key="remark" placeholder=""></td>
+						<td  rowspan="{$vo['rowspan']}" colspan="1"><button type="button" onclick="deleteMaterial({$vo['id']})" class="layui-btn layui-btn-xs layui-btn-danger">删除</button></td>
+					</tr>
+					{foreach $vo['bom'] as $k=>$item}
+					{if $k>0}
+					<tr class="apply_id_{$vo['id']}">
+						<input type="hidden"  name="out_material[{$vo['data_id']}][{$item['related_material_id']}][id]" value="{$item['related_material_id']}" class="material_id" >
+						<input type="hidden"  name="out_material[{$vo['data_id']}][{$item['related_material_id']}][material_type]" value="{$item['material_type']}" class="material_type" >
+						<input type="hidden"  name="out_material[{$vo['data_id']}][{$item['related_material_id']}][out_material_id]" value="{$item['related_material_id']}" class="out_material_id" >
+						<input type="hidden"  name="out_material[{$vo['data_id']}][{$item['related_material_id']}][order_material_id]" value="{$item['material_id']}" class="order_material_id" >
+						<input type="hidden"  name="out_material[{$vo['data_id']}][{$item['related_material_id']}][out_material_unit]" value="{$item['related_material_unit']}" class="out_material_unit" >
+						<input type="hidden"  name="out_material[{$vo['data_id']}][{$item['related_material_id']}][order_material_unit]" value="{$item['material_unit']}" class="order_material_unit" >
+						<td>{$item['sn']}</td>
+						<td>{$item['name']}</td>
+						<td>
+							<select name="out_material[{$vo['data_id']}][{$item['related_material_id']}][enter_material_id]" class="enter_material_id" xm-select="material_{$item['related_material_id']}"  data-id="{$item['related_material_id']}" required lay-verify="required" xm-select-checkbox>';
+								{if !empty($stock[$item['related_material_id']])}
+									{foreach $stock[$item['related_material_id']]['enter'] as $k2=>$item2}
+									<option {if $k2 == 0}selected{/if} data-num="{$item2['num']}" value="{$item2['id']}" >{$item2['order_sn']}({$item2['num']})</option>
+									{/foreach}
+								{/if}
+							</select>
+						</td>
+						<td>
+							<input type="text" readonly name="out_material[{$vo['data_id']}][{$item['related_material_id']}][num]" value="{$item['num']}"  data-key="num" class="layui-input num" lay-verify="required|number" >
+						</td>
+						<td>
+							<input type="text" readonly name="out_material[{$vo['data_id']}][{$item['related_material_id']}][theory_num]" value="{$item['theory_num']}"  data-key="theory_num" class="layui-input theory_num" lay-verify="required|number" >
+						</td>
+						<td>
+							<input type="text" data-old="{$item['stock_num']}"  name="out_material[{$vo['data_id']}][{$item['related_material_id']}][stock_num]" value="{$item['stock_num']}"  data-key="stock_num" class="layui-input stock_num" lay-verify="required|number" placeholder="请输入数量">
+						</td>
+						<td>
+							<input type="text" readonly name="out_material[{$vo['data_id']}][{$item['related_material_id']}][loss_rate]" value="{$item['loss_rate']}"  data-key="loss_rate" class="layui-input loss_rate" lay-verify="required|number" >
+						</td>
+					</tr>
+					{/if}					
+					{/foreach}
+					{/volist}
+				</tbody>
+			</table>
+		</div>
+	</div>
+	<div class="bottom">
+		<div class="button-container">
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*"><i class="layui-icon layui-icon-ok"></i>提交</button>
+			<button type="reset" class="layui-btn layui-btn-primary layui-btn-sm"><i class="layui-icon layui-icon-refresh"></i>重置</button>
+		</div>
+	</div>
+</form>
+{/block}
+{block name="script"}
+<script>
+var data = {:json_encode($data)};
+
+layui.use(['tableSelect','select','laydate'], function () {
+	var $ = layui.jquery;
+	var tableSelect = layui.tableSelect;
+	var select = layui.select;
+	var laydate = layui.laydate;
+	
+	laydate.render({
+		elem: '#delivery_date',
+		type: 'date',
+		trigger: 'click',
+		done: function(value, date, endDate){
+			$('.delivery_date').val(value);
+		}
+	});
+	
+	window.submitCallBack = function (res){
+		parent.layui.table.reload('dataTable');
+		location.replace('{:url('erp.PurchaseOrder/edit1')}?id='+res.data.id);
+	}
+	
+	window.deleteMaterial = function(_id){
+		$('.apply_id_'+_id).remove();
+	}
+	
+	$("body").on("change",".stock_num",function(){
+		var value 	= $(this).val();
+		var old 	= $(this).data('old');
+		//value 		= value.replace(/[^\d]/g,"");
+		if(!(/^([1-9][0-9]*)$/.test(value)) || value <= 0){ 
+			layer.msg('请输入大于0的正整数');
+			$(this).val(old);
+			return ;
+		}
+		value = parseInt(value);
+		var material_id = $(this).closest('tr').find('.material_id').val();
+		var ids = select.value('material_'+material_id, 'val'); 
+		console.log(ids);
+		var num = 0 ;
+		$(this).closest('tr').find('.enter_material_id option').each(function(){
+			var v = ($(this).val()).toString();
+			if(ids.indexOf(v) != -1){
+				num = num + parseInt($(this).data('num'));
+			}
+		})
+		if(num > 0 && value > num){
+			layer.msg('最多出库数量'+num);
+			$(this).val(old);
+			return ;
+		}
+		$(this).data('old',value);
+		setData($(this).closest('tr'));
+	});
+
+
+	$("body").on("change",".apply_num",function(){
+		var value 	= $(this).val();
+		var old 	= $(this).data('old');
+		//value 		= value.replace(/[^\d]/g,"");
+		if(!(/^([1-9][0-9]*)$/.test(value)) || value <= 0){ 
+			layer.msg('请输入大于0的正整数');
+			$(this).val(old);
+			return ;
+		}
+		value = parseInt(value);
+		
+		var trs = $('.'+$(this).closest('tr').attr('class'));
+		
+		trs.each(function(){
+			setData($(this),true);
+		})
+
+	});
+
+
+	function setData(tr,set_stock){
+		var stock_num = parseFloat(tr.find('.stock_num').val());
+		var num = parseFloat(tr.find('.num').val());
+		var apply_num = parseFloat($('.'+tr.attr('class')).find('.apply_num').val());
+		
+		var theory_num = apply_num*num;
+		var loss_rate = (stock_num - theory_num) / stock_num;
+		
+		
+		tr.find('.theory_num').val(theory_num)
+		tr.find('.loss_rate').val(loss_rate)
+		
+		if(set_stock == true){
+			tr.find('.stock_num').val(Math.ceil(theory_num))
+		}
+	}
+
+
+	$('.enter_material_id').each(function(){
+		var tr = $(this).closest('tr');
+		select.on('material_'+$(this).data('id'), function(id, vals, item, isAdd, isDisabled){
+			//console.log(vals);
+			var ids = [];
+			$.each(vals,function(idx,vo){
+				ids.push(vo.value);
+			})
+			var max_num = 0;
+		
+			tr.find('.enter_material_id option').each(function(){
+				if(ids.indexOf($(this).val().toString()) != -1){
+					max_num = $(this).data('num');
+				}
+			})
+			max_num = parseInt(max_num);
+			var stock_num = tr.find('.stock_num').val();
+			
+			if(max_num > 0 && stock_num && max_num < parseInt(stock_num)){
+				tr.find('.stock_num').val(max_num);
+			}
+		},true);
+	})
+
+
+
+
+
+
+	$(".layui-table").on("keydown",".layui-input",function(){
+		if (event.keyCode == 40) {
+			$(this).closest('tr').next().find('.'+$(this).data('key')).focus();
+		}else if (event.keyCode == 38) {
+			$(this).closest('tr').prev().find('.'+$(this).data('key')).focus();
+		}else if (event.keyCode == 13 || event.keyCode == 39) {
+			//右一个
+			$(this).closest('td').next().next().find('.layui-input').focus();
+		}else if (event.keyCode == 37) {
+			//左一个
+			$(this).closest('td').prev().prev().find('.layui-input').focus();
+		}
+	});
+	
+});
+</script>
+{/block}

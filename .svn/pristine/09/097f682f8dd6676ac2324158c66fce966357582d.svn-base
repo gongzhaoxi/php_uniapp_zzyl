@@ -1,0 +1,133 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-input-block {margin-left: 150px;}
+.layui-form-label {width: 120px;}
+</style>
+<form class="layui-form" action="" method="post" data-reload="7" data-callback="submitCallBack">
+	<div class="mainBox">
+		<div class="main-container">
+			<blockquote class="layui-elem-quote">单据单头信息</blockquote>
+			<div class="layui-form-item">	
+				<label class="layui-form-label">供应商:</label>
+				<div class="layui-form-mid" > 
+					<input type="hidden"  name="supplier_id" value="{$supplier['id']}" >
+					{$supplier['name']}
+				</div>				
+				<label class="layui-form-label">退货日期:</label>
+				<div class="layui-input-inline">
+					<input type="text"  readonly name="stock_date" value="{:date('Y-m-d')}" lay-verify="required" placeholder="请选择,不可为空" autocomplete="off" class="layui-input date">
+				</div>	
+				<label class="layui-form-label">退货原因:</label>
+				<div class="layui-input-inline">
+					<input type="text" maxlength="255" name="remark"  placeholder="请输入" autocomplete="off" class="layui-input">
+				</div>					
+			</div>	
+			<blockquote class="layui-elem-quote">相关物料信息</blockquote>
+			<table class="layui-table">
+				<thead>
+					<tr>
+						<th>物料编码</th>
+						<th>物料名称</th>
+						<th style="width:150px">总需报废量</th>
+						<th style="width:150px">已出库数量</th>
+						<th style="width:150px">本次库数量</th>
+						<th style="width:150px">备注</th>
+						<th style="width:100px">操作</th>
+					</tr> 
+				</thead>
+				<tbody id="tbody">
+					{foreach $data as $vo}
+					<tr id="material_{$vo['material_id']}">
+						<input type="hidden"  name="material[{$vo['material_id']}][material_id]" value="{$vo['material_id']}" >
+						<input type="hidden"  name="material[{$vo['material_id']}][scrap_id]" value="{:implode(',',$vo['ids'])}" >
+						<td>{$vo['sn']}</td>
+						<td>{$vo['name']}</td>
+						<td>{$vo['stock_num']}</td>
+						<td>{$vo['stocked_num']}</td>
+						<td><input type="text"  name="material[{$vo['material_id']}][stock_num]" value="{$vo['stock_num']-$vo['stocked_num']}" data-old="{$vo['stock_num']-$vo['stocked_num']}" data-num="{$vo['stock_num']-$vo['stocked_num']}" data-key="stock_num" class="layui-input stock_num" lay-verify="required|number" placeholder="请输入数量"></td>
+						<td><input type="text"  name="material[{$vo['material_id']}][remark]" value="" class="layui-input"  placeholder=""></td>
+						<td><button type="button" onclick="deleteMaterial({$vo['material_id']})" class="layui-btn layui-btn-xs layui-btn-danger">删除</button></td>
+					</tr>
+					{/foreach}
+				</tbody>
+			</table>
+		</div>
+	</div>
+	<div class="bottom">
+		<div class="button-container">
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm submit" lay-submit="" lay-filter="*"><i class="layui-icon layui-icon-ok"></i>提交</button>
+			<button type="button" class="layui-btn layui-btn-warm layui-btn-sm layui-hide print"><i class="layui-icon layui-icon-file-b"></i>打印</button>
+		</div>
+	</div>
+</form>
+{/block}
+{block name="script"}
+<script>
+
+layui.use(['tableSelect','select','laydate'], function () {
+	var $ = layui.jquery;
+	var tableSelect = layui.tableSelect;
+	var select = layui.select;
+	var laydate = layui.laydate;
+	
+	laydate.render({
+		elem: '#delivery_date',
+		type: 'date',
+		trigger: 'click',
+		done: function(value, date, endDate){
+			$('.delivery_date').val(value);
+		}
+	});
+	
+	window.submitCallBack = function (res){
+		parent.layui.table.reload('dataTable');
+		$('.submit').addClass('layui-hide');
+		$('.print').removeClass('layui-hide');
+		$('.print').click(function(){
+			toPrintPage(5,{order_sn:res.data.order_sn})
+		})
+	}
+	
+	window.deleteMaterial = function(_id){
+		$('#material_'+_id).remove();
+	}
+	
+	$(".layui-table").on("keydown",".layui-input",function(){
+		if (event.keyCode == 40) {
+			$(this).closest('tr').next().find('.'+$(this).data('key')).focus();
+		}else if (event.keyCode == 38) {
+			$(this).closest('tr').prev().find('.'+$(this).data('key')).focus();
+		}else if (event.keyCode == 13 || event.keyCode == 39) {
+			//右一个
+			$(this).closest('td').next().next().find('.layui-input').focus();
+		}else if (event.keyCode == 37) {
+			//左一个
+			$(this).closest('td').prev().prev().find('.layui-input').focus();
+		}
+	});
+	
+	$("body").on("change",".stock_num",function(){
+		var value 	= $(this).val();
+		var old 	= $(this).data('old');
+		var num 	= parseInt($(this).data('num'));
+
+		//value 		= value.replace(/[^\d]/g,"");
+		if(!(/^([1-9][0-9]*)$/.test(value)) || value <= 0){ 
+			layer.msg('请输入大于0的正整数');
+			$(this).val(old);
+			return ;
+		}
+		value = parseInt(value);
+		if(value > num){
+			layer.msg('最多出库数量'+num);
+			$(this).val(old);
+			return ;
+		}
+		$(this).data('old',value);
+	});	
+	
+
+});
+</script>
+{/block}

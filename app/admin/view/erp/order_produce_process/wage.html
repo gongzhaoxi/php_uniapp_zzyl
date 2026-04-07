@@ -1,0 +1,146 @@
+{extend name="base" /}
+{block name="body"}
+
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="" id="searchForm" lay-filter="searchForm">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline" style="width:190px;">
+					<input type="text" name="confirm_date" value="{:date('Y-m-01')} 至 {:date('Y-m-'.date('t'))}" placeholder="完成时间" class="layui-input rangedate">					
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="customer_name" placeholder="客户名称" class="layui-input ">	
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="order_sn" placeholder="销售合同号" class="layui-input ">	
+				</div>				
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="produce_sn" placeholder="产品编号" class="layui-input ">	
+				</div>					
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="follow_name" placeholder="所属随工单" class="layui-input ">	
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<select name="approve_status" >
+						<option value="">状态</option>
+						<option value="0" selected>未审核</option>
+						<option value="1">已审核</option>
+					</select>
+				</div>				
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	<button class="pear-btn pear-btn-primary pear-btn-sm" lay-event="export"><i class="layui-icon layui-icon-export"></i>导出</button>
+	<button class="pear-btn pear-btn-success pear-btn-sm" lay-event="approve"><i class="layui-icon layui-icon-success"></i>审核</button>
+</script>
+<script type="text/html" id="options">
+	<button class="pear-btn pear-btn-danger pear-btn-xs" lay-event="log">报工变更</button>
+	{{#  if(d.approve_status == 0){ }}<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="edit">编辑</button>{{#  } }}
+</script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('wage')}?approve_status=0&confirm_date={:date('Y-m-01')} 至 {:date('Y-m-'.date('t'))}',
+			page: true,
+			limit:90,
+			height:'full-170',
+			cols: [[
+				{type: 'checkbox'},
+				{field: 'produce_sn',title: '产品编码',align: 'center',unresize: false,minWidth: {:get_col_width('produce_sn',150)}, hide: getTableFieldIsHide('dataTable','produce_sn')},
+				{field: 'product_model',title: '型号',align: 'center',unresize: false,width: {:get_col_width('produce_sn',100)}, hide: getTableFieldIsHide('dataTable','product_model')},
+				{field: 'product_specs',title: '款式',align: 'center',unresize: false,width: {:get_col_width('product_specs',80)}, hide: getTableFieldIsHide('dataTable','product_specs')},
+				{field: 'order_sn',title: '销售合同号',align: 'center',unresize: false,width: {:get_col_width('order_sn',140)}, hide: getTableFieldIsHide('dataTable','order_sn')},
+				{field: 'delivery_time',title: '交货日期',align: 'center',unresize: false,width: {:get_col_width('delivery_time',120)}, hide: getTableFieldIsHide('dataTable','delivery_time')},
+				{field: 'finish_date',title: '入库日期',align: 'center',unresize: false,width: {:get_col_width('finish_date',120)}, hide: getTableFieldIsHide('dataTable','finish_date')},
+				{field: 'salesman',title: '业务员',align: 'center',unresize: false,width: {:get_col_width('salesman',100)}, hide: getTableFieldIsHide('dataTable','salesman')},
+				{field: 'process_name',title: '报工工序',align: 'center',unresize: false,width: {:get_col_width('process_name',120)}, hide: getTableFieldIsHide('dataTable','process_name')},
+				{field: 'follow_name',title: '所属随工单',align: 'center',unresize: false,width: {:get_col_width('follow_name',120)}, hide: getTableFieldIsHide('dataTable','follow_name')},
+				{field: 'confirm_date',title: '完成时间',align: 'center',unresize: false,width: {:get_col_width('confirm_date',120)}, hide: getTableFieldIsHide('dataTable','confirm_date')},
+				{field: 'username',title: '完成人',align: 'center',unresize: false,width: {:get_col_width('username',100)}, hide: getTableFieldIsHide('dataTable','username')},
+				{field: 'price',title: '报工单价',align: 'center',unresize: false,width: {:get_col_width('price',120)}, hide: getTableFieldIsHide('dataTable','price')},
+				{field: 'approve_status_desc',title: '状态',align: 'center',unresize: false,width: {:get_col_width('approve_status_desc',100)}, hide: getTableFieldIsHide('dataTable','approve_status_desc')},
+				{title: '操作',toolbar: '#options',align: 'center',width: 150,unresize:true,fixed: 'right'}
+				
+			]],
+			cellMinWidth: 80,
+			//skin: 'line',
+			toolbar: '#toolbar',
+			defaultToolbar: [{
+				title: '刷新',
+				layEvent: 'refresh',
+				icon: 'layui-icon-refresh',
+			}, 'filter']
+		});
+
+		table.on('sort(dataTable)', function(obj){
+			table.reload('dataTable', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+
+		table.on('tool(dataTable)', function(obj) {
+			if (obj.event === 'edit') {
+				openLayer('修改工资','{:url('wageEdit')}?id='+obj.data['id'],'80%','90%');
+			}else if (obj.event === 'log') {
+				openLayer('变更记录','{:url('log')}?order_produce_id='+obj.data['order_produce_id'],'80%','90%');
+			}
+		});
+
+		table.on('toolbar(dataTable)', function(obj) {
+			if (obj.event === 'refresh') {
+				table.reload('dataTable');
+			}else if (obj.event === 'export') {
+				var data = form.val('searchForm');
+				exportData('{:url('wageExport')}',data);
+			}else if (obj.event === 'approve') {
+				tableAction(obj.config.id,'确定要审核？','{:url('approve')}');
+			}
+		});
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+		
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+		table.on('colToggled(dataTable)', function(obj){
+			setTableFieldIsHide(obj.config.id,obj.col.field,obj.col.hide);
+		});
+	})
+</script>
+{/block}
+
+

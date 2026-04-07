@@ -1,0 +1,26 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.item{text-align:center;height:100px;overflow:hidden;}
+.item .layui-icon{font-size:30px;}
+.item p{height: 20px;line-height: 20px;}
+</style>
+<form class="layui-form" action="" method="post">
+	<div class="mainBox">
+		<div class="main-container">
+			<div class="layui-row layui-col-space30">
+				{if !empty($model['product']['produce_file_link'])}
+				{foreach $model['product']['produce_file_link']['file'] as $k=>$vo}
+				<div class="layui-col-xs6 layui-col-sm4 layui-col-md2 ">
+					<div class="item">
+						<i class="layui-icon layui-icon-file"></i>   
+						<a target="_blank" href="{$vo}" ><p>{$model['product']['produce_file_link']['name'][$k]}</p></a>
+					</div>
+				</div>
+				{/foreach}
+				{/if}
+			</div>
+		</div>
+	</div>
+</form>
+{/block}

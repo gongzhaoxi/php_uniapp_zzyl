@@ -1,0 +1,137 @@
+{extend name="base" /}
+{block name="body"}
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="" lay-filter="searchForm">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="keyword" placeholder="物料编号/名称" class="layui-input">					
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+					<button type="reset" class="pear-btn pear-btn-md"><i class="layui-icon layui-icon-refresh"></i>重置</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	<button class="pear-btn pear-btn-primary pear-btn-sm" lay-event="add"><i class="layui-icon layui-icon-add-1"></i>添加零件</button>
+	<button class="pear-btn pear-btn-danger pear-btn-sm" lay-event="batchRemove"><i class="layui-icon layui-icon-delete"></i>删除零件</button>
+	<button class="pear-btn pear-btn-success pear-btn-sm" lay-event="import"><i class="layui-icon layui-icon-upload"></i>导入</button>
+	<button class="pear-btn pear-btn-warming pear-btn-sm" lay-event="export"><i class="layui-icon layui-icon-download-circle"></i>导出</button>
+</script>
+<script type="text/html" id="color_follow">
+	<input type="checkbox" name="color_follow" value="{{d.id}}" lay-skin="switch" lay-text="是|否" lay-filter="color_follow" {{# if(d.color_follow==1){ }} checked {{# } }}>
+</script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+		table.render({
+			elem: '#dataTable',
+			url: "{:url('list')}?material_id={$material_id}",
+			page: true,
+			cols: [[
+				{type: 'checkbox'},
+				{field: 'sn',title: '物料编码',align: 'center',unresize: false,width: {:get_col_width('sn2',150)},templet: function(d){return d.relatedMaterial?d.relatedMaterial.sn:'';}, hide: getTableFieldIsHide('dataTable','sn')},
+				{field: 'name',title: '物料名称',align: 'left',unresize: false,width: {:get_col_width('name2',250)},templet: function(d){return d.relatedMaterial?d.relatedMaterial.name:'';}, hide: getTableFieldIsHide('dataTable','name')},
+				{field: 'category_name',title: '物料分类',align: 'center',unresize: false,width: {:get_col_width('category_name2',120)},templet: function(d){return d.relatedMaterial?d.relatedMaterial.category_name:'';}, hide: getTableFieldIsHide('dataTable','category_name')},
+				{field: 'unit',title: '单位',align: 'center',unresize: false,width: {:get_col_width('unit2',100)},templet: function(d){return d.relatedMaterial?d.relatedMaterial.unit:'';}, hide: getTableFieldIsHide('dataTable','unit')},
+				{field: 'processing_type',title: '加工类型',align: 'center',unresize: false,width: {:get_col_width('processing_type2',100)},templet: function(d){return d.relatedMaterial?d.relatedMaterial.processing_type:'';}, hide: getTableFieldIsHide('dataTable','processing_type')},
+				{field: 'material',title: '材料',align: 'center',unresize: false,width: {:get_col_width('material2',100)},templet: function(d){return d.relatedMaterial?d.relatedMaterial.material:'';}, hide: getTableFieldIsHide('dataTable','material')},
+				{field: 'surface',title: '表面',align: 'center',unresize: false,width: {:get_col_width('surface2',100)},templet: function(d){return d.relatedMaterial?d.relatedMaterial.surface:'';}, hide: getTableFieldIsHide('dataTable','surface')},
+				{field: 'color',title: '颜色',align: 'center',unresize: false,width: {:get_col_width('color2',100)},templet: function(d){return d.relatedMaterial?d.relatedMaterial.color:'';}, hide: getTableFieldIsHide('dataTable','color')},
+				{field: 'remark',title: '备注',align: 'left',unresize: false,width: {:get_col_width('remark2',100)},templet: function(d){return d.relatedMaterial?d.relatedMaterial.remark:'';}, hide: getTableFieldIsHide('dataTable','remark')},
+				{field: 'num',title: '数量', edit: 'text',align: 'center',unresize: false,width: {:get_col_width('num2',120)},templet: function(d){return d.num;}, hide: getTableFieldIsHide('dataTable','num')},
+				{field: 'color_follow',title: '颜色是否跟随产品',align: 'left',unresize: false,width: {:get_col_width('color_follow2',150)},templet: '#color_follow', hide: getTableFieldIsHide('dataTable','color_follow')}
+			]],
+			cellMinWidth: 100,
+			//skin: 'line',
+			toolbar: '#toolbar',
+			defaultToolbar: [{
+				title: '刷新',
+				layEvent: 'refresh',
+				icon: 'layui-icon-refresh',
+			}, 'filter']
+		});
+
+		table.on('sort(dataTable)', function(obj){
+			table.reload('dataTable', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+
+		table.on('tool(dataTable)', function(obj) {
+			if (obj.event === 'remove') {
+				layerConfirm('确定要删除该客户?','{:url('remove')}',{ids:[obj.data['id']]},function(res){
+					obj.del();
+				})
+			} else if (obj.event === 'edit') {
+				openLayer('修改客户','{:url('edit')}?id='+obj.data['id'],'80%','90%');
+			}
+		});
+
+		table.on('toolbar(dataTable)', function(obj) {
+			if (obj.event === 'add') {
+				openLayer('添加零件','{:url('add')}?table=dataTable&material_id={$material_id}','80%','90%');
+			}else if (obj.event === 'refresh') {
+				table.reload('dataTable');
+			} else if (obj.event === 'batchRemove') {
+				tableAction(obj.config.id,'确定要删除这些零件','{:url('remove')}');
+			}else if (obj.event === 'import') {
+				openLayer('导入零件','{:url('import')}','90%','90%');
+			}else if (obj.event === 'export') {
+				var data = form.val('searchForm');
+				data.material_id = '{$material_id}';
+				exportData('{:url('export')}',data);
+			}
+		});
+
+		table.on('edit(dataTable)', function(obj){
+			ajaxActionCall('{:url('edit')}',{id:obj.data.id,num:obj.value})
+		});
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+		
+		form.on('switch(color_follow)', function(data) {
+			ajaxActionCall('{:url('edit')}',{color_follow:data.elem.checked?1:0,id:this.value})
+		});		
+		
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+		table.on('colToggled(dataTable)', function(obj){
+			setTableFieldIsHide(obj.config.id,obj.col.field,obj.col.hide);
+		});
+	})
+</script>
+{/block}
+
+

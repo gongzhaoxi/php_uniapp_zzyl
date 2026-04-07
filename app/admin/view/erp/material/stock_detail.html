@@ -1,0 +1,43 @@
+{extend name="base" /}
+{block name="body"}
+<div class="layui-card">
+	<div class="layui-card-body">
+		<fieldset class="layui-elem-field">
+			<legend>入库单编号</legend>
+			<div class="layui-field-box">
+				<div class="layui-btn-group">
+					{volist name="data" id="vo"}
+					{if $vo['order_sn']}
+					<button type="button" class="layui-btn layui-btn-sm">{$vo['order_sn']}</button>
+					{/if}
+					{/volist}
+				</div>
+			</div>
+		</fieldset>
+		<fieldset class="layui-elem-field">
+			<legend>采购单编号</legend>
+			<div class="layui-field-box">
+				<div class="layui-btn-group">
+					{volist name="data" id="vo"}
+					{if $vo['purchase_order_sn']}
+					<button type="button" class="layui-btn layui-btn-sm">{$vo['purchase_order_sn']}</button>
+					{/if}
+					{/volist}
+				</div>			
+			</div>
+		</fieldset>		
+	</div>
+</div>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+	})
+</script>
+{/block}
+
+

@@ -1,0 +1,171 @@
+{extend name="layout" /}
+{block name="body"}
+<style>
+.num{color:red;font-size:16px;}
+</style>
+{include file="public/nav2" /}
+
+<div class="layui-card">
+	<div class="layui-card-body">
+		<div class="layui-row">
+			<div class="layui-col-md2">
+				<ul id="demoTree" class="dtree" ></ul>
+			</div>
+			<div class="layui-col-md10">
+				<form class="layui-form" action="" id="searchForm">
+					<div class="layui-form-item">
+						<div class="layui-form-item layui-inline">
+							<input type="text" name="keyword" placeholder="物料名称/编码/备注" class="layui-input">					
+						</div>		
+						<div class="layui-form-item layui-inline">
+							<select name="warehouse_id" >
+								<option value="">仓位</option>
+								{foreach $warehouse as $vo}
+								<option value="{$vo['id']}">{$vo['name']}</option>
+								{/foreach}
+							</select>
+						</div>	
+						<div class="layui-form-item layui-inline">
+							<select name="cid" >
+								<option value="">物料分类</option>
+								{foreach $category as $vo}
+								<option value="{$vo['id']}">{$vo['name']}</option>
+								{/foreach}
+							</select>
+						</div>					
+						<div class="layui-form-item layui-inline">
+							<button class="layui-btn layui-btn-md " lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+						</div>
+						
+					</div>
+				</form>
+				<table id="dataTable" lay-filter="dataTable"></table>
+			</div>
+		</div>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	<button class="layui-btn layui-bg-blue layui-btn-sm" lay-event="check"><i class="layui-icon layui-icon-download-circle"></i>盘点</button>
+</script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common','dtree'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		var dtree = layui.dtree;
+		var tree_id = '';
+
+		var demoTree = dtree.render({
+			elem: "#demoTree",
+			data:{:json_encode($tree)},
+			menubar:true,
+			//skin: "laySimple",  // layui主题风格
+			//icon: "-1",  // 隐藏二级图标
+			line: true,  // 显示树线
+			response:{
+				treeId: "id",			  //节点ID
+				parentId: "pid",	  //父节点ID
+				title: "title",			  //节点名称 
+				childName: "children",	  //子节点名称
+			}
+		});
+
+		dtree.on("node('demoTree')" ,function(param){
+			tree_id = param.param.nodeId;
+			table.reload('dataTable', {
+				where: {tree_id:param.param.nodeId},
+				page:{curr: 1}
+			})
+		});
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('index')}',
+			page: true,
+			size:'sm',
+			cols: [[
+				{type: 'checkbox'},
+				{field: 'sn',title: '物料编码',align: 'center',unresize: false,width: {:get_col_width('sn',200)}},
+				{field: 'name',title: '物料名称',align: 'left',unresize: false,width: {:get_col_width('name')}},
+				{field: 'category_name',title: '物料分类',align: 'center',unresize: false,width: {:get_col_width('category_name',120)}},
+				{field: 'stock',title: '现有库存',align: 'center',unresize: false,width: {:get_col_width('stock',120)}},
+				{field: 'unit',title: '单位',align: 'center',unresize: false,width: {:get_col_width('unit',100)}},
+				{field: 'warehouse_name',title: '仓位',align: 'center',unresize: false,width: {:get_col_width('warehouse_name',100)}},
+				{field: 'processing_type',title: '加工类型',align: 'center',unresize: false,width: {:get_col_width('processing_type',100)}},
+				{field: 'material',title: '材料',align: 'center',unresize: false,width: {:get_col_width('material',100)}},
+				{field: 'surface',title: '表面',align: 'center',unresize: false,width: {:get_col_width('surface',100)}},
+				{field: 'color',title: '颜色',align: 'center',unresize: false,width: {:get_col_width('color',100)}},
+			]],
+			cellMinWidth: 100,
+			//skin: 'line',
+			toolbar: '#toolbar',
+			defaultToolbar: [{
+				title: '刷新',
+				layEvent: 'refresh',
+				icon: 'layui-icon-refresh',
+			}, 'filter']
+		});
+
+		table.on('sort(dataTable)', function(obj){
+			table.reload('dataTable', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+
+		table.on('toolbar(dataTable)', function(obj) {
+			if (obj.event === 'refresh') {
+				table.reload('dataTable');
+			}else if (obj.event === 'check') {
+				var checkStatus = table.checkStatus('dataTable');
+				var ids = [];
+				for(var i in checkStatus.data) {
+					ids.push(checkStatus.data[i].id);
+				}
+				if(ids.length == 0){
+					layui.layer.msg('请选择物料');return;
+				}
+				openLayer('盘点','{:url('add')}?ids='+ids.join(','),'80%','90%');
+			}
+		});
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+		
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+	})
+</script>
+<style>
+.dtree{
+    overflow-x:hidden;
+    overflow-y: auto;
+    width: 0px;
+    width: 90%;
+    height: 75vh;
+}
+.layui-col-md2{
+    overflow:hidden;
+}
+</style>
+{/block}
+
+

@@ -1,0 +1,634 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-input-block {margin-left: 150px;}
+.layui-form-label {width: 120px;}
+.layui-layer-content .form-container{padding-bottom: 60px;}
+.layui-layer-content .form-container .bottom {width: 80%;position: fixed;bottom: 10%;left: 10%;}
+</style>
+
+<div class="mainBox">
+	<div class="main-container">
+		<form class="layui-form" action="" method="post" data-reload="2">
+			<blockquote class="layui-elem-quote">产品信息<button  style="float:right;" type="submit" class="layui-btn layui-btn-normal  layui-btn-sm" lay-submit="" lay-filter="*"><i class="layui-icon layui-icon-ok"></i>修改产品</button></blockquote>
+			<input type="hidden" value="{$model['id']}" name="id">
+			<div class="layui-form-item">
+				<div class="layui-row">
+					<div class="layui-col-md3">
+						<label class="layui-form-label"><span class="asterisk">*</span>产品编码</label>
+						<div class="layui-input-block">
+							<input type="hidden"value="{$model['product_id']}" id="product_id">
+							<input type="text"  value="{$model['product_sn']}" disabled  placeholder="请选择,不可为空" autocomplete="off" class="layui-input">
+						</div>
+					</div>
+					<div class="layui-col-md3">
+						<label class="layui-form-label">产品名称</label>
+						<div class="layui-input-block">
+							<input type="text" value="{$model['product_name']}" disabled  placeholder="" autocomplete="off" class="layui-input">
+						</div>
+					</div>
+					<div class="layui-col-md3">
+						<label class="layui-form-label"><span class="asterisk">*</span>型号</label>
+						<div class="layui-input-block">
+							<input type="text" name="product_model" value="{$model['product_model']}" lay-verify="required"   placeholder="" autocomplete="off" class="layui-input">
+						</div>
+					</div>
+					<div class="layui-col-md3">
+						<label class="layui-form-label">款式</label>
+						<div class="layui-input-block">
+							<input type="text" name="product_specs" value="{$model['product_specs']}"   placeholder="" autocomplete="off" class="layui-input">
+						</div>
+					</div>					
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<div class="layui-row">
+					<div class="layui-col-md3">
+						<label class="layui-form-label">颜色</label>
+						<div class="layui-input-block">
+							<select name="color" >
+								<option value=""></option>
+								{foreach $color as $key=>$vo}
+								<option value="{$vo['name']}" {if $model['color'] == $vo['name']}selected{/if}>{$vo['name']}</option>
+								{/foreach}
+							</select>
+						</div>
+					</div>
+					<div class="layui-col-md3">
+						<label class="layui-form-label"><span class="asterisk">*</span>数量</label>
+						<div class="layui-input-block">
+							<input type="text" name="product_num" value="{$model['product_num']}" {if $model['product_stock_id']}readonly{/if} id="product_num" lay-verify="required|number"   placeholder="" autocomplete="off" class="layui-input cal_price">
+						</div>
+					</div>
+					<div class="layui-col-md3">
+						<label class="layui-form-label"><span class="asterisk">*</span>币种</label>
+						<div class="layui-input-block">
+							<input type="text" name="currency" value="{$model['currency']}" lay-verify="required"   placeholder="" autocomplete="off" class="layui-input">
+						</div>
+					</div>
+					<div class="layui-col-md3">
+						<label class="layui-form-label"><span class="asterisk">*</span>汇率</label>
+						<div class="layui-input-block">
+							<input type="text" name="exchange_rates" value="{$model['exchange_rates']}" lay-verify="required"   placeholder="" autocomplete="off" class="layui-input">
+						</div>
+					</div>					
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<div class="layui-row">
+					<div class="layui-col-md3">
+						<label class="layui-form-label"><span class="asterisk">*</span>税率</label>
+						<div class="layui-input-block">
+							<input type="text" name="tax_rate" value="{$model['tax_rate']}"   lay-verify="required"   placeholder="" autocomplete="off" class="layui-input">
+						</div>
+					</div>
+					<div class="layui-col-md3" style="display:none;">
+						<label class="layui-form-label">单价</label>
+						<div class="layui-input-block">
+							<input type="text" name="product_price" value="{$model['product_price']}" id="product_price" lay-verify="required|number"   placeholder="" autocomplete="off" class="layui-input cal_price">
+						</div>
+					</div>
+					<div class="layui-col-md3" style="display:none;">
+						<label class="layui-form-label">总价</label>
+						<div class="layui-input-block">
+							<input type="text" name="total_price" value="{$model['total_price']}" id="total_price" lay-verify="required|number"   placeholder="" autocomplete="off" class="layui-input">
+						</div>
+					</div>	
+					<div class="layui-col-md3">
+						<label class="layui-form-label">备注</label>
+						<div class="layui-input-block">
+							<input type="text" name="remark"  value="{$model['remark']}" placeholder="" autocomplete="off" class="layui-input">
+						</div>
+					</div>
+					
+				</div>
+			</div>		
+		</form>
+		<form class="layui-form" action="{:url('saveBom')}" method="post" data-reload="3">
+			<input type="hidden" value="{$model['id']}" name="id">
+			<blockquote class="layui-elem-quote">配置信息<button style="float:right;" type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*"><i class="layui-icon layui-icon-ok"></i>修改配置</button></blockquote>
+			<div class="layui-tab layui-tab-brief">
+				<ul class="layui-tab-title">
+					<li class="layui-hide">换标配</li>
+					<li  class="layui-this">改配置</li>
+					<li>加配置</li>
+				</ul>
+				<div class="layui-tab-content">
+					<div class="layui-tab-item layui-hide">
+						<button type="button" class="layui-btn layui-btn-normal layui-btn-sm add-replace" >增加</button>
+						<table class="layui-table">
+							<colgroup>
+								<col width="15%">
+								<col width="25%">
+								<col width="15%">
+								<col width="25%">
+								<col width="10%">
+								<col width="10%">
+							</colgroup>
+							<thead>
+								<tr>
+									<th colspan="2">标配物料信息</th>
+									<th colspan="2">替换物料信息</th>
+									<th rowspan="2">类型</th>
+									<th rowspan="2">操作</th>
+								</tr>
+								<tr>
+									<th>物料编号</th>
+									<th>名称</th>
+									<th>物料编号</th>
+									<th>名称</th>
+						
+								</tr>
+							</thead>
+							<tbody id="replaceDiv">		
+								
+							</tbody>
+						</table>
+					</div>
+					<div class="layui-tab-item layui-show">
+						<button type="button" class="layui-btn layui-btn-normal layui-btn-sm change-add" >增加</button>
+						<table class="layui-table">
+							<thead>
+								<tr>
+									<th>方案分类</th>
+									<th>方案</th>
+									<th class="layui-hide">单价</th>
+									<th>数量</th>
+									<th>操作</th>
+								</tr>
+							</thead>
+							<tbody id="changeDiv">		
+								
+						
+							</tbody>
+						</table>
+					</div>					
+					<div class="layui-tab-item">
+						<button type="button" class="layui-btn layui-btn-normal layui-btn-sm add-add" >增加</button>
+						<table class="layui-table">
+							<thead>
+								<tr>
+									<th>方案分类</th>
+									<th>方案</th>
+									<th class="layui-hide">单价</th>
+									<th>数量</th>
+									<th>操作</th>
+								</tr>
+							</thead>
+							<tbody id="addDiv">		
+								
+						
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+
+{/block}
+{block name="script"}
+<script>
+var bill_type = {:json_encode($bill_type)} ;
+var category = {:json_encode($category)} ;
+var bom = [];
+var default_bom = {:json_encode($model['bom'])} ;
+var project1 = [];
+var project2 = [];
+var category1 = [];
+var category2 = [];
+var default_replace_info = {:json_encode($model['replace_info'])} ;
+var default_change_project = {:json_encode($model['change_project'])} ;
+var default_add_project = {:json_encode($model['add_project'])} ;
+var default_project_price = {:json_encode($model['project_price'])} ;
+
+layui.use(['tableSelect','select'], function () {
+	var $ = layui.jquery;
+	var tableSelect = layui.tableSelect,form = layui.form,select = layui.select;
+	
+	function getBillTypeHtml(bom_id,bom_bill_type,name){
+		var html = '<select lay-search="" name="'+name+'['+bom_id+']" lay-verify="required">';
+		layui.each(bill_type, function (index, item) {
+			if(item.id == bom_bill_type){
+				html += '<option selected value="'+item.id+'">'+item.name+'</option>';
+			}else{
+				html += '<option value="'+item.id+'">'+item.name+'</option>';
+			}
+		})
+		html += '</select>';
+		return html;
+	}
+	
+	window.confirmReplace = function(obj){
+		if($(obj).closest('.layui-form').find('option').length == 0){
+			layui.layer.msg('无物料可换');return ;
+		}
+		var selected_option = $(obj).closest('.layui-form').find('option:selected');
+		var data = {};
+		data.id = selected_option.val();
+		data.sn = selected_option.data('sn');
+		data.name = selected_option.data('name');
+		data.bill_type = selected_option.data('bill_type');
+		var html = getReplaceHtml(data);
+		
+		$('#replaceDiv').append(html);	
+		form.render();
+		
+		layui.layer.closeAll();
+	}
+	
+	function getReplaceHtml(data){
+		var id 	= data.id;
+		var html = '<tr id="addTr'+id+'">';
+		html += '		<td>'+data.sn+'<input type="hidden" value="'+id+'" name="replace_bom_id[]"  /></td>';
+		html += '		<td>'+data.name+'</td>';
+		
+		html += '			<td><select lay-search=""  lay-verify="required" name="replace_bom_value['+id+']"  lay-filter="replace_bom_value"  >';	
+		var first_name = '';
+
+		layui.each(bom, function (index, item) {
+			if(item.data_type == 2 && item.material.status == 1 && item.bill_type == data.bill_type){
+				if(data.value && data.value == item.id){
+					first_name = item.material.name;
+					html += 		'<option data-sn="'+item.material.sn+'" selected data-name="'+item.material.name+'"  value="'+item.id+'">'+item.material.sn+item.material.name+'</option>';
+				}else{
+					html += 		'<option data-sn="'+item.material.sn+'" data-name="'+item.material.name+'"  value="'+item.id+'">'+item.material.sn+item.material.name+'</option>';
+				}
+				first_name = first_name?first_name:item.material.name;
+			}
+		})
+		html += '			</select></td>';	
+		html += '		<td>'+first_name+'</td>';
+		html += '		<td>'+getBillTypeHtml(id,data.bill_type,'replace_bom_bill_type')+'</td>';
+		html += '		<td><button type="button" onclick="deleteReplace('+id+')" class="layui-btn  layui-btn-danger layui-btn-xs">删除</button></td>';
+		html += '	</tr>';
+		return html;
+	}
+	
+	
+	window.deleteReplace = function(id){
+		$('#addTr'+id).remove();
+		//calPrice()
+	}
+	
+	$('.add-replace').click(function(){
+		if(!$('#product_id').val()){
+			layui.layer.msg('请先选择产品');return ;
+		}
+		var html = '<div class="layui-form form-container" style="margin:20px;">';		
+		html += '		<div class="layui-form-item">';	
+		html += '			<select lay-search=""  lay-verify="required"  >';	
+		layui.each(bom, function (index, item) {
+			if(item.data_type == 1 && item.can_replace == 1 && item.material.status == 1 && $('#addTr'+item.id).length == 0){
+				html += 		'<option data-sn="'+item.material.sn+'" data-cid="'+item.material.cid+'" data-name="'+item.material.name+'" data-bill_type="'+item.bill_type+'" value="'+item.id+'">'+item.material.sn+'/'+item.material.name+'</option>';
+			}
+		})
+		html += '			</select>';	
+		html += '		</div>';
+		html += '		<div class="bottom"><div class="button-container"><button onclick="confirmReplace(this)" type="button" class="layui-btn">确认</button><button type="button" onclick="layui,layer.closeAll()" class="layui-btn layui-btn-primary">关闭</button></div></div>';
+		html += '	</div>';
+
+		layer.open({
+			type: 1,
+			title:'请选择要更换的标配物料信息',
+			area: ['80%', '80%'], 
+			closeBtn: 0,
+			 shadeClose: true, 
+			content: html
+		});
+		form.render();	
+		return ;
+	})
+	
+	
+	
+	window.confirmAdd = function(obj){
+		var _form = $(obj).closest('.layui-form');
+		var html = '';
+		_form.find('input[type="checkbox"]:checked').each(function(){
+			var cid = $(this).val();
+			var project_id = $(this).closest('.contain').find("[name='"+$(this).closest('.contain').find('.project_id_'+cid).data('name')+"']").val();
+			var title = $(this).attr('title');
+			//console.log(project_id);
+			
+			if(project_id && cid){
+				var arr = project_id.split(",");
+				layui.each(arr, function (index, item) {
+					html += getConfirmChangeHtml(2,cid,item,title);
+				})	
+			}			
+		})		
+		$('#addDiv').html(html);	
+		form.render();
+		layui.layer.closeAll();
+	}	
+	
+
+	$('.add-add').click(function(){
+		if(!$('#product_id').val()){
+			layui.layer.msg('请先选择产品');return ;
+		}
+		var html = '<div class="layui-form form-container" lay-filter="add-val-filter" style="margin:20px;">';		
+		layui.each(category2, function (index, item) {
+			html += '	<div class="contain"><div class="layui-form-item">';	
+			html += '		<input type="checkbox" '+($('#addDiv .cid'+item).length>0?'checked':'')+' value="'+item+'" name="cid[]" class="cid" title="'+category[item]['name']+'" />';
+			html += '	</div>';
+			html += '	<div class="layui-form-item">';	
+			html += '		<select '+(category[item]['multiple']?('xm-select-search xm-select-search-type="dl" xm-select="multiple'+index+'-'+item+'"'):'')+' lay-search="" lay-verify="required" data-name="project_id_'+item+'" name="project_id_'+item+'" class="project_id project_id_'+item+'">';	
+			layui.each(project2, function (index2, item2) {
+				if(item2.cid == item){
+					var is_select = false;
+					$('#addDiv .cid'+item+' select').each(function(){
+						if($(this).val() == item2.id){
+							is_select = true;
+						}
+					})
+					if(is_select){
+						html += '<option selected value="'+item2.id+'">'+item2.name+'</option>';
+					}else{
+						html += '<option value="'+item2.id+'">'+item2.name+'</option>';
+					}
+				}
+			})
+			html += '		</select>';		
+			html += '	</div></div>';		
+		})
+		html += '		<div class="bottom"><div class="button-container"><button onclick="preview(this)" type="button" class="layui-btn layui-btn-danger">预览</button><button onclick="confirmAdd(this)" type="button" class="layui-btn">确认</button><button type="button" onclick="layui.layer.closeAll()" class="layui-btn layui-btn-primary">关闭</button></div></div>';
+		html += '	</div>';		
+
+		layer.open({
+			type: 1,
+			title:'请选择方案分类',
+			area: ['80%', '80%'], 
+			closeBtn: 0,
+			shadeClose: true, 
+			content: html,
+			success: function(layero, index){
+				select.render();
+			}
+		});
+		form.render();	
+		return ;		
+	})
+	
+	window.deleteAdd = function(obj){
+		$(obj).closest('tr').remove();
+		calPrice()
+	}	
+	
+	window.confirmChange = function(obj){
+		var _form = $(obj).closest('.layui-form');
+		var html = '';
+		_form.find('input[type="checkbox"]:checked').each(function(){
+			var cid = $(this).val();
+			var project_id = $(this).closest('.contain').find("[name='"+$(this).closest('.contain').find('.project_id_'+cid).data('name')+"']").val();
+			var title = $(this).attr('title');
+			//console.log(project_id);
+			
+			if(project_id && cid){
+				var arr = project_id.split(",");
+				layui.each(arr, function (index, item) {
+					html += getConfirmChangeHtml(1,cid,item,title);
+				})	
+			}
+		})
+		$('#changeDiv').html(html);	
+		form.render();
+		layui.layer.closeAll();
+	}
+
+	window.preview = function(obj){
+		var _form = $(obj).closest('.layui-form');
+		var html = '';
+		_form.find('input[type="checkbox"]:checked').each(function(){
+			var cid = $(this).val();
+			var project = $(this).closest('.contain').find("[name='"+$(this).closest('.contain').find('.project_id_'+cid).data('name')+"'] option:selected").text();
+			var title = $(this).attr('title');
+			html += '<p>'+title+'：'+project+'</p>';
+		})
+		layer.open({
+			type: 1,
+			// area: ['420px', '240px'], // 宽高
+			content: '<div style="padding: 16px;">'+html+'</div>'
+		});
+	}
+
+	function getConfirmChangeHtml(idx,cid,project_id,title){
+		var type = '';
+		var project = [];
+		var num = default_project_price[project_id]?default_project_price[project_id]['num']:1;
+		var price = default_project_price[project_id]?default_project_price[project_id]['price']:0;
+		if(idx == 1){
+			type = 'change';
+			project = project1;
+		}else if(idx == 2){
+			type = 'add';
+			project = project2;
+		}
+		var html = '';
+		html += '<tr class="cid'+cid+'">';
+		html += '	<td>'+title+'</td>';
+		html += '	<td><select lay-search="" lay-verify="required" name="'+type+'_project[id][]"  class="'+type+'_project_id"  >';	
+		
+		layui.each(project, function (index, item) {
+			if(item.cid == cid){
+				if(project_id == item.id){
+					html += '<option selected value="'+item.id+'">'+item.name+'</option>';
+				}else{
+					html += '<option value="'+item.id+'">'+item.name+'</option>';
+				}	
+			}
+		})
+		html += '	</select></td>';
+		html += '	<td class="layui-hide"><input type="text" name="'+type+'_project[price][]" value="'+price+'" lay-verify="required|number"   placeholder="" autocomplete="off" class="layui-input project_price cal_price"></td>';		
+		html += '	<td><input type="text" name="'+type+'_project[num][]" value="'+num+'" lay-verify="required|number"   placeholder="" autocomplete="off" class="layui-input project_num"></td>';		
+		
+		html += '	<td><button type="button" onclick="deleteChange(this)" class="layui-btn  layui-btn-danger layui-btn-xs">删除</button></td>';
+		html += '</tr>';	
+		return html;
+	}	
+	
+	$('.change-add').click(function(){
+		if(!$('#product_id').val()){
+			layui.layer.msg('请先选择产品');return ;
+		}
+		
+		var html = '<div class="layui-form form-container" lay-filter="change-val-filter" style="margin:20px;">';		
+		layui.each(category1, function (index, item) {
+			html += '	<div class="contain">';	
+			html += '	<div class="layui-form-item">';	
+			html += '		<input type="checkbox" '+($('#changeDiv .cid'+item).length>0?'checked':'')+' value="'+item+'" name="cid[]" class="cid" title="'+category[item]['name']+'" />';
+			html += '	</div>';
+			html += '	<div class="layui-form-item">';	
+			html += '		<select '+(category[item]['multiple']?('xm-select-search xm-select-search-type="dl" xm-select="multiple'+index+'-'+item+'"'):'')+' lay-search="" lay-verify="required" data-name="project_id_'+item+'" name="project_id_'+item+'" class="project_id project_id_'+item+'">';	
+			layui.each(project1, function (index2, item2) {
+				if(item2.cid == item){
+					var is_select = false;
+					$('#changeDiv .cid'+item+' select').each(function(){
+						if($(this).val() == item2.id){
+							is_select = true;
+						}
+					})
+					if(is_select){
+						html += '<option selected value="'+item2.id+'">'+item2.name+'</option>';
+					}else{
+						html += '<option value="'+item2.id+'">'+item2.name+'</option>';
+					}
+				}
+			})
+			html += '		</select>';		
+			html += '	</div>';		
+			html += '	</div>';		
+		})
+		html += '		<div class="bottom"><div class="button-container"><button onclick="preview(this)" type="button" class="layui-btn layui-btn-danger">预览</button><button onclick="confirmChange(this)" type="button" class="layui-btn">确认</button><button type="button" onclick="layui,layer.closeAll()" class="layui-btn layui-btn-primary">关闭</button></div></div>';
+		html += '	</div>';
+		
+		layer.open({
+			type: 1,
+			title:'请选择方案分类',
+			area: ['80%', '80%'], 
+			closeBtn: 0,
+			shadeClose: true, 
+			content: html,
+			success: function(layero, index){
+				
+				select.render();
+			}
+		});
+		form.render();	
+		return ;		
+	})
+	
+	window.deleteChange = function(obj){
+		$(obj).closest('tr').remove();
+		calPrice()
+	}
+
+	$.ajax({
+		url:'{:url('product')}?id={$model['product_id']}&limit=1',
+		dataType: 'json',
+		success: function(data){	
+			bom = data.data[0]['bom'];
+			project1 = [];
+			project2 = [];
+			var default_project = [];
+			
+			layui.each(data.data[0]['project'], function (index, item) {
+				if(item.type == 1){
+					project1.push(item);
+					if(category1.indexOf(item.cid) == -1){
+						category1.push(item.cid);
+					}
+					if(item.is_default == 1){
+						default_project.push(item);
+					}					
+				}else if(item.type == 2){
+					project2.push(item);
+					if(category2.indexOf(item.cid) == -1){
+						category2.push(item.cid);
+					}
+					if(item.is_default == 1){
+						default_project.push(item);
+					}					
+				}
+			})
+			
+			if(default_replace_info && default_replace_info.replace_bom_id){
+				var html = '';
+				layui.each(default_replace_info.replace_bom_id, function (idx, id) {
+					layui.each(bom, function (index, item) {
+						if(item.id == id){
+							var data = {};
+							data.id = item.id;
+							data.sn = item.material.sn;
+							data.name = item.material.name;
+							data.value = default_replace_info.replace_bom_value[item.id];
+							data.bill_type = default_replace_info.replace_bom_bill_type[item.id];
+							html += getReplaceHtml(data);
+						}
+					})			
+				})
+				$('#replaceDiv').append(html);	
+				
+			}
+			
+			if(default_change_project && default_change_project.length > 0){			
+				var html = '';
+				layui.each(default_change_project, function (idx, id) {
+					layui.each(project1, function (index, item) {
+						if(item.id == id){
+							html += getConfirmChangeHtml(1,item.cid,item.id,category[item.cid]['name']);
+						}
+					})				
+				})	
+			
+				$('#changeDiv').append(html);	
+			}
+			
+			//console.info(category2);
+			//console.info(project2);
+			//console.info(default_add_project);
+			
+			if(default_add_project && default_add_project.length > 0){			
+				var html = '';
+				layui.each(default_add_project, function (idx, id) {
+					layui.each(project2, function (index, item) {
+						if(item.id == id){
+							html += getConfirmChangeHtml(2,item.cid,item.id,category[item.cid]['name']);
+						}
+					})
+				
+				})	
+				$('#addDiv').html(html);	
+			}			
+			
+			
+			form.render();
+		},
+		error : function() {
+			alert('失败。');
+		}
+	});		
+	
+	
+
+	
+	form.on('select(replace_bom_value)', function(data){
+		$(data.elem).closest('tr').find('td').eq(3).html($(data.elem).find('option:selected').data('name'));
+		form.render();		
+	});	
+
+
+	$("body").on("change",".cal_price",function(){
+		calPrice()
+	});
+
+	function calPrice(){
+		var product_num 	= $('#product_num').val();
+		var product_price 	= $('#product_price').val();
+		var price = 0;		
+		if(!product_num || isNaN(parseFloat(product_num)) || product_num <= 0 ){ 
+			return 
+		}
+		if(product_price && !isNaN(parseFloat(product_price)) && product_price > 0){ 
+			price = price + parseFloat(product_price);
+		}
+		$('.project_price').each(function(){
+			var v = $(this).val();
+			if(v && !isNaN(parseFloat(v)) && v > 0 ){ 
+				price = price + parseFloat(v);
+			}
+		})
+		var total_price = parseFloat(product_num)*price;
+		if(total_price > 0 ){
+			$('#total_price').val(total_price);
+		}
+		if(price){
+			$('#product_price').val(price);
+		}
+	}
+
+});
+</script>
+{/block}

@@ -1,0 +1,121 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.grid-item { width: 200px; }
+.grid-item img{width: 100%;}
+.grid-item p{text-align:center;}
+</style>
+<form class="layui-form" action="" method="post">
+	<div class="layui-card">
+		<div class="layui-card-body">
+			<div class="layui-tab layui-tab-brief">
+				<ul class="layui-tab-title">
+					<li class="layui-this">指导书</li>
+					<li>编号/版本</li>
+				</ul>
+				<div class="layui-tab-content">
+					<div class="layui-tab-item layui-show">
+						<div class="grid1">
+							{php}
+							for($i=1;$i<=20;$i++){
+							{/php}
+							<div class="grid-item"><img src="https://muyunyun.cn/waterfall/images/{$i}.png"><p>sadsd</p></div>
+							{php}
+							}
+							{/php}
+						</div>
+					</div>
+					<div class="layui-tab-item layui-show">
+						<div class="grid2">
+							{php}
+							for($i=1;$i<=20;$i++){
+							{/php}
+							<div class="grid-item"><img src="https://muyunyun.cn/waterfall/images/{$i}.png"><p>sadsd</p></div>
+							{php}
+							}
+							{/php}
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="layui-row layui-col-space30">
+				{if !empty($model['material']['qc_file_link'])}
+				{foreach $model['material']['qc_file_link']['file'] as $k=>$vo}
+				<div class="layui-col-xs6 layui-col-sm4 layui-col-md2 ">
+					<div class="item">
+						<i class="layui-icon layui-icon-file"></i>   
+						<a target="_blank" href="{$vo}" ><p>{$model['material']['qc_file_link']['name'][$k]}</p></a>
+					</div>
+				</div>
+				{/foreach}
+				{/if}
+			</div>
+		</div>
+	</div>
+</form>
+<script src="/static/tool/jquery.min.js"></script>
+<script src="https://unpkg.com/masonry-layout@4/dist/masonry.pkgd.min.js"></script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common','layer'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		let layer = layui.layer;
+
+		var load_index 	= layer.load(2);	
+
+		$(window).on('load', function() {
+			console.log('所有图片都加载完成！');
+			$('.grid1').masonry({
+				// options
+				itemSelector: '.grid-item',
+				gutter: 10,
+				columnWidth: 200
+			});
+			$('.grid2').masonry({
+				// options
+				itemSelector: '.grid-item',
+				gutter: 10,
+				columnWidth: 200
+			});			
+			
+			$('.layui-tab-item').eq(1).removeClass('layui-show');
+			
+			layer.close(load_index);
+		});
+	
+		/*
+		$(document).ready(function() {
+			var complete_length = 0;
+			var images = $('.grid img');
+			var totalImages = images.length;
+			
+			$('.grid img').on('load', function() {
+				// 每当一个图片加载完成，这里的代码会被执行
+				//console.log('图片加载完成：', this.src);
+				if(totalImages == complete_length){
+					$('.grid').masonry({
+						// options
+						itemSelector: '.grid-item',
+						gutter: 10,
+						columnWidth: 200
+					});
+				}
+			});
+		
+			images.each(function() {
+				if (this.complete) {
+					complete_length++;
+					$(this).load();
+				}
+			});
+		});
+		*/
+		
+	})
+</script>
+{/block}
+
+

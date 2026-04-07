@@ -1,0 +1,180 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.process .name{height: 35px;line-height: 35px;background: rgb(0, 150, 136);color:#fff;text-align: center;}
+.process .count{height: 35px;line-height: 35px;	background: rgb(237, 237, 237);	font-weight: bold;text-align: center;color: rgb(0, 73, 255);}
+#searchForm{margin-top:0;}
+.layui-table td, .layui-table th{text-align:center;}
+#dataList .b-b td{border-top: 1px solid #eee;}
+#dataList tr td:first-child{border-left: 1px solid #eee;}
+#dataList tr td:last-child{border-right: 1px solid #eee;}
+#dataList td{border:none;}
+.h3{text-align: center;color: rgb(24, 144, 255);}
+
+
+#dataList tr:last-child{border-bottom: 1px solid #eee;}
+</style>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<div class="layui-row  layui-col-space10">
+			<div class="layui-col-md2">
+				<h3 class="h3">{$today}</h2>
+				<table class="layui-table">
+					<colgroup>
+						<col width="100">
+						<col>
+					</colgroup>
+					<thead>
+						<tr>
+							<th>日期</th>
+							<th>成品排产日均</th>
+						</tr> 
+					</thead>
+					<tbody>
+						{volist name="dates" id="vo"}
+						<tr onclick="location.replace('{:url('index')}?date={$vo['date']}')" {if $query['date'] == $vo['date']}style="color:rgb(24, 144, 255)"{/if}>
+							<td>{$vo['date']}</td>
+							<td>{$vo['count']} 台/日</td>
+						</tr>
+						{/volist}
+					</tbody>
+				</table>	
+				<table class="layui-table">
+					<colgroup>
+						<col width="60%">
+						<col width="40%">
+					</colgroup>
+					<thead>
+						<tr>
+							<th colspan="2">已检合格，等待包装</th>
+						</tr> 
+						<tr>
+							<th>收货地址(简称)</th>
+							<th>产品编码</th>
+						</tr> 	
+					</thead>
+					<tbody>
+						{volist name="produce1" id="vo"}
+						<tr>
+							<td>{$vo['address_short']}</td>
+							<td>{$vo['produce_sn']}</td>
+						</tr>
+						{/volist}
+					</tbody>
+				</table>					
+			</div>		
+			<div class="layui-col-md10">
+				<div style="border-left:1px solid rgb(233, 233, 233);padding-left:10px;">
+					<div class="layui-card" >
+						<div class="layui-card-body" style="padding: 10px 0;">
+							<div class="layui-row layui-col-space10">
+								{volist name="process" id="vo"}
+								<div class="layui-col-md1 process">
+									<div class="name">{$vo['name']}</div>
+									<div class="count">{$vo['count']}</div>
+								</div>
+								{/volist}
+							</div>
+						</div>
+					</div>				
+					<form class="layui-form" action="" id="searchForm">
+						<input type="hidden" name="date" value="{$query['date']}" >				
+						<div class="layui-form-item">
+							<div class="layui-form-item layui-inline">
+								<input type="text" name="customer_name" value="{$query['customer_name']|default=''}" placeholder="客户名称/订货单位" class="layui-input">					
+							</div>	
+							<div class="layui-form-item layui-inline">
+								<input type="text" name="order_sn" value="{$query['order_sn']|default=''}" placeholder="销售合同" class="layui-input">	
+							</div>	
+							<div class="layui-form-item layui-inline">
+								<input type="text" name="produce_sn" value="{$query['produce_sn']|default=''}" placeholder="产品编码" class="layui-input">	
+							</div>	
+							<div class="layui-form-item layui-inline" style="width:190px;">
+								<input type="text" name="delivery_time" value="{$query['delivery_time']|default=''}" placeholder="交货日期" class="layui-input rangedate">	
+							</div>								
+							<div class="layui-form-item layui-inline">
+								<button class="pear-btn pear-btn-md pear-btn-primary" ><i class="layui-icon layui-icon-search"></i>查询</button>
+								<button type="button" class="pear-btn pear-btn-md export"><i class="layui-icon layui-icon-export"></i>导出</button>
+							</div>
+						</div>
+					</form>
+					<table class="layui-table" id="dataList" lay-filter="parse-table-demo">
+	
+						<thead>
+							<tr>
+								<th rowspan="2" lay-data="{field:'i',width:80}">序号</th>		
+								<th rowspan="2" lay-data="{field:'customer_name',width:120}">客户名称</th>	
+								<th rowspan="2" lay-data="{field:'order_sn',width:150}">销售合同</th>									
+								<th rowspan="2" lay-data="{field:'produce_date',width:120}">上线日期</th>								
+								<th rowspan="2" lay-data="{field:'model',width:120}">型号</th>
+								<th rowspan="2" lay-data="{field:'specs',width:120}">款式</th>
+								<th rowspan="2" lay-data="{field:'produce_sn',width:170}">产品编码</th>
+								<th colspan="{:count($process)}">生产工艺组进度</th>	
+							</tr>
+							<tr>
+								{volist name="process" id="vo"}
+								<th lay-data="{field:'process{$vo['id']}',width:180}">{$vo['name']}</th>
+								{/volist}
+							</tr>
+						</thead>
+						<tbody>
+							{php}
+							$order_id = 0;
+							{/php}
+							{volist name="produce2" id="vo"}
+							<tr class="{if $order_id != $vo['order_id']}b-b{/if}">
+								<td>{$i}</td>
+								<td>{$vo['customer_name']}</td>
+								<td>{$vo['order_sn']}</td>
+								<td>{$vo['produce_date']}</td>
+								<td>{$vo['model']}</td>
+								<td>{$vo['specs']}</td>
+								<td>{$vo['produce_sn']}</td>
+								{foreach $vo['process'] as $v}
+								<td>&nbsp;{if $v}{$user[$v['user_id']]|default=''}：{:date('m-d H:i',strtotime($v['confirm_date']))}{/if}</td>
+								{/foreach}
+							</tr>
+							{php}
+							$order_id = $vo['order_id'];
+							{/php}							
+							{/volist}
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+{/block}
+{block name="js"}
+<script type="text/javascript" src="/static/tool/jquery.min.js"></script>
+<script type="text/javascript" src="/static/tool/jquery.table2excel.js"></script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+		table.init('parse-table-demo', {
+
+			height: 'full-370'
+
+		});
+
+
+		$('.export').click(function(){
+				$("#dataList").table2excel({
+				exclude: ".excludeThisClass",
+				name: "Worksheet Name",
+				filename: "生产进度.xls", // do include extension
+				preserveColors: false // set to true if you want background colors and font colors preserved
+			});
+		})
+
+	})
+</script>
+{/block}
+
+

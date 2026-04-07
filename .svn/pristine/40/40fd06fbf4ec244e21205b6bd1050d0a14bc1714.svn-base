@@ -1,0 +1,31 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-input-block {margin-left: 150px;}
+.layui-form-label {width: 120px;}
+</style>
+    <form class="layui-form" action="" method="post">
+        <div class="mainBox">
+            <div class="main-container">
+                <div class="layui-form-item">
+                    <label class="layui-form-label">物流单号</label>
+                    <div class="layui-input-block">
+                        <input type="text" maxlength="255" name="shipping_num"  placeholder="请输入" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+				<div class="layui-form-item">
+					<label class="layui-form-label">物流单据图片</label>
+					<div class="layui-input-block">
+						{:$form->photos('shipping_photo')}
+					</div>
+				</div>
+            </div>
+        </div>
+        <div class="bottom">
+			<div class="button-container">
+				<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*"><i class="layui-icon layui-icon-ok"></i>提交</button>
+				<button type="reset" class="layui-btn layui-btn-primary layui-btn-sm"><i class="layui-icon layui-icon-refresh"></i>重置</button>
+			</div>
+		</div>
+	</form>
+{/block}

@@ -1,0 +1,1969 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.t_aling_l{text-align: left !important;}
+.t_aling_r{text-align: right !important;}
+.session1_1{text-align: center;}
+.session2 table,.layui-table td,.layui-table th{border-color: #333;color: #000; text-align: center;}
+.content{font-weight:600;line-height:30px;font-size:14px;}
+.m_top_i_eleven{ margin: 0; margin-top: -11px !important;}
+.m_top_i_one{ margin: 0; margin-top: -1px !important;}
+.input_no_bro{border: none;}
+/* .layui-form-radio{float: left;} */
+.layui-form-radio>*{font-size:12px !important ;}
+input.height25{ height: 25px !important;}
+.font_w_b{font-weight: bold;}.
+.l{float: left;}
+.r{float: right;}
+/* .mainBox{padding-bottom:5px !important;} */
+.div_bor_b{border-bottom: 1px solid #000;}
+.floer{width: 100%; height:40px; line-height: 40px;text-align: center; overflow: hidden;}
+.padding_o{padding: 0 !important;}
+.padding_tblr,.padding_tblr td{padding:2px;}
+.padding_tb_o, .padding_tb_o td{padding-top: 0 !important;padding-bottom: 0 !important;}
+.layui-form-radio{ margin: 0 !important;}
+.padding_ab{padding:2px;}
+.layui-form-radio:hover>*, .layui-form-radioed, .layui-form-radioed>i{ color: #000;}
+.font_s8{-webkit-text-size-adjust: none;font-size:11px;}
+.layui-table th{ padding: 0 !important;}
+.session3>div>table>tbody>tr>td{padding: 0 !important;}
+.session6>div>table>tbody>tr>td .layui-form-radio{line-height: 25px !important; padding-rihgt: 5 !important;}
+.session7>div>table>tbody>tr>td .layui-form-radio{line-height: 25px !important; padding-rihgt: 5 !important;}
+.session7>div>table>tbody>tr>td .layui-form-checked[lay-skin=primary]>i{border-color: #333 !important;color: #000 !important;background-color:#FFF !important; }
+.session7>div>table>tbody>tr>td>div.layui-form-checkbox[lay-skin=primary]>div{padding-right: 0 !important;}
+.session7 label{float: left;}
+.sign-input {display: inline;width: auto;height: auto;}
+.session2 .layui-table td,.session2 .layui-input{padding: 0px !important;}
+.session2 .ccssaa td input.input_no_bro{padding-left: 3px !important; }
+.bottom {
+  position: fixed;
+}
+.floer {
+  margin-bottom: 50px;
+}
+
+@media print {
+	.no-print {
+		display: none;
+	}
+	.layui-input,.layui-textarea{
+		border:none;
+	}
+	.floer {
+	  margin-bottom: 0px;
+	}	
+}
+.page{page-break-before: always;}
+</style>
+<form class="layui-form" action="" method="post" data-reload="7" data-callback="cb" onkeydown="if(event.keyCode === 13) return false;">
+	<input type="hidden" name="id" value="{$produce['id']}" >
+	<input type="hidden" name="produce_sn" value="{$produce['produce_sn']}" >
+	<input type="hidden" name="process_id" value="{$process['id']}" >
+	{php}
+	function getUserFieldValue($filed){
+		if(!empty($produce['report'][$filed])){
+			return $produce['report'][$filed];
+		}
+		if(!empty($userInfo['name'])){
+			return $userInfo['name'];
+		}
+		return '';
+	}
+	{/php}
+	<div class="">
+		<div class="main-container">
+			{if !empty($bg) || $page == 1}
+			<div class="page" id="page1">
+				<div class="session1">
+					<div class="layui-row session1_1">
+						<img src="/static/index/images/logo_product.png" style="width: 100px; margin: 0 auto;"/>
+						<h2>产品档案<br/>生产过程及检验记录</h2>
+					</div>
+					<table class="layui-table session1_1">
+						<colgroup>
+							<col width="200">
+							<col />
+						</colgroup>
+						<tr>
+							<td><strong>产品序列号</strong></td>
+							<td><strong>{$produce['produce_finish_sn']|default=''}</strong></td>
+						</tr>
+						<tr>
+							<td ><strong>产品名称</strong></td>
+							<td><strong>牙科综合治疗机</strong></td>
+						</tr>
+						<tr>
+							<td><strong>型号</strong></td>
+							<td><strong>{$produce['order_product']['product_model']|default=''}</strong></td>
+						</tr>
+						<tr>
+							<td><strong>产品档案内容</strong></td>
+							<td><strong>生产记录、重要物资、过程检验<br/>出厂检验、使用量具、产品放行、UDI标签</strong></td>
+						</tr>
+						<tr>
+							<td><strong>完工日期（生产日期）</strong></td>
+							<td><strong>{if !empty($all_process[4]['confirm_date'])}{:date('Y年m月d日',strtotime($all_process[4]['confirm_date']))}{/if}</strong></td>
+						</tr>
+					</table>
+					<table class="layui-table session1_1">
+						<colgroup>
+							<col width="80">
+							<col />
+							<col width="80">
+							<col />
+						</colgroup>
+						<tr>
+							<td>列号</td>
+							<td>档案名称</td>
+							<td>列号</td>
+							<td>档案名称</td>
+						</tr>
+						<tr>
+							<td>1</td>
+							<td>整机随工单及组件随工单</td>
+							<td>4</td>
+							<td>使用量具（工具）清单</td>
+						</tr>
+						<tr>
+							<td>2</td>
+							<td>生产过程检验报告</td>
+							<td>5</td>
+							<td>产品放行确认表</td>
+						</tr>
+						<tr>
+							<td>3</td>
+							<td>产品出厂检验报告</td>
+							<td>6</td>
+							<td>UDI标签</td>
+						</tr>
+					</table>
+					<table class="layui-table t_aling_l">
+						<tr>
+							<td>本档案无盖本公司“检验专用章”无效。<br />本档案未经本公司书面批准不得复印。</td>
+							<td>本档案复印本未加盖本公司“检验专用章”无效。<br />本档案涂改无效。</td>
+						</tr>
+						<tr>
+							<td colspan="2">本档案保存15年。</td>
+						</tr>
+					</table>
+					<div class="content">
+						注册/生产企业：佛山市置安医疗器械有限公司<br />
+						注册住所：佛山市高明区更合镇鸿淘路7号13栋4层<br />
+						生产地址：佛山市高明区更合镇鸿淘路7号13栋4层<br />
+						住    所：佛山市高明区更合镇鸿淘路7号13栋4层<br />
+						邮      编：528500<br />
+						销售部电话：0757-86690872<br />
+						出口部电话：0757-81208757<br />
+						传      真：0757-86690873<br />
+						售后服务部电话：0757-81208755<br />
+					</div>
+				</div>			
+				<div class="floer">
+					<span style="float: left;" class="font_w_b">版本生效日期：2025年08月20日</span>
+					<span style="float: right;" class="font_w_b">下载日期：{if !empty($all_process[count($all_process)-1]['confirm_date'])}{:date('Y年m月d日',strtotime($all_process[count($all_process)-1]['confirm_date']))}{/if}</span>
+				</div>	
+			</div>
+			{/if}
+			{if !empty($bg) || $page == 2}
+			<div class="page" id="page2">
+				<div class="session2">
+					<div class="layui-row session1_1">
+						<h2>牙科综合治疗机-整机随工单</h2>
+					</div>
+					<table class="layui-table t_aling_l">
+						<tr>
+							<td>订单号：{$produce['order']['order_sn']|default=''}</td>
+							<td>客户名称：{$produce['order']['customer_name']|default=''}</td>
+							<td>生产单号：{$produce['order_sn']|default=''}</td>
+							<td>型号：{$produce['order_product']['product_model']|default=''}</td>
+						</tr>
+					</table>
+					<table class="layui-table t_aling_l m_top_i_eleven">
+						<col width="40">
+						<col width="70">
+						<col />
+						<col width="70">
+						<col />
+						<col width="70">
+						<col />
+						<col width="70">
+						<col />
+						<tr>
+							<td rowspan="9" class="session1_1">重要<br />物资<br />或<br />附件</td>
+						</tr>
+						<tr class="ccssaa">
+							<td>下电机：</td>
+							<td>
+								<input type="text" name="data[f200]" value="{$produce['report']['f200']|default='/'}"  lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro" onfocus="if (value ==' /'){value =''}" onblur="if (value ==''){value='/'}">
+							</td>
+							<td>上电机：</td>
+							<td>
+								<input type="text" name="data[f201]" value="{$produce['report']['f201']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro" onfocus="if (value ==' /'){value =''}" onblur="if (value ==''){value='/'}">
+							</td>
+							<td>程控盒：</td>
+							<td>
+								<input type="text" name="data[f202]" value="{$produce['report']['f202']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+							</td>
+							<td>治疗板：</td>
+							<td>
+								<input type="text" name="data[f203]" value="{$produce['report']['f203']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+							</td>
+						</tr>
+						<tr class="ccssaa">
+							<td>更换记录：</td>
+							<td>
+								<input type="text" name="data[f204]" value="{$produce['report']['f204']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+							</td>
+							<td>更换记录：</td>
+							<td>
+								<input type="text" name="data[f205]" value="{$produce['report']['f205']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+							</td>
+							<td>更换记录：</td>
+							<td>
+								<input type="text" name="data[f206]" value="{$produce['report']['f206']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+							</td>
+							<td>更换记录：</td>
+							<td>
+								<input type="text" name="data[f207]" value="{$produce['report']['f207']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+							</td>
+						</tr>
+						<tr class="ccssaa">
+							<td>变压器：</td>
+							<td>
+								<input type="text" name="data[f208]" value="{$produce['report']['f208']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+							</td>
+							<td>观片灯：</td>
+							<td>
+								<input type="text" name="data[f209]" value="{$produce['report']['f209']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+							</td>
+							<td>口腔灯：</td>
+							<td>
+								<input type="text" name="data[f210]" value="{$produce['report']['f210']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+							</td>
+							<td>滤波器：</td>
+							<td>
+								<input type="text" name="data[f211]" value="{$produce['report']['f211']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+							</td>
+						</tr>
+						<tr class="ccssaa">
+							<td>更换记录：</td>
+							<td>
+								<input type="text" name="data[f212]" value="{$produce['report']['f212']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+							</td>
+							<td>更换记录：</td>
+							<td>
+								<input type="text" name="data[f213]" value="{$produce['report']['f213']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+							</td>
+							<td>更换记录：</td>
+							<td>
+								<input type="text" name="data[f214]" value="{$produce['report']['f214']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+							</td>
+							<td>更换记录：</td>
+							<td>
+								<input type="text" name="data[f215]" value="{$produce['report']['f215']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+							</td>
+						</tr>
+						<tr class="ccssaa">
+							<td>热水器：</td>
+							<td>
+								<input type="text" name="data[f216]" value="{$produce['report']['f216']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+							</td>
+							<td>电动马达：</td>
+							<td>
+								<input type="text" name="data[f217]" value="{$produce['report']['f217']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+							</td>
+							<td>高速牙科手机：</td>
+							<td>
+								<input type="text" name="data[f218]" value="{$produce['report']['f218']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+							</td>
+							<td>低速牙科手机：</td>
+							<td>
+								<input type="text" name="data[f219]" value="{$produce['report']['f219']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+							</td>
+						</tr>
+						<tr class="ccssaa">
+							<td>更换记录：</td>
+							<td>
+								<input type="text" name="data[f220]" value="{$produce['report']['f220']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+							</td>
+							<td>更换记录：</td>
+							<td>
+								<input type="text" name="data[f221]" value="{$produce['report']['f221']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+							</td>
+							<td>更换记录：</td>
+							<td>
+								<input type="text" name="data[f222]" value="{$produce['report']['f222']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+							</td>
+							<td>更换记录：</td>
+							<td>
+								<input type="text" name="data[f223]" value="{$produce['report']['f223']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+							</td>
+						</tr>
+						<tr class="ccssaa">
+							<td>口腔数字观察仪：</td>
+							<td>
+								<input type="text" name="data[f224]" value="{$produce['report']['f224']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+							</td>
+							<td>光固化：</td>
+							<td>
+								<input type="text" name="data[f225]" value="{$produce['report']['f225']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+							</td>
+							<td>手术显微镜：</td>
+							<td>
+								<input type="text" name="data[f226]" value="{$produce['report']['f226']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+							</td>
+							<td>洁牙机：</td>
+							<td>
+								<input type="text" name="data[f227]" value="{$produce['report']['f227']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+							</td>
+						</tr>
+						<tr class="ccssaa">
+							<td>更换记录：</td>
+							<td>
+								<input type="text" name="data[f228]" value="{$produce['report']['f228']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+							</td>
+							<td>更换记录：</td>
+							<td>
+								<input type="text" name="data[f229]" value="{$produce['report']['f229']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+							</td>
+							<td>更换记录：</td>
+							<td>
+								<input type="text" name="data[f230]" value="{$produce['report']['f230']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+							</td>
+							<td>更换记录：</td>
+							<td>
+								<input type="text" name="data[f231]" value="{$produce['report']['f231']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+							</td>
+						</tr>
+					</table>
+					<table class="layui-table session1_1 m_top_i_one">
+						<col width="60">
+						<col />
+						<col />
+						<col />
+						<col />
+						<tr>
+							<td>序号</td>
+							<td>工序名称</td>
+							<td>操作者</td>
+							<td>日期</td>
+							<td>备注</td>
+						</tr>
+						{volist name="all_process" id="vo"}
+						<tr>
+							<td>{$i}</td>
+							<td>{$vo['process_name']}</td>
+							<td>{$vo['username']}</td>
+							<td>{if !empty($vo['confirm_date'])}{:date('Y年m月d日',strtotime($vo['confirm_date']))}{/if}</td>
+							{if $i == 1}<td rowspan="{:count($all_process)}">根据相关安装作业指导书进行安装</td>{/if}
+						</tr>
+						{/volist}
+					</table>
+					<table class="layui-table t_aling_l m_top_i_one">
+						<tr>
+							<td>产品序列号：{$produce['produce_finish_sn']|default=''}</td>
+							<td>颜色：{$produce['order_product']['color']|default='/'}</td>
+							<td>完工日期（生产日期）：{if !empty($all_process[3]['confirm_date'])}{:date('Y年m月d日',strtotime($all_process[3]['confirm_date']))}{/if}</td>
+							<td>审核员：
+								{if empty($produce['report']['f232']) && empty($bg)}
+									<button type="button" data-field="f232" class="layui-btn layui-btn-xs no-print sign-btn">确认</button>
+								{else}
+									<input type="text" name="data[f232]" value="{$produce['report']['f232']|default=''}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro sign-input" >
+								{/if}
+							</td>
+						</tr>
+					</table>
+				</div>			
+				<div class="floer">
+					版本号：A /3
+					<span style="float: left;">文件编号：ZA4-S01</span>
+					<span style="float: right;">版本生效日期：2025年08月20日</span>
+				</div>	
+			</div>
+			{/if}
+			{if !empty($bg) || $page == 3}
+			<div class="page" id="page3">
+				<div class="session3">
+					<div class="layui-form">
+						<div class="layui-row session1_1">
+							<h2>生产过程检验报告</h2>
+						</div>
+						<table class="layui-table t_aling_l session1_1">
+							<col width="60">
+							<col width="120">
+							<col />
+							<col width="120">
+							<col width="120">
+							<col width="140">
+							<tr class="t_aling_l">
+								<td colspan="2">产品名称：牙科综合治疗机</td>
+								<td>检验依据：工艺流图及生产过程检验指导书</td>
+								<td colspan="2">
+									审核员：
+									{if empty($produce['report']['f300']) && empty($bg)}
+										<button type="button" data-field="f300" data-date="date_f322" class="layui-btn layui-btn-xs no-print sign-btn">确认</button>
+									{else}
+										<input type="text" name="data[f300]" value="{$produce['report']['f300']|default=''}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro sign-input" style="width: 130px; padding: 0;" >
+									{/if}
+								</td>
+								<td><input id="date_f322" type="text" name="data[f322]" value="{$produce['report']['f322']|default=''}"  placeholder="" autocomplete="off" class="layui-input input_no_bro" style="padding: 0;"></td>
+							</tr>
+							<tr>
+								<td>序号</td>
+								<td>工序名称</td>
+								<td>工艺要求</td>
+								<td>质量状况</td>
+								<td>检验员/巡检</td>
+								<td>备注</td>
+							</tr>
+							<tr>
+								<td>1</td>
+								<td>安装椅架</td>
+								<td class="t_aling_l">椅架安装完整，椅架底板及连接头水平，外壳整洁美观。</td>
+								<td>
+									<input type="radio" name="data[f301]" value="A" title="A" {if (isset($produce['report']['f301']) && $produce['report']['f301'] == 'A') || (!isset($produce['report']['f301']))}checked{/if}>
+									<input type="radio" name="data[f301]" value="B" title="B" {if isset($produce['report']['f301']) && $produce['report']['f301'] == 'B'}checked{/if}> 
+								</td>
+								<td rowspan="10">
+									{if empty($produce['report']['f302']) && empty($bg)}
+										<button type="button" data-field="f302" class="layui-btn layui-btn-xs no-print sign-btn">确认</button>
+									{else}
+										<input type="text" name="data[f302]" value="{$produce['report']['f302']|default=''}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro sign-input" style="width: 100px; padding: 0;">
+									{/if}
+								</td>
+								<td>
+									<input type="text" name="data[f303]" value="{$produce['report']['f303']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1" onfocus="if (value =='Z'){value =''}" onblur="if (value ==''){value='Z'}">
+								</td>
+							</tr>
+							<tr>
+								<td>2</td>
+								<td>安装箱体</td>
+								<td class="t_aling_l">箱体安装完整，箱架，立柱水平垂直，转动关节位加润滑脂，水气电元件接头牢固。</td>
+								<td>
+									<input type="radio" name="data[f304]" value="A" title="A" {if (isset($produce['report']['f304']) && $produce['report']['f304'] == 'A') || (!isset($produce['report']['f304']))}checked{/if}>
+									<input type="radio" name="data[f304]" value="B" title="B" {if isset($produce['report']['f304']) && $produce['report']['f304'] == 'B'}checked{/if}> 
+								</td>
+								<td>
+									<input type="text" name="data[f305]" value="{$produce['report']['f305']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+								</td>
+							</tr>
+							<tr>
+								<td>3</td>
+								<td>安装地箱</td>
+								<td class="t_aling_l">地箱安装完整，水气电元件接头牢固，不得漏水漏气。</td>
+								<td>
+									<input type="radio" name="data[f306]" value="A" title="A" {if (isset($produce['report']['f306']) && $produce['report']['f306'] == 'A') || (!isset($produce['report']['f306']))}checked{/if}>
+									<input type="radio" name="data[f306]" value="B" title="B" {if isset($produce['report']['f306']) && $produce['report']['f306'] == 'B'}checked{/if}> 
+								</td>
+								<td>
+									<input type="text" name="data[f307]" value="{$produce['report']['f307']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+								</td>
+							</tr>
+							<tr>
+								<td>4</td>
+								<td>安装助手架</td>
+								<td class="t_aling_l">助手架安装完整，转动关节位加润滑脂，按键灵敏，不得漏气。</td>
+								<td>
+									<input type="radio" name="data[f308]" value="A" title="A" {if (isset($produce['report']['f308']) && $produce['report']['f308'] == 'A') || (!isset($produce['report']['f308']))}checked{/if}>
+									<input type="radio" name="data[f308]" value="B" title="B" {if isset($produce['report']['f308']) && $produce['report']['f308'] == 'B'}checked{/if}> 
+								</td>
+								<td>
+									<input type="text" name="data[f309]" value="{$produce['report']['f309']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+								</td>
+							</tr>
+							<tr>
+								<td>5</td>
+								<td>安装脚踏开关</td>
+								<td class="t_aling_l">脚踏安装完整，气电元件接头牢固，不得漏气。</td>
+								<td>
+									<input type="radio" name="data[f310]" value="A" title="A" {if (isset($produce['report']['f310']) && $produce['report']['f310'] == 'A') || (!isset($produce['report']['f310']))}checked{/if}>
+									<input type="radio" name="data[f310]" value="B" title="B" {if isset($produce['report']['f310']) && $produce['report']['f310'] == 'B'}checked{/if}> 
+								</td>
+								<td>
+									<input type="text" name="data[f311]" value="{$produce['report']['f311']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+								</td>
+							</tr>
+							<tr>
+								<td>6</td>
+								<td>安装痰盂组件</td>
+								<td class="t_aling_l">痰盂安装完整，冲供水转动灵活，冲供水水管接头牢固，不得漏水。</td>
+								<td>
+									<input type="radio" name="data[f312]" value="A" title="A" {if (isset($produce['report']['f312']) && $produce['report']['f312'] == 'A') || (!isset($produce['report']['f312']))}checked{/if}>
+									<input type="radio" name="data[f312]" value="B" title="B" {if isset($produce['report']['f312']) && $produce['report']['f312'] == 'B'}checked{/if}> 
+								</td>
+								<td>
+									<input type="text" name="data[f313]" value="{$produce['report']['f313']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+								</td>
+							</tr>
+							<tr>
+								<td>7</td>
+								<td>安装转臂</td>
+								<td class="t_aling_l">转臂安装完整，转动关节位加润滑脂，弹力适中。</td>
+								<td>
+									<input type="radio" name="data[f314]" value="A" title="A" {if (isset($produce['report']['f314']) && $produce['report']['f314'] == 'A') || (!isset($produce['report']['f314']))}checked{/if}>
+									<input type="radio" name="data[f314]" value="B" title="B" {if isset($produce['report']['f314']) && $produce['report']['f314'] == 'B'}checked{/if}> 
+								</td>
+								<td>
+									<input type="text"  name="data[f315]" value="{$produce['report']['f315']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+								</td>
+							</tr>
+							<tr>
+								<td>8</td>
+								<td>安装器械盘，手机支架</td>
+								<td class="t_aling_l">器械盘安装完整，水气电元件接头牢固，按键灵敏，不得漏水漏气。</td>
+								<td>
+									<input type="radio" name="data[f316]" value="A" title="A" {if (isset($produce['report']['f316']) && $produce['report']['f316'] == 'A') || (!isset($produce['report']['f316']))}checked{/if}>
+									<input type="radio" name="data[f316]" value="B" title="B" {if isset($produce['report']['f316']) && $produce['report']['f316'] == 'B'}checked{/if}> 
+								</td>
+								<td>
+									<input type="text" name="data[f317]" value="{$produce['report']['f317']|default='/'}"  lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+								</td>
+							</tr>
+							<tr>
+								<td>9</td>
+								<td>安装灯臂，口腔灯</td>
+								<td class="t_aling_l">转动关节位加润滑脂，灯臂及口腔灯转动灵活。</td>
+								<td>
+									<input type="radio" name="data[f318]" value="A" title="A" {if (isset($produce['report']['f318']) && $produce['report']['f318'] == 'A') || (!isset($produce['report']['f318']))}checked{/if}>
+									<input type="radio" name="data[f318]" value="B" title="B" {if isset($produce['report']['f318']) && $produce['report']['f318'] == 'B'}checked{/if}> 
+								</td>
+								<td>
+									<input type="text" name="data[f319]" value="{$produce['report']['f319']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+								</td>
+							</tr>
+							<tr>
+								<td>10</td>
+								<td>总装</td>
+								<td class="t_aling_l">设备安装完整,将相关水气电元件接头牢固，不得漏水漏气，使其正常工作。</td>
+								<td>
+									<input type="radio" name="data[f320]" value="A" title="A" {if (isset($produce['report']['f320']) && $produce['report']['f320'] == 'A') || (!isset($produce['report']['f320']))}checked{/if}>
+									<input type="radio" name="data[f320]" value="B" title="B" {if isset($produce['report']['f320']) && $produce['report']['f320'] == 'B'}checked{/if}> 
+								</td>
+								<td>
+									<input type="text" name="data[f321]" value="{$produce['report']['f321']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+								</td>
+							</tr>
+							<tr class="session1_1">
+								<td colspan="2">质量状况说明</td>
+								<td colspan="2">A 同意转入下一道工序&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;B 返工后转入下一道工序</td>
+								<td colspan="2">产品序列号：{$produce['produce_finish_sn']|default=''}</td>
+							</tr>
+						</table>
+					</div>
+				</div>
+				<div class="floer">
+					版本号：A /3
+					<span style="float: left;">文件编号：ZA4-Z03</span>
+					<span style="float: right;">版本生效日期：2025年08月20日</span>
+				</div>
+			</div>					
+			{/if}
+			{if !empty($bg) || $page == 4}
+			<div class="page" id="page4">
+				<div class="session4">
+						<div class="layui-row session1_1">
+							<h2>产品出厂检验报告</h2>
+							<h2>声 明</h2>
+						</div>
+						<div class="font_w_b"><span style="float:left;">1、</span><div style="display:flex">本检验报告无主检、审核、批准签名无效。</div></div>
+						<div class="font_w_b"><span style="float:left;">2、</span><div style="display:flex">本检验报告仅对所检样品负责。</div>
+						<div class="font_w_b"><span style="float:left;">3、</span><div style="display:flex">本检验报告覆盖已注册备案的产品技术要求中需要常规控制的检验项目，没有覆盖的项目（如破坏性试验，EMC等）通过严格控制关键元器件、原材料供应商、生产工艺过程等进行控制。（注册安规检测报告，注册EMC检测报告，CE国外认证检测报告）</div></div>
+					</div>
+				</div>
+				<div class="floer">
+					版本号：A /3
+					<span style="float: left;">文件编号：ZA4-Z04</span>
+					<span style="float: right;">版本生效日期：2025年08月20日</span>
+				</div>
+			</div>	
+			{/if}
+			{if !empty($bg) || $page == 5}
+			<div class="page" id="page5">
+				<div class="session5">
+					<div class="layui-row session1_1">
+						<h2>佛山市置安医疗器械有限公司</h2>
+						<h2>产品出厂检验报告</h2>
+					</div>
+					<table class="layui-table t_aling_l session1_1">
+						<col width="150">
+						<col />
+						<col width="150">
+						<col />
+						<tr>
+							<td>产品名称</td>
+							<td>牙科综合治疗机</td>
+							<td>型号</td>
+							<td>{$produce['order_product']['product_model']|default=''}</td>
+						</tr>
+						<tr>
+							<td>产品数量</td>
+							<td>1</td>
+							<td>产品序列号</td>
+							<td>{$produce['produce_finish_sn']|default=''}</td>
+						</tr>
+						<tr>
+							<td>生产单位</td>
+							<td colspan="3">佛山市置安医疗器械有限公司</td>
+						</tr>
+						<tr>
+							<td>送检人</td>
+							<td>{$all_process[30]['username']|default=''}</td>
+							<td>送检日期</td>
+							<td>{if !empty($all_process[30]['confirm_date'])}{:date('Y年m月d日',strtotime($all_process[30]['confirm_date']))}{/if}</td>
+						</tr>
+						<tr>
+							<td>工序名称</td>
+							<td>出厂检验</td>
+							<td>检验地点</td>
+							<td>本公司产品检验区</td>
+						</tr>
+						<tr>
+							<td>检验条件</td>
+							<td colspan="3" class="t_aling_l">
+								环境温度：5 ℃～40 ℃；<br />
+								相对湿度：≤ 93％；<br />
+								海拔高度：≤3000m；<br />
+								额定电压：
+								<input type="radio" name="data[f733]" value="国内a.c.220 V" title="国内a.c.220 V" {if (isset($produce['report']['f733']) && $produce['report']['f733'] == '国内a.c.220 V') || (!isset($produce['report']['f733']))}checked{/if}>
+								<input type="radio" name="data[f733]" value="欧盟a.c.230 V" title="欧盟a.c.230 V" {if isset($produce['report']['f733']) && $produce['report']['f733'] == '欧盟a.c.230 V'}checked{/if}>
+								<input type="radio" name="data[f733]" value="日本a.c.110V" title="日本a.c.110V" {if isset($produce['report']['f733']) && $produce['report']['f733'] == '日本a.c.110V'}checked{/if}>
+								<br />
+								额度频率：
+								<input type="radio" name="data[f734]" value="50 Hz" title="50 Hz" {if isset($produce['report']['f734']) && $produce['report']['f734'] == '50 Hz'}checked{/if}>
+								<input type="radio" name="data[f734]" value="60 Hz" title="60 Hz" {if isset($produce['report']['f734']) && $produce['report']['f734'] == '60 Hz'}checked{/if}>
+								<br />
+								水源：水压0.20 MPa～0.40 Mpa；<br />
+								气源：气压0.5 MPa～0.80 Mpa；
+							</td>
+						</tr>
+						<tr>
+							<td>检验依据</td>
+							<td colspan="3" class="t_aling_l">
+								置安牙科综合治疗机的产品技术要求，出厂检验指导书, EN 60601-1, EN 60601-1-2 , IEC 80601-2-60, EN ISO 7494-1, EN ISO 7494-2, EN ISO 9680
+							</td>
+						</tr>
+						<tr>
+							<td>检验结论</td>
+							<td colspan="3" class="t_aling_l">
+								<input type="radio" name="data[f735]" value="被检产品所检项目符合牙科综合治疗机的产品技术要求" title="被检产品所检项目符合牙科综合治疗机的产品技术要求" {if (isset($produce['report']['f735']) && $produce['report']['f735'] == '被检产品所检项目符合牙科综合治疗机的产品技术要求') || (!isset($produce['report']['f735']))}checked{/if}>
+								<input type="radio" name="data[f735]" value="被检产品所检项目符合EN 60601-1, EN 60601-1-2, IEC 80601-2-60,EN ISO 7494-1, EN ISO 7494-2,  EN ISO 9680标准的要求" title="被检产品所检项目符合EN 60601-1, EN 60601-1-2, IEC 80601-2-60,EN ISO 7494-1, EN ISO 7494-2,  EN ISO 9680标准的要求" {if isset($produce['report']['f735']) && $produce['report']['f735'] == '被检产品所检项目符合EN 60601-1, EN 60601-1-2, IEC 80601-2-60,EN ISO 7494-1, EN ISO 7494-2,  EN ISO 9680标准的要求'}checked{/if}><br />
+								结论:产品合格。<br />
+								<div style="text-align: right;padding-right: 10px;">（检验报告专用章）&nbsp;&nbsp;&nbsp;&nbsp;<br />日期：{if !empty($all_process[3]['confirm_date'])}{:date('Y年m月d日',strtotime($all_process[3]['confirm_date']))}{/if}</div>
+							</td>
+						</tr>
+						<tr>
+							<td>备注</td>
+							<td colspan="3">
+								<input type="text" name="data[f500]" value="{$produce['report']['f500']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+							</td>
+						</tr>
+					</table>
+					<div>
+						<div style="width: 33%; float: left;" class="t_aling_l">
+							主检：
+							{if empty($produce['report']['f501']) && empty($bg)}
+								<button type="button" data-field="f501" class="layui-btn layui-btn-xs no-print sign-btn">确认</button>
+							{else}
+								<input type="text" name="data[f501]" value="{$produce['report']['f501']|default=''}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro sign-input" >
+							{/if}
+						</div>
+						<div style="width: 33%; float: left;" class="session1_1">
+							审核：
+							{if empty($produce['report']['f502']) && empty($bg)}
+								<button type="button" data-field="f502" class="layui-btn layui-btn-xs no-print sign-btn">确认</button>
+							{else}
+								<input type="text" name="data[f502]" value="{$produce['report']['f502']|default=''}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro sign-input" >
+							{/if}
+						</div>
+						<div style="width: 33%; float: left;" class="t_aling_r">
+							批准：
+							{if empty($produce['report']['f503']) && empty($bg)}
+								<button type="button" data-field="f503" class="layui-btn layui-btn-xs no-print sign-btn">确认</button>
+							{else}
+								<input type="text" name="data[f503]" value="{$produce['report']['f503']|default=''}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro sign-input" >
+							{/if}
+						</div>
+					</div>
+				</div>			
+				<div class="floer">
+					版本号：A /3
+					<span style="float: left;">文件编号：ZA4-Z04</span>
+					<span style="float: right;">版本生效日期：2025年08月20日</span>
+				</div>
+			</div>	
+			{/if}
+			{if !empty($bg) || $page == 6}
+			<div class="page" id="page6">
+				<div class="session6">
+					<div class="layui-form">
+						<table class="layui-table padding_tblr session1_1">
+							<thead>
+								<tr>
+									<th colspan="8" style="border: none;">
+										<div class="layui-row session1_1" style="padding-top: 10px;">
+											<h2>佛山市置安医疗器械有限公司</h2>
+											<h2 style="margin: 10px 0; ">产品出厂检验报告</h2>
+										</div>
+									</th>
+								</tr>
+								<tr>
+									<th>序号</th>
+									<th>检验项目</th>
+									<th colspan="4">技术要求</th>
+									<th>检验结果</th>
+									<th>结论</th>
+								</tr>
+							</thead>
+							<tbody>
+								<col width="60">
+								<col width="80">
+								<col width="100">
+								<col width="50">
+								<col />
+								<col width="100">
+								<col width="100">
+								<col width="150">
+								<!-- 序号：1 -->
+								<tr>
+									<td rowspan="6">1</td>
+									<td rowspan="6">外观与结构</td>
+									<td colspan="4" class="t_aling_l">牙机/治疗机的外表面应光滑、平整，不允许有凹凸、碰伤和粗糙不平的缺陷。</td>
+									<td rowspan="6">
+										<input type="radio" name="data[f600]" value="符合" title="符&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f600']) && $produce['report']['f600'] == '符合') || (!isset($produce['report']['f600']))}checked{/if}>
+										<input type="radio" name="data[f600]" value="不符合" title="不符合" {if isset($produce['report']['f600']) && $produce['report']['f600'] == '不符合'}checked{/if}> 									
+									</td>
+									<td rowspan="6"> 
+										<input type="radio" name="data[f601]" value="符合" title="符&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f601']) && $produce['report']['f601'] == '符合') || (!isset($produce['report']['f601']))}checked{/if}>
+										<input type="radio" name="data[f601]" value="返工后符合" title="返工后符合" {if isset($produce['report']['f601']) && $produce['report']['f601'] == '返工后符合'}checked{/if}> 										
+									</td>
+								</tr>
+								<tr>
+									<td colspan="4" class="t_aling_l">油漆件/喷涂件表面应光洁，无露底、脱落、起泡、发黏及影响外观的修补痕迹。</td>
+								</tr>
+								<tr>
+									<td colspan="4" class="t_aling_l">患者或操作者可触及的部件和零件的边和角应不会伤害患者或操作者。</td>
+								</tr>
+								<tr>
+									<td colspan="4" class="t_aling_l">连接到牙机上的器械管子应是可拆卸的，以便于清洁和消毒。</td>
+								</tr>
+								<tr>
+									<td colspan="4" class="t_aling_l">各种文字符号应清晰、准确、牢固。</td>
+								</tr>
+								<tr>
+									<td colspan="4" class="t_aling_l">牙椅的头枕、扶手、靠背、座垫和脚垫应使患者轻松地坐或卧，并且操作者可以在符合人机学最佳位置上进行操作。</td>
+								</tr>
+								<!-- 序号：2 -->
+								<tr>
+									<td rowspan="4">2</td>
+									<td rowspan="4">运动部件</td>
+									<td colspan="4" class="t_aling_l">在正常工作情况下，可能造成损害的运动部件，应加以防护或覆盖。</td>
+									<td rowspan="4">
+										<input type="radio" name="data[f602]" value="符合" title="符&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f602']) && $produce['report']['f602'] == '符合') || (!isset($produce['report']['f602']))}checked{/if}>
+										<input type="radio" name="data[f602]" value="不符合" title="不符合" {if isset($produce['report']['f602']) && $produce['report']['f602'] == '不符合'}checked{/if}> 	
+									</td>
+									<td rowspan="4">
+										<input type="radio" name="data[f603]" value="符合" title="符&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f603']) && $produce['report']['f603'] == '符合') || (!isset($produce['report']['f603']))}checked{/if}>
+										<input type="radio" name="data[f603]" value="返工后符合" title="返工后符合" {if isset($produce['report']['f603']) && $produce['report']['f603'] == '返工后符合'}checked{/if}> 
+									</td>
+								</tr>
+								<tr>
+									<td colspan="4" class="t_aling_l">电动部件应提供限位开关以限制其动作范围，并对限位开关的失效提供附加保护装置。</td>
+								</tr>
+								<tr>
+									<td colspan="4" class="t_aling_l">所有管道和电缆应适当防护，以免在正常使用时，由于摩擦、弯曲或拉伸导致的磨损、断裂和损坏。</td>
+								</tr>
+								<tr>
+									<td colspan="4" class="t_aling_l">牙机/治疗机装配应牢靠，紧固件应牢固，活动部件应灵活可靠。</td>
+								</tr>
+								<!-- 序号：3 -->
+								<tr>
+									<td>3</td>
+									<td>噪音</td>
+									<td colspan="4" class="t_aling_l">牙机的转动部分运转应平稳，无不正常的杂声。整机噪声应不大于70 dB(A)。</td>
+									<td>
+										<span style="float: right; line-height: 25px;" class="font_s8">dB(A)</span>
+										<input style="width:50%" type="text" name="data[f604]" value="{$produce['report']['f604']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+									</td>
+									<td>
+										<input type="radio" name="data[f605]" value="符合" title="符&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f605']) && $produce['report']['f605'] == '符合') || (!isset($produce['report']['f605']))}checked{/if}>
+										<input type="radio" name="data[f605]" value="返工后符合" title="返工后符合" {if isset($produce['report']['f605']) && $produce['report']['f605'] == '返工后符合'}checked{/if}> 
+									</td>
+								</tr>
+								<!-- 序号：4 -->
+								<tr>
+									<td rowspan="5">4</td>
+									<td rowspan="5">操作控制装置</td>
+									<td colspan="4" class="t_aling_l">控制装置的位置排列应在避免意外触发的位置。</td>
+									<td rowspan="5">
+										<input type="radio" name="data[f606]" value="符合" title="符&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f606']) && $produce['report']['f606'] == '符合') || (!isset($produce['report']['f606']))}checked{/if}>
+										<input type="radio" name="data[f606]" value="不符合" title="不符合" {if isset($produce['report']['f606']) && $produce['report']['f606'] == '不符合'}checked{/if}> 	
+									</td>
+									<td rowspan="5">
+										<input type="radio" name="data[f607]" value="符合" title="符&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f607']) && $produce['report']['f607'] == '符合') || (!isset($produce['report']['f607']))}checked{/if}>
+										<input type="radio" name="data[f607]" value="返工后符合" title="返工后符合" {if isset($produce['report']['f607']) && $produce['report']['f607'] == '返工后符合'}checked{/if}>  
+									</td>
+								</tr>
+								<tr>
+									<td colspan="4" class="t_aling_l">各操作件指示应正确，动作应可靠。</td>
+								</tr>
+								<tr>
+									<td colspan="4" class="t_aling_l">操作符号应符合YY/T 0628 的规定。</td>
+								</tr>
+								<tr>
+									<td colspan="4" class="t_aling_l">当牙科手机正常放置时，控制装置应能防止其意外启动。</td>
+								</tr>
+								<tr>
+									<td colspan="4" class="t_aling_l">当牙科手机工作时，控制装置应能防止牙科病人椅的意外启动。</td>
+								</tr>
+								<!-- 序号：5 -->
+								<tr>
+									<td rowspan="2">5</td>
+									<td rowspan="2">供水与供气</td>
+									<td colspan="4" class="t_aling_l">水、气路管道应有明显的颜色区分。</td>
+									<td rowspan="2">
+										<input type="radio" name="data[f608]" value="符合" title="符&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f608']) && $produce['report']['f608'] == '符合') || (!isset($produce['report']['f608']))}checked{/if}>
+										<input type="radio" name="data[f608]" value="不符合" title="不符合" {if isset($produce['report']['f608']) && $produce['report']['f608'] == '不符合'}checked{/if}> 	
+									</td>
+									<td rowspan="2">
+										<input type="radio" name="data[f609]" value="符合" title="符&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f609']) && $produce['report']['f609'] == '符合') || (!isset($produce['report']['f609']))}checked{/if}>
+										<input type="radio" name="data[f609]" value="返工后符合" title="返工后符合" {if isset($produce['report']['f609']) && $produce['report']['f609'] == '返工后符合'}checked{/if}> 
+									</td>
+								</tr>
+								<tr>
+									<td colspan="4" class="t_aling_l">水、气路系统应畅通，各阀应操作方便，启闭灵活。</td>
+								</tr>
+								<!-- 序号：6 -->
+								<tr>
+									<td rowspan="2">6</td>
+									<td rowspan="2">地箱</td>
+									<td colspan="4" class="t_aling_l">在地箱的自来水输入水连接处应安装一个过滤器，以防止自来水供应系统的微粒进入到牙机内的水系统。</td>
+									<td rowspan="2">
+										<input type="radio" name="data[f610]" value="符合" title="符&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f610']) && $produce['report']['f610'] == '符合') || (!isset($produce['report']['f610']))}checked{/if}>
+										<input type="radio" name="data[f610]" value="不符合" title="不符合" {if isset($produce['report']['f610']) && $produce['report']['f610'] == '不符合'}checked{/if}> 	
+									</td>
+									<td rowspan="2">
+										<input type="radio" name="data[f611]" value="符合" title="符&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f611']) && $produce['report']['f611'] == '符合') || (!isset($produce['report']['f611']))}checked{/if}>
+										<input type="radio" name="data[f611]" value="返工后符合" title="返工后符合" {if isset($produce['report']['f611']) && $produce['report']['f611'] == '返工后符合'}checked{/if}> 
+									</td>
+								</tr>
+								<tr>
+									<td colspan="4" class="t_aling_l">在地箱的输入气连接处应安装一个过滤器，以防止空气压缩机供气系统的微粒进入到牙机内的气系统。</td>
+								</tr>
+								<!-- 序号：7 -->
+								<tr>
+									<td rowspan="6">7</td>
+									<td rowspan="6">冲盂漱口<br />给水装置</td>
+									<td colspan="4" class="t_aling_l">痰盂清洗水出水口和溢出水位之间的空气间隙的距离应不少于20 mm。</td>
+									<td>
+										<span style="float: right; line-height: 25px;" class="font_s8">mm</span>
+										<input style="width:50%" type="text" name="data[f612]" value="{$produce['report']['f612']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+									</td>
+									<td rowspan="6">
+										<input type="radio" name="data[f613]" value="符合" title="符&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f613']) && $produce['report']['f613'] == '符合') || (!isset($produce['report']['f613']))}checked{/if}>
+										<input type="radio" name="data[f613]" value="返工后符合" title="返工后符合" {if isset($produce['report']['f613']) && $produce['report']['f613'] == '返工后符合'}checked{/if}> 
+									</td>
+								</tr>
+								<tr>
+									<td colspan="4" class="t_aling_l">水压为200 kPa时，痰盂清洗水水流应达盂底整周。</td>
+									<td rowspan="3">
+										<input type="radio" name="data[f614]" value="符合" title="符&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f614']) && $produce['report']['f614'] == '符合') || (!isset($produce['report']['f614']))}checked{/if}>
+										<input type="radio" name="data[f614]" value="不符合" title="不符合" {if isset($produce['report']['f614']) && $produce['report']['f614'] == '不符合'}checked{/if}> 	
+									</td>
+								</tr>
+								<tr>
+									<td colspan="4"  class="t_aling_l">痰盂清洗水水流应不会溅出痰盂。</td>
+								</tr>
+								<tr>
+									<td colspan="4"  class="t_aling_l">漱口给水装置的出水应柔直，无飘溅现象。</td>
+								</tr>
+								<tr>
+									<td colspan="4" class="t_aling_l">痰盂下水道通畅，下水速率应不少于4L/min。</td>
+									<td>
+										<span style="float: right; line-height: 25px;" class="font_s8">L/min</span>
+										<input style="width:50%" type="text" name="data[f615]" value="{$produce['report']['f615']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+									</td>
+								</tr>
+								<tr>
+									<td colspan="4" class="t_aling_l">痰盂下水口内应配有固体收集器，能截留直径 ≥2 mm的任何固体废物。</td>
+									<td>
+										<span style="float: right; line-height: 25px;" class="font_s8">mm</span>
+										<input style="width:50%" type="text" name="data[f616]" value="{$produce['report']['f616']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+									</td>
+								</tr>
+								<!-- 序号：8 -->
+								<tr>
+									<td rowspan="2">8</td>
+									<td rowspan="2">三用喷枪</td>
+									<td colspan="4" class="t_aling_l">密封性应良好，启闭灵活，喷出物应均匀，喷射方向应能调节。</td>
+									<td rowspan="2">
+										<input type="radio" name="data[f617]" value="符合" title="符&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f617']) && $produce['report']['f617'] == '符合') || (!isset($produce['report']['f617']))}checked{/if}>
+										<input type="radio" name="data[f617]" value="不符合" title="不符合" {if isset($produce['report']['f617']) && $produce['report']['f617'] == '不符合'}checked{/if}> 	
+									</td>
+									<td rowspan="2">
+										<input type="radio" name="data[f618]" value="符合" title="符&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f618']) && $produce['report']['f618'] == '符合') || (!isset($produce['report']['f618']))}checked{/if}>
+										<input type="radio" name="data[f618]" value="返工后符合" title="返工后符合" {if isset($produce['report']['f618']) && $produce['report']['f618'] == '返工后符合'}checked{/if}> 
+									</td>
+								</tr>
+								<tr>
+									<td colspan="4" class="t_aling_l">分别按动水路或气路按钮时，水、气应分清，两个按钮同时按下时，喷出物应成雾状。</td>
+								</tr>
+								<!-- 序号：9 -->
+								<tr>
+									<td rowspan="2">9</td>
+									<td rowspan="2">热水器</td>
+									<td colspan="4" class="t_aling_l">热水器应使用安全特低电压（SELV）进行操作。</td>
+									<td >
+										<input type="radio" name="data[f619]" value="符合" title="符&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f619']) && $produce['report']['f619'] == '符合') || (!isset($produce['report']['f619']))}checked{/if}>
+										<input type="radio" name="data[f619]" value="不符合" title="不符合" {if isset($produce['report']['f619']) && $produce['report']['f619'] == '不符合'}checked{/if}> 
+									</td>
+									<td rowspan="2">
+										<input type="radio" name="data[f620]" value="符合" title="符&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f620']) && $produce['report']['f620'] == '符合') || (!isset($produce['report']['f620']))}checked{/if}>
+										<input type="radio" name="data[f620]" value="返工后符合" title="返工后符合" {if isset($produce['report']['f620']) && $produce['report']['f620'] == '返工后符合'}checked{/if}> 
+									</td>
+								</tr>
+								<tr>
+									<td colspan="4" class="t_aling_l">恒温性能应稳定，漱口水和热水三用喷枪水的温度应为40 ℃±5 ℃。</td>
+									<td>
+										<span style="float: right; line-height: 25px;" class="font_s8">℃&nbsp;&nbsp;&nbsp;&nbsp;</span>
+										<input style="width:50%" type="text" name="data[f621]" value="{$produce['report']['f621']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+									</td>
+								</tr>
+								<!-- 序号：10 -->
+								<tr>
+									<td rowspan="4">10</td>
+									<td rowspan="2">吸唾器<br />弱吸唾器</td>
+									<td colspan="4" class="t_aling_l">水压为200 kPa时，真空度应不少于15 kPa。</td>
+									<td >
+										<span style="float: right; line-height: 25px;" class="font_s8">kPa</span>
+										<input style="width:50%" type="text" name="data[f622]" value="{$produce['report']['f622']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+									</td>
+									<td rowspan="4">
+										<input type="radio" name="data[f623]" value="符合" title="符&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f623']) && $produce['report']['f623'] == '符合') || (!isset($produce['report']['f623']))}checked{/if}>
+										<input type="radio" name="data[f623]" value="返工后符合" title="返工后符合" {if isset($produce['report']['f623']) && $produce['report']['f623'] == '返工后符合'}checked{/if}> 
+									</td>
+								</tr>
+								<tr>
+									<td colspan="4" class="t_aling_l">水压为200 kPa时，抽水速率应不少于400 mL/min。</td>
+									<td>
+										<span style="float: right; line-height: 25px;" class="font_s8">mL/min</span>
+										<input style="width:50%" type="text" name="data[f624]" value="{$produce['report']['f624']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+									</td>
+								</tr>
+								<tr>
+									<td rowspan="2">吸唾器<br />强吸唾器</td>
+									<td colspan="4" class="t_aling_l">气压为500 kPa时，真空度应不少于25 kPa。</td>
+									<td >
+										<span style="float: right; line-height: 25px;" class="font_s8">kPa</span>
+										<input style="width:50%" type="text" name="data[f625]" value="{$produce['report']['f625']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+									</td>
+								</tr>
+								<tr>
+									<td colspan="4" class="t_aling_l">气压为500kPa时，抽水速率应不少于1000 mL/min。</td>
+									<td>
+										<span style="float: right; line-height: 25px;" class="font_s8">mL/min</span>
+										<input style="width:50%" type="text" name="data[f626]" value="{$produce['report']['f626']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+									</td>
+								</tr>
+								<!-- 序号：11 -->
+								<tr>
+									<td rowspan="5">11</td>
+									<td rowspan="5">器械盘</td>
+									<td colspan="4" class="t_aling_l">在各个工作位置都应稳定，盘面偏斜度应不大于3°。</td>
+									<td >
+										<span style="float: right; line-height: 25px;" class="font_s8">°&nbsp;&nbsp;&nbsp;&nbsp;</span>
+										<input style="width:50%" type="text" name="data[f627]" value="{$produce['report']['f627']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+									</td>
+									<td rowspan="5">
+										<input type="radio" name="data[f628]" value="符合" title="符&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f628']) && $produce['report']['f628'] == '符合') || (!isset($produce['report']['f628']))}checked{/if}>
+										<input type="radio" name="data[f628]" value="返工后符合" title="返工后符合" {if isset($produce['report']['f628']) && $produce['report']['f628'] == '返工后符合'}checked{/if}> 
+									</td>
+								</tr>
+								<tr>
+									<td colspan="4" class="t_aling_l">升降、转动应自如，可在移动范围内任意位置上停留。</td>
+									<td rowspan="4">
+										<input type="radio" name="data[f629]" value="符合" title="符&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f629']) && $produce['report']['f629'] == '符合') || (!isset($produce['report']['f629']))}checked{/if}>
+										<input type="radio" name="data[f629]" value="不符合" title="不符合" {if isset($produce['report']['f629']) && $produce['report']['f629'] == '不符合'}checked{/if}> 
+									</td>
+								</tr>
+								<tr>
+									<td colspan="4" class="t_aling_l">上下移动范围应不少于440 mm，转动角度应不少于160°。</td>
+								</tr>
+								<tr>
+									<td colspan="4" class="t_aling_l">器械盘应有锁紧装置，盘面承受不大于5 kg质量时，应可在移动范围内任意位置上停留。</td>
+								</tr>
+								<tr>
+									<td colspan="4" class="t_aling_l">牙科手机接头输出气压应不窄于200kPa～400kPa。</td>
+								</tr>
+								<!-- 序号：12 -->
+								<tr>
+									<td rowspan="2">12</td>
+									<td rowspan="2">观片灯</td>
+									<td colspan="3" class="t_aling_l">应具有足够的光照度，色温应不小于6500K。</td>
+									<td rowspan="2">
+										<input type="radio" name="data[f630]" value="有" title="有" {if (isset($produce['report']['f630']) && $produce['report']['f630'] == '有') || (!isset($produce['report']['f630']))}checked{/if}>
+										<input type="radio" name="data[f630]" value="无" title="无" {if isset($produce['report']['f630']) && $produce['report']['f630'] == '无'}checked{/if}> 																	
+									</td>
+									<td >
+										<span style="float: right; line-height: 25px;" class="font_s8">K&nbsp;&nbsp;&nbsp;&nbsp;</span>
+										<input style="width:50%" type="text" name="data[f631]" value="{$produce['report']['f631']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+									</td>
+									<td rowspan="2">
+										<input type="radio" name="data[f632]" value="符合" title="符&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f632']) && $produce['report']['f632'] == '符合') || (!isset($produce['report']['f632']))}checked{/if}>
+										<input type="radio" name="data[f632]" value="返工后符合" title="返工后符合" {if isset($produce['report']['f632']) && $produce['report']['f632'] == '返工后符合'}checked{/if}> 
+									</td>
+								</tr>
+								<tr>
+									<td colspan="3" class="t_aling_l">亮度应不小于2000cd/m2。</td>
+									<td >
+										<span style="float: right; line-height: 25px;" class="font_s8">cd/m²</span>
+										<input style="width:50%" type="text"  name="data[f633]" value="{$produce['report']['f633']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+									</td>
+								</tr>
+								<!-- 序号：13 -->
+								<tr>
+									<td>13</td>
+									<td>口腔灯</td>
+									<td colspan="4" class="t_aling_l">照度的调节若是连续可调的，最大照度值不小于15000 Lx</td>
+									<td>
+										<input type="radio" name="data[f634]" value="符合" title="符&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f634']) && $produce['report']['f634'] == '符合') || (!isset($produce['report']['f634']))}checked{/if}>
+										<input type="radio" name="data[f634]" value="不符合" title="不符合" {if isset($produce['report']['f634']) && $produce['report']['f634'] == '不符合'}checked{/if}> 
+									</td>
+									<td>
+										<input type="radio" name="data[f635]" value="符合" title="符&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f635']) && $produce['report']['f635'] == '符合') || (!isset($produce['report']['f635']))}checked{/if}>
+										<input type="radio" name="data[f635]" value="返工后符合" title="返工后符合" {if isset($produce['report']['f635']) && $produce['report']['f635'] == '返工后符合'}checked{/if}>
+									</td>
+								</tr>
+								<!-- 序号：14 -->
+								<tr>
+									<td>14</td>
+									<td>脚踏开关</td>
+									<td colspan="4" class="t_aling_l">脚踏开关的启动力应不小于 10 N ，且不大于50 N 。</td>
+									<td>
+										<input type="radio" name="data[f636]" value="符合" title="符&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f636']) && $produce['report']['f636'] == '符合') || (!isset($produce['report']['f636']))}checked{/if}>
+										<input type="radio" name="data[f636]" value="不符合" title="不符合" {if isset($produce['report']['f636']) && $produce['report']['f636'] == '不符合'}checked{/if}> 
+									</td>
+									<td>
+										<input type="radio" name="data[f637]" value="符合" title="符&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f637']) && $produce['report']['f637'] == '符合') || (!isset($produce['report']['f637']))}checked{/if}>
+										<input type="radio" name="data[f637]" value="返工后符合" title="返工后符合" {if isset($produce['report']['f637']) && $produce['report']['f637'] == '返工后符合'}checked{/if}>
+									</td>
+								</tr>
+								<!-- 序号：15 -->
+								<tr>
+									<td>15</td>
+									<td>牙科病人椅</td>
+									<td colspan="4" class="t_aling_l">牙科病人椅应配有至少一套紧急停止装置，它应装在牙科医生和（或）操作者容易操作的部位。该系统一旦被启动，所有可能危害患者和操作者的动作应立即停止。</td>
+									<td>
+										<input type="radio" name="data[f638]" value="符合" title="符&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f638']) && $produce['report']['f638'] == '符合') || (!isset($produce['report']['f638']))}checked{/if}>
+										<input type="radio" name="data[f638]" value="不符合" title="不符合" {if isset($produce['report']['f638']) && $produce['report']['f638'] == '不符合'}checked{/if}> 
+									</td>
+									<td>
+										<input type="radio" name="data[f639]" value="符合" title="符&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f639']) && $produce['report']['f639'] == '符合') || (!isset($produce['report']['f639']))}checked{/if}>
+										<input type="radio" name="data[f639]" value="返工后符合" title="返工后符合" {if isset($produce['report']['f639']) && $produce['report']['f639'] == '返工后符合'}checked{/if}>
+									</td>
+								</tr>
+								<!-- 序号：16 -->
+								<tr>
+									<td>16</td>
+									<td>光固化</td>
+									<td colspan="3" class="t_aling_l">接入时光固化应能正常工作</td>
+									<td>
+										<input type="radio" name="data[f640]" value="有" title="有" {if isset($produce['report']['f640']) && $produce['report']['f640'] == '有'}checked{/if}> 
+										<input type="radio" name="data[f640]" value="无" title="无" {if (isset($produce['report']['f640']) && $produce['report']['f640'] == '无') || (!isset($produce['report']['f640']))}checked{/if}>
+									</td>
+									<td>
+										<input type="radio" name="data[f641]" value="符合" title="符&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f641']) && $produce['report']['f641'] == '符合')}checked{/if}>
+										<input type="radio" name="data[f641]" value="不符合" title="不符合" {if isset($produce['report']['f641']) && $produce['report']['f641'] == '不符合'}checked{/if}> 
+									</td>
+									<td>
+										<input type="radio" name="data[f642]" value="符合" title="符&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f642']) && $produce['report']['f642'] == '符合')}checked{/if}>
+										<input type="radio" name="data[f642]" value="返工后符合" title="返工后符合" {if isset($produce['report']['f642']) && $produce['report']['f642'] == '返工后符合'}checked{/if}>
+									</td>
+								</tr>
+								<!-- 序号：17 -->
+								<tr>
+									<td>17</td>
+									<td>洁牙机</td>
+									<td colspan="3" class="t_aling_l">接入时洁牙机应能正常工作</td>
+									<td>
+										<input type="radio" name="data[f643]" value="有" title="有" {if isset($produce['report']['f643']) && $produce['report']['f643'] == '有'}checked{/if}> 
+										<input type="radio" name="data[f643]" value="无" title="无" {if (isset($produce['report']['f643']) && $produce['report']['f643'] == '无') || (!isset($produce['report']['f643']))}checked{/if}>
+									</td>
+									<td>
+										<input type="radio" name="data[f644]" value="符合" title="符&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f644']) && $produce['report']['f644'] == '符合')}checked{/if}>
+										<input type="radio" name="data[f644]" value="不符合" title="不符合" {if isset($produce['report']['f644']) && $produce['report']['f644'] == '不符合'}checked{/if}> 
+									</td>
+									<td>
+										<input type="radio" name="data[f645]" value="符合" title="符&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f645']) && $produce['report']['f645'] == '符合')}checked{/if}>
+										<input type="radio" name="data[f645]" value="返工后符合" title="返工后符合" {if isset($produce['report']['f645']) && $produce['report']['f645'] == '返工后符合'}checked{/if}>
+									</td>
+								</tr>
+								<!-- 序号：18 -->
+								<tr>
+									<td>18</td>
+									<td>牙科手机和电动马达</td>
+									<td colspan="3" class="t_aling_l">接入时牙科手机和电动马达应能正常工作</td>
+									<td>
+										<input type="radio" name="data[f646]" value="有" title="有" {if isset($produce['report']['f646']) && $produce['report']['f646'] == '有'}checked{/if}> 
+										<input type="radio" name="data[f646]" value="无" title="无" {if (isset($produce['report']['f646']) && $produce['report']['f646'] == '无') || (!isset($produce['report']['f646']))}checked{/if}>
+									</td>
+									<td>
+										<input type="radio" name="data[f647]" value="符合" title="符&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f647']) && $produce['report']['f647'] == '符合')}checked{/if}>
+										<input type="radio" name="data[f647]" value="不符合" title="不符合" {if isset($produce['report']['f647']) && $produce['report']['f647'] == '不符合'}checked{/if}> 
+									</td>
+									<td>
+										<input type="radio" name="data[f648]" value="符合" title="符&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f648']) && $produce['report']['f648'] == '符合')}checked{/if}>
+										<input type="radio" name="data[f648]" value="返工后符合" title="返工后符合" {if isset($produce['report']['f648']) && $produce['report']['f648'] == '返工后符合'}checked{/if}>
+									</td>
+								</tr>
+								<!-- 序号：19 -->
+								<tr>
+									<td>19</td>
+									<td>口腔数字观察仪</td>
+									<td colspan="3" class="t_aling_l">接入时口腔数字观察仪应能正常工作作</td>
+									<td>
+										<input type="radio" name="data[f649]" value="有" title="有" {if isset($produce['report']['f649']) && $produce['report']['f649'] == '有'}checked{/if}> 
+										<input type="radio" name="data[f649]" value="无" title="无" {if (isset($produce['report']['f649']) && $produce['report']['f649'] == '无') || (!isset($produce['report']['f649']))}checked{/if}>
+									</td>
+									<td>
+										<input type="radio" name="data[f650]" value="符合" title="符&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f650']) && $produce['report']['f650'] == '符合')}checked{/if}>
+										<input type="radio" name="data[f650]" value="不符合" title="不符合" {if isset($produce['report']['f650']) && $produce['report']['f650'] == '不符合'}checked{/if}> 
+									</td>
+									<td>
+										<input type="radio" name="data[f651]" value="符合" title="符&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f651']) && $produce['report']['f651'] == '符合')}checked{/if}>
+										<input type="radio" name="data[f651]" value="返工后符合" title="返工后符合" {if isset($produce['report']['f651']) && $produce['report']['f651'] == '返工后符合'}checked{/if}>
+									</td>
+								</tr>
+								<!-- 序号：20 -->
+								<tr>
+									<td>20</td>
+									<td>手术显微镜</td>
+									<td colspan="3" class="t_aling_l">接入时手术显微镜应能正常工作</td>
+									<td>
+										<input type="radio" name="data[f652]" value="有" title="有" {if isset($produce['report']['f652']) && $produce['report']['f652'] == '有'}checked{/if}> 
+										<input type="radio" name="data[f652]" value="无" title="无" {if (isset($produce['report']['f652']) && $produce['report']['f652'] == '无') || (!isset($produce['report']['f652']))}checked{/if}>
+									</td>
+									<td>
+										<input type="radio" name="data[f653]" value="符合" title="符&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f653']) && $produce['report']['f653'] == '符合')}checked{/if}>
+										<input type="radio" name="data[f653]" value="不符合" title="不符合" {if isset($produce['report']['f653']) && $produce['report']['f653'] == '不符合'}checked{/if}> 
+									</td>
+									<td>
+										<input type="radio" name="data[f654]" value="符合" title="符&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f654']) && $produce['report']['f654'] == '符合')}checked{/if}>
+										<input type="radio" name="data[f654]" value="返工后符合" title="返工后符合" {if isset($produce['report']['f654']) && $produce['report']['f654'] == '返工后符合'}checked{/if}>
+									</td>
+								</tr>
+								<!-- 序号：21 -->
+								<tr>
+									<td rowspan="14">21<br />电气安全性能</td>
+									<td>阻抗及载流能力</td>
+									<td colspan="4" class="t_aling_l">带有不可拆卸电源软电线的ME设备,网电源插头中的保护接地脚与任何已保护接地部件之间的阻抗,不得超过0.2 Ω。</td>
+									<td >
+										<span style="float: right; line-height: 25px;" class="font_s8">Ω&nbsp;&nbsp;&nbsp;&nbsp;</span>
+										<input style="width:50%" type="text" name="data[f655]" value="{$produce['report']['f655']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+									</td>
+									<td>
+										<input type="radio" name="data[f656]" value="符合" title="符&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f656']) && $produce['report']['f656'] == '符合') || (!isset($produce['report']['f656']))}checked{/if}>
+										<input type="radio" name="data[f656]" value="返工后符合" title="返工后符合" {if isset($produce['report']['f656']) && $produce['report']['f656'] == '返工后符合'}checked{/if}> 
+									</td>
+								</tr>
+								<tr>
+									<td rowspan="8">正常工作温度下的连续漏电流</td>
+									<td rowspan="2">对地漏电流</td>
+									<td colspan="3" class="t_aling_l">正常状态下不应超过5 mA。</td>
+									<td >
+										<span style="float: right; line-height: 25px;" class="font_s8">mA</span>
+										<input style="width:50%" type="text" name="data[f657]" value="{$produce['report']['f657']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+									</td>
+									<td rowspan="8">
+										<input type="radio" name="data[f658]" value="符合" title="符&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f658']) && $produce['report']['f658'] == '符合') || (!isset($produce['report']['f658']))}checked{/if}>
+										<input type="radio" name="data[f658]" value="返工后符合" title="返工后符合" {if isset($produce['report']['f658']) && $produce['report']['f658'] == '返工后符合'}checked{/if}> 
+									</td>
+								</tr>
+								<tr>
+									<td colspan="3" class="t_aling_l">单一故障状态下不应超过10 mA。</td>
+									<td >
+										<span style="float: right; line-height: 25px;" class="font_s8">mA</span>
+										<input style="width:50%" type="text" name="data[f659]" value="{$produce['report']['f659']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+									</td>
+								</tr>
+								<tr>
+									<td rowspan="2">接触电流</td>
+									<td colspan="3" class="t_aling_l">正常状态下不应超过0.1 mA。</td>
+									<td >
+										<span style="float: right; line-height: 25px;" class="font_s8">mA</span>
+										<input style="width:50%" type="text" name="data[f660]" value="{$produce['report']['f660']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+									</td>
+								</tr>
+								<tr>
+									<td colspan="3" class="t_aling_l">单一故障状态下不应超过0.5 mA。</td>
+									<td >
+										<span style="float: right; line-height: 25px;" class="font_s8">mA</span>
+										<input style="width:50%" type="text" name="data[f661]" value="{$produce['report']['f661']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+									</td>
+								</tr>
+								<tr>
+									<td rowspan="4">患者/总患者漏电流B型设备</td>
+									<td rowspan="2">d.c.</td>
+									<td colspan="2" class="t_aling_l">正常状态下不应超过0.01 mA。</td>
+									<td >
+										<span style="float: right; line-height: 25px;" class="font_s8">mA</span>
+										<input style="width:50%" type="text" name="data[f662]" value="{$produce['report']['f662']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+									</td>
+								</tr>
+								<tr>
+									<td colspan="2" class="t_aling_l">单一故障下不应超过0.05 mA。。</td>
+									<td >
+										<span style="float: right; line-height: 25px;" class="font_s8">mA</span>
+										<input style="width:50%" type="text" name="data[f663]" value="{$produce['report']['f663']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+									</td>
+								</tr>
+								<tr>
+									<td rowspan="2">a.c.</td>
+									<td colspan="2" class="t_aling_l">正常状态下不应超过0.1 mA。</td>
+									<td >
+										<span style="float: right; line-height: 25px;" class="font_s8">mA</span>
+										<input style="width:50%" type="text" name="data[f664]" value="{$produce['report']['f664']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+									</td>
+								</tr>
+								<tr>
+									<td colspan="2" class="t_aling_l">单一故障下不应超过0.5 mA。</td>
+									<td >
+										<span style="float: right; line-height: 25px;" class="font_s8">mA</span>
+										<input style="width:50%" type="text" name="data[f665]" value="{$produce['report']['f665']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+									</td>
+								</tr>
+								<tr>
+									<td rowspan="4">正常工作温度下的患者辅助电流</td>
+									<td rowspan="4">患者辅助电流B型设备</td>
+									<td rowspan="2">d.c.</td>
+									<td colspan="2" class="t_aling_l">正常状态下不应超过0.01 mA。</td>
+									<td >
+										<span style="float: right; line-height: 25px;" class="font_s8">mA</span>
+										<input style="width:50%" type="text" name="data[f666]" value="{$produce['report']['f666']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+									</td>
+									<td rowspan="4">
+										<input type="radio" name="data[f667]" value="符合" title="符&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f667']) && $produce['report']['f667'] == '符合') || (!isset($produce['report']['f667']))}checked{/if}>
+										<input type="radio" name="data[f667]" value="返工后符合" title="返工后符合" {if isset($produce['report']['f667']) && $produce['report']['f667'] == '返工后符合'}checked{/if}> 
+									</td>
+								</tr>
+								<tr>
+									<td colspan="2" class="t_aling_l">单一故障下不应超过0.05 mA。</td>
+									<td >
+										<span style="float: right; line-height: 25px;" class="font_s8">mA</span>
+										<input style="width:50%" type="text" name="data[f668]" value="{$produce['report']['f668']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+									</td>
+								</tr>
+								<tr>
+									<td rowspan="2">a.c.</td>
+									<td colspan="2" class="t_aling_l">正常状态下不应超过0.1 mA。</td>
+									<td >
+										<span style="float: right; line-height: 25px;" class="font_s8">mA</span>
+										<input style="width:50%" type="text" name="data[f669]" value="{$produce['report']['f669']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+									</td>
+								</tr>
+								<tr>
+									<td colspan="2" class="t_aling_l">单一故障下不应超过0.5 mA。</td>
+									<td >
+										<span style="float: right; line-height: 25px;" class="font_s8">mA</span>
+										<input style="width:50%" type="text" name="data[f670]" value="{$produce['report']['f670']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+									</td>
+								</tr>
+								<tr>
+									<td>正常工作温度下的电介质强度</td>
+									<td colspan="4" class="t_aling_l">设备应能承受(EN 60601-1)GB 9706.1中要求的试验电压，历时1 min，无击穿或闪烁现象。</td>
+									<td>见本报告表A.1</td>
+									<td>
+										<input type="radio" name="data[f671]" value="符合" title="符&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f671']) && $produce['report']['f671'] == '符合') || (!isset($produce['report']['f671']))}checked{/if}>
+										<input type="radio" name="data[f671]" value="返工后符合" title="返工后符合" {if isset($produce['report']['f671']) && $produce['report']['f671'] == '返工后符合'}checked{/if}> 
+									</td>
+								</tr>
+								<!-- 序号：22 -->
+								<tr>
+									<td>22</td>
+									<td>UDI标签</td>
+									<td colspan="4" class="t_aling_l">条码符号印制质量及数据符合性符合《GS1通用规范》的技术要求。</td>
+									<td>
+										<input type="radio" name="data[f672]" value="符合" title="符&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f672']) && $produce['report']['f672'] == '符合') || (!isset($produce['report']['f672']))}checked{/if}>
+										<input type="radio" name="data[f672]" value="不符合" title="不符合" {if isset($produce['report']['f672']) && $produce['report']['f672'] == '不符合'}checked{/if}> 
+									</td>
+									<td>
+										<input type="radio" name="data[f673]" value="符合" title="符&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f673']) && $produce['report']['f673'] == '符合') || (!isset($produce['report']['f673']))}checked{/if}>
+										<input type="radio" name="data[f673]" value="返工后符合" title="返工后符合" {if isset($produce['report']['f673']) && $produce['report']['f673'] == '返工后符合'}checked{/if}> 
+									</td>
+								</tr>
+								<!-- 序号：23 -->
+								<tr>
+									<td>23</td>
+									<td>出厂自动测试</td>
+									<td colspan="4" class="t_aling_l">牙机按自动化测试程序运行不少于10分钟（上下电机，冲痰供水，口腔灯，观片灯等）。</td>
+									<td>
+										<input type="radio" name="data[f674]" value="符合" title="符&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f674']) && $produce['report']['f674'] == '符合') || (!isset($produce['report']['f674']))}checked{/if}>
+										<input type="radio" name="data[f674]" value="不符合" title="不符合" {if isset($produce['report']['f674']) && $produce['report']['f674'] == '不符合'}checked{/if}> 
+									</td>
+									<td>
+										<input type="radio" name="data[f675]" value="符合" title="符&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;合" {if (isset($produce['report']['f675']) && $produce['report']['f675'] == '符合') || (!isset($produce['report']['f675']))}checked{/if}>
+										<input type="radio" name="data[f675]" value="返工后符合" title="返工后符合" {if isset($produce['report']['f675']) && $produce['report']['f675'] == '返工后符合'}checked{/if}> 
+									</td>
+								</tr>
+							</tbody>
+							<tbody>
+								<tr>
+									<td colspan="8">
+										<table style="width: 100%;">
+											<col width="100"/>
+											<col />
+											<col width="100"/>
+											<col />
+											<col  width="200">
+											<tr>
+												<td colspan="4">表A.1</td>
+												<td rowspan="3">备注</td>
+											</tr>
+											<tr>
+												<td colspan="4">电介质强度</td>
+											</tr>
+											<tr>
+												<td>绝缘类型</td>
+												<td>参考电压</td>
+												<td>试验电压</td>
+												<td>测试结果</td>
+											</tr>
+											<tr>
+												<td>1MOOP</td>
+												<td>
+													<input type="radio" name="data[f676]" value="国内a.c.220" title="国内a.c.220" {if (isset($produce['report']['f676']) && $produce['report']['f676'] == '国内a.c.220')}checked{/if}>
+													<input type="radio" name="data[f676]" value="欧盟a.c.230" title="欧盟a.c.230" {if isset($produce['report']['f676']) && $produce['report']['f676'] == '欧盟a.c.230'}checked{/if}> 
+													<input type="radio" name="data[f676]" value="日本a.c.110" title="日本a.c.110" {if isset($produce['report']['f676']) && $produce['report']['f676'] == '日本a.c.110'}checked{/if}> 
+												</td>
+												<td>a.c.1500</td>
+												<td>
+													<input type="radio" name="data[f677]" value="无击穿或闪烁" title="无击穿或闪烁" {if (isset($produce['report']['f677']) && $produce['report']['f677'] == '无击穿或闪烁') || (!isset($produce['report']['f677']))}checked{/if}>
+													<input type="radio" name="data[f677]" value="击穿" title="击穿" {if isset($produce['report']['f677']) && $produce['report']['f677'] == '击穿'}checked{/if}> 												
+													<input type="radio" name="data[f677]" value="闪烁" title="闪烁" {if isset($produce['report']['f677']) && $produce['report']['f677'] == '闪烁'}checked{/if}> 
+												</td>
+												<td class="t_aling_l">网电源部分相反极性之间</td>
+											</tr>
+											<tr>
+												<td>1MOOP</td>
+												<td>
+													<input type="radio" name="data[f678]" value="国内a.c.220" title="国内a.c.220" {if (isset($produce['report']['f678']) && $produce['report']['f678'] == '国内a.c.220')}checked{/if}>
+													<input type="radio" name="data[f678]" value="欧盟a.c.230" title="欧盟a.c.230" {if isset($produce['report']['f678']) && $produce['report']['f678'] == '欧盟a.c.230'}checked{/if}> 
+													<input type="radio" name="data[f678]" value="日本a.c.110" title="日本a.c.110" {if isset($produce['report']['f678']) && $produce['report']['f678'] == '日本a.c.110'}checked{/if}> 
+												</td>
+												<td>a.c.1500</td>
+												<td>
+													<input type="radio" name="data[f679]" value="无击穿或闪烁" title="无击穿或闪烁" {if (isset($produce['report']['f679']) && $produce['report']['f679'] == '无击穿或闪烁') || (!isset($produce['report']['f679']))}checked{/if}>
+													<input type="radio" name="data[f679]" value="击穿" title="击穿" {if isset($produce['report']['f679']) && $produce['report']['f679'] == '击穿'}checked{/if}> 												
+													<input type="radio" name="data[f679]" value="闪烁" title="闪烁" {if isset($produce['report']['f679']) && $produce['report']['f679'] == '闪烁'}checked{/if}> 
+												</td>
+												<td class="t_aling_l">网电源部分到接地</td>
+											</tr>
+											<tr>
+												<td>2MOOP</td>
+												<td>
+													<input type="radio" name="data[f680]" value="国内a.c.220" title="国内a.c.220" {if (isset($produce['report']['f680']) && $produce['report']['f680'] == '国内a.c.220')}checked{/if}>
+													<input type="radio" name="data[f680]" value="欧盟a.c.230" title="欧盟a.c.230" {if isset($produce['report']['f680']) && $produce['report']['f680'] == '欧盟a.c.230'}checked{/if}> 
+													<input type="radio" name="data[f680]" value="日本a.c.110" title="日本a.c.110" {if isset($produce['report']['f680']) && $produce['report']['f680'] == '日本a.c.110'}checked{/if}> 
+												</td>
+												<td>a.c.3000</td>
+												<td>
+													<input type="radio" name="data[f681]" value="无击穿或闪烁" title="无击穿或闪烁" {if (isset($produce['report']['f681']) && $produce['report']['f681'] == '无击穿或闪烁') || (!isset($produce['report']['f681']))}checked{/if}>
+													<input type="radio" name="data[f681]" value="击穿" title="击穿" {if isset($produce['report']['f681']) && $produce['report']['f681'] == '击穿'}checked{/if}> 												
+													<input type="radio" name="data[f681]" value="闪烁" title="闪烁" {if isset($produce['report']['f681']) && $produce['report']['f681'] == '闪烁'}checked{/if}> 
+												</td>
+												<td class="t_aling_l">网电源部分到塑料外壳之间</td>
+											</tr>
+											<tr>
+												<td>2MOPP</td>
+												<td>
+													<input type="radio" name="data[f682]" value="国内a.c.220" title="国内a.c.220" {if (isset($produce['report']['f682']) && $produce['report']['f682'] == '国内a.c.220')}checked{/if}>
+													<input type="radio" name="data[f682]" value="欧盟a.c.230" title="欧盟a.c.230" {if isset($produce['report']['f682']) && $produce['report']['f682'] == '欧盟a.c.230'}checked{/if}> 
+													<input type="radio" name="data[f682]" value="日本a.c.110" title="日本a.c.110" {if isset($produce['report']['f682']) && $produce['report']['f682'] == '日本a.c.110'}checked{/if}> 
+												</td>
+												<td>a.c.4000</td>
+												<td>
+													<input type="radio" name="data[f683]" value="无击穿或闪烁" title="无击穿或闪烁" {if (isset($produce['report']['f683']) && $produce['report']['f683'] == '无击穿或闪烁') || (!isset($produce['report']['f683']))}checked{/if}>
+													<input type="radio" name="data[f683]" value="击穿" title="击穿" {if isset($produce['report']['f683']) && $produce['report']['f683'] == '击穿'}checked{/if}> 												
+													<input type="radio" name="data[f683]" value="闪烁" title="闪烁" {if isset($produce['report']['f683']) && $produce['report']['f683'] == '闪烁'}checked{/if}> 
+												</td>
+												<td class="t_aling_l">网电源部分和应用部分之间</td>
+											</tr>
+											<tr>
+												<td>2MOPP</td>
+												<td>内部供电24V</td>
+												<td>a.c.1000</td>
+												<td>
+													<input type="radio" name="data[f684]" value="无击穿或闪烁" title="无击穿或闪烁" {if (isset($produce['report']['f684']) && $produce['report']['f684'] == '无击穿或闪烁') || (!isset($produce['report']['f684']))}checked{/if}>
+													<input type="radio" name="data[f684]" value="击穿" title="击穿" {if isset($produce['report']['f684']) && $produce['report']['f684'] == '击穿'}checked{/if}> 												
+													<input type="radio" name="data[f684]" value="闪烁" title="闪烁" {if isset($produce['report']['f684']) && $produce['report']['f684'] == '闪烁'}checked{/if}> 
+												</td>
+												<td class="t_aling_l">带电部分与强、弱吸唾器及头枕、靠背、扶手、坐垫，洁牙机，光固化机，牙科电动马达，牙科手机之间</td>
+											</tr>
+											<tr>
+												<td>2MOPP</td>
+												<td>
+													<input type="radio" name="data[f685]" value="国内a.c.220" title="国内a.c.220" {if (isset($produce['report']['f685']) && $produce['report']['f685'] == '国内a.c.220')}checked{/if}>
+													<input type="radio" name="data[f685]" value="欧盟a.c.230" title="欧盟a.c.230" {if isset($produce['report']['f685']) && $produce['report']['f685'] == '欧盟a.c.230'}checked{/if}> 
+													<input type="radio" name="data[f685]" value="日本a.c.110" title="日本a.c.110" {if isset($produce['report']['f685']) && $produce['report']['f685'] == '日本a.c.110'}checked{/if}> 
+												</td>
+												<td>a.c.4000</td>
+												<td>
+													<input type="radio" name="data[f686]" value="无击穿或闪烁" title="无击穿或闪烁" {if (isset($produce['report']['f686']) && $produce['report']['f686'] == '无击穿或闪烁') || (!isset($produce['report']['f686']))}checked{/if}>
+													<input type="radio" name="data[f686]" value="击穿" title="击穿" {if isset($produce['report']['f686']) && $produce['report']['f686'] == '击穿'}checked{/if}> 												
+													<input type="radio" name="data[f686]" value="闪烁" title="闪烁" {if isset($produce['report']['f686']) && $produce['report']['f686'] == '闪烁'}checked{/if}> 
+												</td>
+												<td class="t_aling_l">变压器初、次级之间</td>
+											</tr>
+										</table>
+									</td>
+								</tr>
+							</tbody>
+							<tfoot style="display: table-footer-group">
+								<tr>
+									<td colspan="8" style="border: none;">
+										<div class="floer">
+											版本号：A /3
+											<span style="float: left;">文件编号：ZA4-Z04</span>
+											<span style="float: right;">版本生效日期：2025年08月20日</span>
+										</div>
+									</td>
+								</tr>
+							</tfoot>
+						</table>
+					</div>
+				</div>
+			</div>	
+			{/if}
+			{if !empty($bg) || $page == 7}
+			<div class="page" id="page7">
+				<div class="session7">
+					<div class="layui-form">
+						<div class="layui-row session1_1">
+							<h2>使用量具（工具）清单</h2>
+						</div>
+						<table class="layui-table padding_tblr session1_1">
+							<col width="150">
+							<col width="80">
+							<col width="30">
+							<col width="30">
+							<col />
+							<col width="100">
+							<tr>
+								<td colspan="6" class="session1_1">
+									版本号：A /3
+									<span style="float: left;">文件编号：ZA4-Z15</span>
+									<span style="float: right;">版本生效日期：2025年08月20日</span>
+								</td>
+							</tr>
+							<tr>
+								<td colspan="6" class="t_aling_l">产品序列号：{$produce['produce_finish_sn']|default=''}</td>
+							</tr>
+							<tr>
+								<td>名称</td>
+								<td colspan="3">编号</td>
+								<td>涉及项目</td>
+								<td>使用打“√”</td>
+							</tr>
+							<tr>
+								<td>钢直尺</td>
+								<td colspan="3">
+                                    <input style="width:100%" type="text" name="data[f323]" value="{$produce['report']['f323']|default='ZAJ-ZC001'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onblur="if (value ==''){value='ZAJ-ZC001'}">
+								</td>
+								<td class="t_aling_l">冲盂漱口给水装置</td>
+								<td>
+									<input type="hidden" name="data[f700]" value="" >
+									<input type="checkbox" name="data[f700]" value="1" title="" {if !empty($produce['report']['f700']) || (!isset($produce['report']['f700']))}checked{/if}>
+								</td>
+							</tr>
+							<tr>
+								<td>量杯</td>
+								<td colspan="3">
+									<input style="width:100%" type="text" name="data[f324]" value="{$produce['report']['f324']|default='ZAJ-LP002'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onblur="if (value ==''){value='ZAJ-LP002'}">
+								</td>
+								<td class="t_aling_l">冲盂漱口给水装置、热水器、吸唾器</td>
+								<td>
+									<input type="hidden" name="data[f701]" value="" >
+									<input type="checkbox" name="data[f701]" value="1" title="" {if !empty($produce['report']['f701']) || (!isset($produce['report']['f701']))}checked{/if}>
+								</td>
+							</tr>
+							<tr>
+								<td>秒表</td>
+								<td colspan="3">
+									<input style="width:100%" type="text" name="data[f325]" value="{$produce['report']['f325']|default='ZAJ-MB001'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onblur="if (value ==''){value='ZAJ-MB001'}">
+								</td>
+								<td class="t_aling_l">冲盂漱口给水装置、热水器、吸唾器</td>
+								<td>
+									<input type="hidden" name="data[f702]" value="" >
+									<input type="checkbox" name="data[f702]" value="1" title="" {if !empty($produce['report']['f702']) || (!isset($produce['report']['f702']))}checked{/if}>
+								</td>
+							</tr>
+							<tr>
+								<td>温度计</td>
+								<td colspan="3">
+									<input style="width:100%" type="text" name="data[f326]" value="{$produce['report']['f326']|default='ZAJ-SY001'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onblur="if (value ==''){value='ZAJ-SY001'}">
+								</td>
+								<td class="t_aling_l">热水器</td>
+								<td>
+									<input type="hidden" name="data[f703]" value="" >
+									<input type="checkbox" name="data[f703]" value="1" title="" {if !empty($produce['report']['f703']) || (!isset($produce['report']['f703']))}checked{/if}>
+								</td>
+							</tr>
+							<tr>
+								<td>气压真空表</td>
+								<td colspan="3">
+									<input style="width:100%" type="text" name="data[f327]" value="{$produce['report']['f327']|default='ZAJ-ZK001'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onblur="if (value ==''){value='ZAJ-ZK001'}">
+								</td>
+								<td class="t_aling_l">吸唾器</td>
+								<td>
+									<input type="hidden" name="data[f704]" value="" >
+									<input type="checkbox" name="data[f704]" value="1" title="" {if !empty($produce['report']['f704']) || (!isset($produce['report']['f704']))}checked{/if}>
+								</td>
+							</tr>
+							<tr>
+								<td>数字水平仪</td>
+								<td colspan="3">
+									<input style="width:100%" type="text" name="data[f328]" value="{$produce['report']['f328']|default='ZAJ-SP001'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onblur="if (value ==''){value='ZAJ-SP001'}">
+								</td>
+								<td class="t_aling_l">器械盘</td>
+								<td>
+									<input type="hidden" name="data[f705]" value="" >
+									<input type="checkbox" name="data[f705]" value="1" title="" {if !empty($produce['report']['f705']) || (!isset($produce['report']['f705']))}checked{/if}>
+								</td>
+							</tr>
+							<tr>
+								<td>钢卷尺</td>
+								<td colspan="3">
+									<input style="width:100%" type="text" name="data[f329]" value="{$produce['report']['f329']|default='ZAJ-JC001'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onblur="if (value ==''){value='ZAJ-JC001'}">
+								</td>
+								<td class="t_aling_l">器械盘</td>
+								<td>
+									<input type="hidden" name="data[f706]" value="" >
+									<input type="checkbox" name="data[f706]" value="1" title="" {if !empty($produce['report']['f706']) || (!isset($produce['report']['f706']))}checked{/if}>
+								</td>
+							</tr>
+							<tr>
+								<td>5Kg金属块</td>
+								<td colspan="3">
+									<input style="width:100%" type="text" name="data[f330]" value="{$produce['report']['f330']|default='ZAS-SK002'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onblur="if (value ==''){value='ZAS-SK002'}">
+								</td>
+								<td class="t_aling_l">器械盘、脚踏开关</td>
+								<td>
+									<input type="hidden" name="data[f707]" value="" >
+									<input type="checkbox" name="data[f707]" value="1" title="" {if !empty($produce['report']['f707']) || (!isset($produce['report']['f707']))}checked{/if}>
+								</td>
+							</tr>
+							<tr>
+								<td>1Kg金属块</td>
+								<td colspan="3">
+									<input style="width:100%" type="text" name="data[f331]" value="{$produce['report']['f331']|default='ZAS-SK001'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onblur="if (value ==''){value='ZAS-SK001'}">
+								</td>
+								<td class="t_aling_l">脚踏开关</td>
+								<td>
+									<input type="hidden" name="data[f708]" value="" >
+									<input type="checkbox" name="data[f708]" value="1" title="" {if !empty($produce['report']['f708']) || (!isset($produce['report']['f708']))}checked{/if}>
+								</td>
+							</tr>
+							<tr>
+								<td>接地电阻测试</td>
+								<td colspan="3">
+									<input style="width:100%" type="text" name="data[f332]" value="{$produce['report']['f332']|default='ZAJ-JD001'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onblur="if (value ==''){value='ZAJ-JD001'}">
+								</td>
+								<td rowspan="3" class="t_aling_l">电气安全性能</td>
+								<td>
+									<input type="hidden" name="data[f709]" value="" >
+									<input type="checkbox" name="data[f709]" value="1" title="" {if !empty($produce['report']['f709']) || (!isset($produce['report']['f709']))}checked{/if}>
+								</td>
+							</tr>
+							<tr>
+								<td>漏电流测试</td>
+								<td colspan="3">
+									<input style="width:100%" type="text" name="data[f333]" value="{$produce['report']['f333']|default='ZAJ-LD002'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onblur="if (value ==''){value='ZAJ-LD002'}">
+								</td>
+								<td>
+									<input type="hidden" name="data[f710]" value="" >
+									<input type="checkbox" name="data[f710]" value="1" title="" {if !empty($produce['report']['f710']) || (!isset($produce['report']['f710']))}checked{/if}>
+								</td>
+							</tr>
+							<tr>
+								<td>耐压测试</td>
+								<td colspan="3">
+									<input style="width:100%" type="text" name="data[f334]" value="{$produce['report']['f334']|default='ZAJ-NY001'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onblur="if (value ==''){value='ZAJ-NY001'}">
+								</td>
+								<td>
+									<input type="hidden" name="data[f711]" value="" >
+									<input type="checkbox" name="data[f711]" value="1" title="" {if !empty($produce['report']['f711']) || (!isset($produce['report']['f711']))}checked{/if}>
+								</td>
+							</tr>
+							<tr>
+								<td>数字多用表</td>
+								<td colspan="3">
+									<input style="width:100%" type="text" name="data[f335]" value="{$produce['report']['f335']|default='ZAJ-DY001'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onblur="if (value ==''){value='ZAJ-DY001'}">
+								</td>
+								<td class="t_aling_l">电气安全性能、热水器</td>
+								<td>
+									<input type="hidden" name="data[f712]" value="" >
+									<input type="checkbox" name="data[f712]" value="1" title="" {if !empty($produce['report']['f712']) || (!isset($produce['report']['f712']))}checked{/if}>
+								</td>
+							</tr>
+							<tr>
+								<td>游标卡尺</td>
+								<td colspan="3">
+									<input style="width:100%" type="text" name="data[f336]" value="{$produce['report']['f336']|default='ZAJ-KC001'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onblur="if (value ==''){value='ZAJ-KC001'}">
+								</td>
+								<td class="t_aling_l">冲盂漱口给水装置</td>
+								<td>
+									<input type="hidden" name="data[f713]" value="" >
+									<input type="checkbox" name="data[f713]" value="1" title="" {if !empty($produce['report']['f713']) || (!isset($produce['report']['f713']))}checked{/if}>
+								</td>
+							</tr>
+							<tr>
+								<td>数字照度计</td>
+								<td colspan="3">
+									<input style="width:100%" type="text" name="data[f337]" value="{$produce['report']['f337']|default='ZAJ-ZD001'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onblur="if (value ==''){value='ZAJ-ZD001'}">
+								</td>
+								<td class="t_aling_l">口腔灯</td>
+								<td>
+									<input type="hidden" name="data[f714]" value="" >
+									<input type="checkbox" name="data[f714]" value="1" title="" {if !empty($produce['report']['f714']) || (!isset($produce['report']['f714']))}checked{/if}>
+								</td>
+							</tr>
+							<tr>
+								<td>屏幕亮度计</td>
+								<td colspan="3">
+									<input style="width:100%" type="text" name="data[f338]" value="{$produce['report']['f338']|default='ZAJ-PM003'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onblur="if (value ==''){value='ZAJ-PM003'}">
+								</td>
+								<td class="t_aling_l">观片灯</td>
+								<td>
+									<input type="hidden" name="data[f715]" value="" >
+									<input type="checkbox" name="data[f715]" value="1" title="" {if !empty($produce['report']['f715']) || (!isset($produce['report']['f715']))}checked{/if}>
+								</td>
+							</tr>
+							<tr>
+								<td>色温照度计</td>
+								<td colspan="3">
+									<input style="width:100%" type="text" name="data[f339]" value="{$produce['report']['f339']|default='ZAJ-SW001'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onblur="if (value ==''){value='ZAJ-SW001'}">
+								</td>
+								<td class="t_aling_l">观片灯</td>
+								<td>
+									<input type="hidden" name="data[f716]" value="" >
+									<input type="checkbox" name="data[f716]" value="1" title="" {if !empty($produce['report']['f716']) || (!isset($produce['report']['f716']))}checked{/if}>
+								</td>
+							</tr>
+							<tr>
+								<td>声级计</td>
+								<td colspan="3">
+									<input style="width:100%" type="text" name="data[f340]" value="{$produce['report']['f340']|default='ZAS-SJ001'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onblur="if (value ==''){value='ZAS-SJ001'}">
+								</td>
+								<td class="t_aling_l">牙科病人椅</td>
+								<td>
+									<input type="hidden" name="data[f717]" value="" >
+									<input type="checkbox" name="data[f717]" value="1" title="" {if !empty($produce['report']['f717']) || (!isset($produce['report']['f717']))}checked{/if}>
+								</td>
+							</tr>
+							<tr>
+								<td>条码阅读器</td>
+								<td colspan="3">
+									<input style="width:100%" type="text" name="data[f341]" value="{$produce['report']['f341']|default='ZAJ-TM001'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onblur="if (value ==''){value='ZAJ-TM001'}">
+								</td>
+								<td class="t_aling_l">UDI标签</td>
+								<td>
+									<input type="hidden" name="data[f718]" value="" >
+									<input type="checkbox" name="data[f718]" value="1" title="" {if !empty($produce['report']['f718']) || (!isset($produce['report']['f718']))}checked{/if}>
+								</td>
+							</tr>
+							<tr>
+								<td>自动化测试系统</td>
+								<td>ZAS-XT00</td>
+								<td>
+									<input type="hidden" name="data[f719]" value="" >
+									<input type="checkbox" name="data[f719]" value="1" title="1" {if !empty($produce['report']['f719']) || (!isset($produce['report']['f719']))}checked{/if}>
+								</td>
+								<td>
+									<input type="hidden" name="data[f720]" value="" >
+									<input type="checkbox" name="data[f720]" value="1" title="2" {if !empty($produce['report']['f720']) || (!isset($produce['report']['f720']))}{/if}>
+								</td>
+								<td class="t_aling_l">整机</td>
+								<td>
+									<input type="hidden" name="data[f721]" value="" >
+									<input type="checkbox" name="data[f721]" value="1" title="" {if !empty($produce['report']['f721']) || (!isset($produce['report']['f721']))}checked{/if}>
+								</td>
+							</tr>
+						</table>
+						<div class="layui-row session1_1">
+							<h2>牙科综合治疗机-产品放行确认表</h2>
+						</div>
+						<table class="layui-table padding_tblr session1_1">
+							<col width="50">
+							<col width="100">
+							<col />
+							<col />
+							<col width="235"/>
+							<col width="100">
+							<tr>
+								<td colspan="6" class="session1_1">
+									版本号：A /3
+									<span style="float: left;">文件编号：ZA4-Z19</span>
+									<span style="float: right;">版本生效日期：2025年08月20日</span>
+								</td>
+							</tr>
+							<tr>
+								<td colspan="3" class="t_aling_l">产品序列号：{$produce['produce_finish_sn']|default=''}</td>
+								<td colspan="3" class="t_aling_l">
+									<label>备注：</label>
+									<input style="width:80%" type="text" name="data[f722]" value="{$produce['report']['f722']|default='/'}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro session1_1 height25" onfocus="if (value =='/'){value =''}" onblur="if (value ==''){value='/'}">
+								</td>
+							</tr>
+							<tr>
+								<td>序号</td>
+								<td>工序名称</td>
+								<td colspan="3">名 称</td>
+								<td>是否符合要求</td>
+							</tr>
+							<tr>
+								<td>1</td>
+								<td rowspan="8">包装工艺及要求</td>
+								<td colspan="3" class="t_aling_l">调试好的牙科综合治疗机清洁干净，小心的包装起来。</td>
+								<td>
+									<input type="radio" name="data[f723]" value="1" title="✓" {if (isset($produce['report']['f723']) && $produce['report']['f723'] == '1') || (!isset($produce['report']['f723']))}checked{/if}>
+									<input type="radio" name="data[f723]" value="2" title="✗" {if isset($produce['report']['f723']) && $produce['report']['f723'] == '2'}checked{/if}> 								
+								</td>
+							</tr>
+							<tr>
+								<td>2</td>
+								<td colspan="3" class="t_aling_l">产品颜色一致。</td>
+								<td>
+									<input type="radio" name="data[f724]" value="1" title="✓" {if (isset($produce['report']['f724']) && $produce['report']['f724'] == '1') || (!isset($produce['report']['f724']))}checked{/if}>
+									<input type="radio" name="data[f724]" value="2" title="✗" {if isset($produce['report']['f724']) && $produce['report']['f724'] == '2'}checked{/if}> 	
+								</td>
+							</tr>
+							<tr>
+								<td>3</td>
+								<td colspan="3" class="t_aling_l">外表无灰尘、无污垢、无杂物、无破损。</td>
+								<td>
+									<input type="radio" name="data[f725]" value="1" title="✓" {if (isset($produce['report']['f725']) && $produce['report']['f725'] == '1') || (!isset($produce['report']['f725']))}checked{/if}>
+									<input type="radio" name="data[f725]" value="2" title="✗" {if isset($produce['report']['f725']) && $produce['report']['f725'] == '2'}checked{/if}> 	
+								</td>
+							</tr>
+							<tr>
+								<td>4</td>
+								<td colspan="3" class="t_aling_l">产品部件应用保护膜和纸箱包装。</td>
+								<td>
+									<input type="radio" name="data[f726]" value="1" title="✓" {if (isset($produce['report']['f726']) && $produce['report']['f726'] == '1') || (!isset($produce['report']['f726']))}checked{/if}>
+									<input type="radio" name="data[f726]" value="2" title="✗" {if isset($produce['report']['f726']) && $produce['report']['f726'] == '2'}checked{/if}> 	
+								</td>
+							</tr>
+							<tr>
+								<td>5</td>
+								<td colspan="3" class="t_aling_l">产品或部件应在包装箱内牢固固定。</td>
+								<td>
+									<input type="radio" name="data[f727]" value="1" title="✓" {if (isset($produce['report']['f727']) && $produce['report']['f727'] == '1') || (!isset($produce['report']['f727']))}checked{/if}>
+									<input type="radio" name="data[f727]" value="2" title="✗" {if isset($produce['report']['f727']) && $produce['report']['f727'] == '2'}checked{/if}> 	
+								</td>
+							</tr>
+							<tr>
+								<td>6</td>
+								<td colspan="3" class="t_aling_l">随机文件、合格证及配件应与装箱清单上一致。</td>
+								<td>
+									<input type="radio" name="data[f728]" value="1" title="✓" {if (isset($produce['report']['f728']) && $produce['report']['f728'] == '1') || (!isset($produce['report']['f728']))}checked{/if}>
+									<input type="radio" name="data[f728]" value="2" title="✗" {if isset($produce['report']['f728']) && $produce['report']['f728'] == '2'}checked{/if}> 	
+								</td>
+							</tr>
+							<tr>
+								<td>7</td>
+								<td colspan="3" class="t_aling_l">封箱之前整机应用防潮塑料袋罩好。</td>
+								<td>
+									<input type="radio" name="data[f729]" value="1" title="✓" {if (isset($produce['report']['f729']) && $produce['report']['f729'] == '1') || (!isset($produce['report']['f729']))}checked{/if}>
+									<input type="radio" name="data[f729]" value="2" title="✗" {if isset($produce['report']['f729']) && $produce['report']['f729'] == '2'}checked{/if}>
+								</td>
+							</tr>
+							<tr>
+								<td>8</td>
+								<td colspan="3" class="t_aling_l">包装箱上的“防雨、向上、禁止翻滚”及“型号、名称、重量、体积、公司名称、地址、电话号码、CE符号、注册证号”等标示应在显眼位置，且应清晰、不易模糊、准确无误。</td>
+								<td>
+									<input type="radio" name="data[f730]" value="1" title="✓" {if (isset($produce['report']['f730']) && $produce['report']['f730'] == '1') || (!isset($produce['report']['f730']))}checked{/if}>
+									<input type="radio" name="data[f730]" value="2" title="✗" {if isset($produce['report']['f730']) && $produce['report']['f730'] == '2'}checked{/if}>
+								</td>
+							</tr>
+							
+							<tr>
+								<td colspan="3" class="t_aling_l">经确认，本产品包装符合要求。（备注：√=是，×=否）</td>
+								<td colspan="3" class="t_aling_l">包装员/日期：{$all_process[4]['username']|default=''} {if !empty($all_process[4]['confirm_date'])}{:date('Y年m月d日',strtotime($all_process[4]['confirm_date']))}{/if}</td>
+							</tr>
+							<tr>
+								<td>1</td>
+								<td rowspan="2">批记录检查</td>
+								<td colspan="3" class="t_aling_l">产品批记录是否齐全</td>
+								<td>
+									<input type="radio" name="data[f731]" value="1" title="✓" {if (isset($produce['report']['f731']) && $produce['report']['f731'] == '1') || (!isset($produce['report']['f731']))}checked{/if}>
+									<input type="radio" name="data[f731]" value="2" title="✗" {if isset($produce['report']['f731']) && $produce['report']['f731'] == '2'}checked{/if}>
+								</td>
+							</tr>
+							<tr>
+								<td>2</td>
+								<td colspan="3" class="t_aling_l">记录填写符合要求</td>
+								<td>
+									<input type="radio" name="data[f732]" value="1" title="✓" {if (isset($produce['report']['f732']) && $produce['report']['f732'] == '1') || (!isset($produce['report']['f732']))}checked{/if}>
+									<input type="radio" name="data[f732]" value="2" title="✗" {if isset($produce['report']['f732']) && $produce['report']['f732'] == '2'}checked{/if}>
+								</td>
+							</tr>
+							<tr>
+								<td colspan="3" class="t_aling_l">产品批记录符合要求，准允放行。（备注：√=是，×=否）</td>
+								<td colspan="3" class="t_aling_l">批准/完工日期：{$all_process[31]['username']|default=''} {if !empty($all_process[31]['confirm_date'])}{:date('Y年m月d日',strtotime($all_process[31]['confirm_date']))}{/if}</td>
+							</tr>
+							
+						</table>
+					</div>
+				</div>	
+				<div class="floer">
+					注册住所:佛山市高明区更合镇鸿淘路7号13栋4层
+					<span style="float: left;">佛山市置安医疗器械有限公司</span>
+					<span style="float: right;">邮编：528500</span>
+				</div>		
+			</div>
+			{/if}
+			{if !empty($bg) || $page == 8}
+			<div class="page" id="page8">
+				<div class="session8">
+					<div class="layui-form">
+						<div class="layui-row session1_1">
+							<h2>产品UDI标签</h2>
+						</div>
+						<div style="width: 70%; height: auto; margin: 0 auto; ">
+							<img src="{$produce['udi']}" width="100%" height="auto"/>
+						</div>
+					</div>
+				</div>
+				<div class="floer">
+					注册住所:佛山市高明区更合镇鸿淘路7号13栋4层
+					<span style="float: left;">佛山市置安医疗器械有限公司</span>
+					<span style="float: right;">邮编：528500</span>
+				</div>
+			</div>
+			{/if}
+		</div>
+	</div>
+	<div class="bottom no-print">
+		<div class="button-container" style="right: 2.5%;width: 95%;">
+			<div class="layui-row">
+				<div class="layui-col-xs6">
+					{if empty($bg)}
+					<button type="button" class="layui-btn layui-btn-sm layui-bg-red rework-add" >创建：不合格/返工评审处理单</button>
+					<button type="button" class="layui-btn layui-btn-sm layui-bg-purple follow-edit" >随工单列表</button>
+					<button type="button" class="layui-btn layui-btn-sm layui-btn-primary layui-border udi" >UDI标签上传</button>
+					{/if}
+					<button type="button" class="layui-btn layui-bg-orange layui-btn-sm  print">打印</button>
+				</div>
+				<div class="layui-col-xs6" style="text-align:right;">
+					{if empty($bg)}
+					<div class="layui-input-inline" style="position: absolute;left: {if $process['id'] == 3}-40px;{else}-23px{/if}">
+						<button type="submit" class="layui-btn layui-btn-sm finish" data-form_url="{:url('processFinish')}" lay-submit="" lay-filter="finish">完成</button>
+						{if $process['id'] == 3}“完成”按键由产品放行人确认完成{/if}
+					</div>
+					{/if}
+					<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*">保存</button>
+					{if empty($bg)}
+						{if $page > 1}<a class="layui-btn layui-btn-sm" href="{:url('')}?produce_sn={$produce['produce_sn']}&id={$produce['id']}&process_id={$process['id']}&page={$page-1}" >上一页</a>{/if}
+						{if $page < 8}<a class="layui-btn layui-btn-sm" href="{:url('')}?produce_sn={$produce['produce_sn']}&id={$produce['id']}&process_id={$process['id']}&page={$page+1}" >下一页</a>{/if}
+					{else}
+						<a class="layui-btn layui-btn-sm bg-pre" href="javascript:;" >上一页</a>
+						<a class="layui-btn layui-btn-sm bg-next" href="javascript:;" >下一页</a>
+					{/if}
+				</div>
+			</div>
+		</div>
+	</div>
+</form>
+
+<div class="layui-form-item layui-hide" >
+	<select id="warehouse_id_select">
+		{if !empty($warehouse)}
+		{foreach $warehouse as $vo}
+		<option value="{$vo['id']}">{$vo['name']}</option>
+		{/foreach}
+		{/if}
+	</select>
+</div>
+
+<script src="/static/tool/jquery.min.js"></script>
+{/block}
+{block name="script"}
+<script>
+var is_end = {$process['is_end']};
+var cur_page = {$page};
+var cur_date = '{:date('Y年m月d日')}';
+layui.use(['form', 'jquery'], function() {
+	let form = layui.form;
+	let $ = layui.jquery;
+	window.cb = function(info,data){
+		if($(data.elem).data('form_url')){
+			parent.location.reload();
+		}
+	}
+	$('.rework-add').click(function(){
+		openLayer('检验报告','{:url('reworkAdd')}?order_produce_id={$produce['id']}','80%','90%');
+	})
+	$('.follow-edit').click(function(){
+		openLayer('随工单列表','{:url('followEdit')}?order_produce_id={$produce['id']}','80%','90%');
+	})
+	
+	$('.udi').click(function(){
+		openLayer('UDI标签上传','{:url('udi')}?id={$produce['id']}','80%','90%');
+	})	
+	
+	$('.bg-pre').click(function(){
+		if(cur_page > 1){
+			cur_page = cur_page - 1;
+			location = '#page'+cur_page;
+		}
+	})
+	
+	$('.bg-next').click(function(){
+		if(cur_page < 8){
+			cur_page = cur_page + 1;
+			location = '#page'+cur_page;
+		}
+	})
+
+	form.on('submit(finish)', function (data) {
+		if(is_end == 1){
+			layui.layer.open({
+				type: 1,
+				area: ['500px', '300px'],
+				title: '入库仓库',
+				content: '<form class="layui-form layui-padding-3" lay-filter="test"><select name="warehouse_id" id="warehouse_id">'+$('#warehouse_id_select').html()+'</select> <div style="margin-top:20px;" class="layui-form-item"><button class="layui-btn layui-btn-fluid confirm" type="button">确认</button></div></form>',
+				success: function (layero) {
+					form.render(layero.find('.layui-form select'));
+					layero.find('.confirm').click(function(){
+						var warehouse_id = layero.find('#warehouse_id').val();
+						if(warehouse_id){
+							data.field.warehouse_id = warehouse_id;
+							formSubmit(data)
+						}else{
+							layui.layer.msg('请选择入库仓库');
+						}
+					})
+				},
+			  });
+		}else{
+			formSubmit(data)
+		}
+		return false;
+	});
+	
+
+	$("body").on("click",".sign-btn",function(){
+		$(this).parent().append('<input type="text" name="data['+$(this).data('field')+']" value="{$userInfo['name']|default=''}" lay-verify="required" placeholder="" autocomplete="off" class="layui-input input_no_bro sign-input" >');
+		if($(this).data('date')){
+			$('#'+$(this).data('date')).val(cur_date);
+		}
+		
+		$(this).remove();
+	});	
+	
+	$('.print').click(function(){
+		window.print();
+	})
+
+
+})
+</script>
+{/block}

@@ -1,0 +1,1148 @@
+<?php
+declare (strict_types = 1);
+namespace app\admin\logic;
+use app\admin\logic\BaseLogic;
+use app\common\model\ErpOrderProduce;
+use app\common\model\ErpOrderProductBom;
+use app\common\model\ErpOrderProduceBom;
+use app\common\model\ErpMaterialBom;
+use app\common\model\ErpProductionSetting;
+use app\common\model\ErpMaterial;
+use app\common\model\ErpOrder;
+use app\common\model\ErpOrderLog;
+use app\common\model\ErpOrderProduceProcess;
+use app\common\model\ErpOrderProduceFollow;
+use app\common\model\ErpProcess;
+use app\common\model\ErpOrderProduceProcessLog;
+use app\admin\validate\ErpProductionSettingValidate;
+use think\facade\Db;
+use app\common\enum\{ErpOrderProduceEnum,ErpPurchaseApplyEnum};
+use app\common\enum\ErpOrderEnum;
+use app\admin\logic\ErpMaterialOutLogic;
+use app\common\enum\ErpMaterialStockEnum;
+use app\common\model\ErpMaterialOutMaterial;
+use app\common\enum\RegionTypeEnum;
+use app\common\model\DictData;
+use app\common\model\{ErpMaterialEnterMaterial,ErpOrderProduct,ErpPurchaseApply,ErpMaterialCode,ErpSupplier,Region,ErpProduct,ErpPurchaseOrderData};
+
+class ErpOrderProduceLogic extends BaseLogic{
+
+	// 获取待排产列表
+    public static function getWait($query=[],$limit=10)
+    {
+		$map	 	= [];
+		$map[]		= ['a.produce_status', '=', ErpOrderProduceEnum::PRODUCE_STATUS_NO];
+		if(!empty($query['check_status'])) {
+			$map[]	= ['a.check_status', '=', $query['check_status']];
+        }
+		if(!empty($query['produce_status'])) {
+			$map[]	= ['a.produce_status', '=', $query['produce_status']];
+        }
+		if(!empty($query['region_type'])) {
+			$map[]	= ['b.region_type', '=', $query['region_type']];
+        }		
+		if(!empty($query['customer_name'])) {
+			$map[]	= ['b.customer_name', 'like', '%' . $query['customer_name'] . '%'];
+        }
+		if(!empty($query['address'])) {
+			$map[]	= ['b.address', 'like', '%' . $query['address'] . '%'];
+        }	
+		if(!empty($query['product_model'])) {
+			$map[]	= ['d.product_model', 'like', '%' . $query['product_model'] . '%'];
+        }	
+        if(!empty($query['order_sn'])) {
+			$sn 		= explode(',',str_replace('，',',',$query['order_sn']));
+			$arr 		= [];
+			foreach($sn as $vo){
+				$arr[] 	= '%' . $vo . '%';
+			}
+			$map[]		= ['b.order_sn', 'like', $arr,'or'];
+        }
+		if(!empty($query['delivery_time'])) {
+			$time 		= is_array($query['delivery_time'])?$query['delivery_time']:explode('至',$query['delivery_time']);
+			if(!empty($time[0])){
+				$map[]	= ['b.delivery_time', '>', strtotime(trim($time[0]))];
+			}
+			if(!empty($time[1])){
+				$map[]	= ['b.delivery_time', '>', strtotime(trim($time[1]))];
+			}
+        }
+		if(!empty($query['create_time'])) {
+			$time 		= is_array($query['create_time'])?$query['create_time']:explode('至',$query['create_time']);
+			if(!empty($time[0])){
+				$map[]	= ['b.create_time', '>', strtotime(trim($time[0]))+24*3600];
+			}
+			if(!empty($time[1])){
+				$map[]	= ['b.create_time', '>', strtotime(trim($time[1]))+24*3600];
+			}
+        }
+		if(!empty($query['produce_finish_sn'])) {
+			$map[]	= ['a.produce_finish_sn', 'like', '%' . $query['produce_finish_sn'] . '%'];
+        }
+		
+		$field 			= 'a.*,b.customer_name,b.create_time as order_create_time,b.order_sn,b.delivery_time,b.address,b.salesman_id,b.order_type,c.nickname,d.product_model,d.product_specs,d.product_num,d.remark,d.add_project,d.change_project,d.replace_info,d.color';		
+        $list 			= ErpOrderProduce::alias('a')
+		->join('erp_order b','a.order_id = b.id','LEFT')
+		->join('admin_admin c','b.salesman_id = c.id','LEFT')
+		->join('erp_order_product d','a.order_product_id = d.id','LEFT')
+		->where($map)->field($field)->order('a.id','asc')
+		->append(['check_status_desc','produce_status_desc','can_purchase','order_type_desc','produce_type_desc','project_html'])->select();
+        return $list;
+    }
+
+    // 排查
+    public static function goCheck($ids){
+		$list_produce  =  ErpOrderProduce::where('id','in',$ids)->select();
+		if($list_produce->isEmpty()) {
+			return ['msg'=>'数据不存在','code'=>201];
+		}
+		ErpOrderProduceBom::where('order_produce_id','in',$ids)->delete();
+        try {
+			foreach($list_produce as $model){
+				$id 					= $model['id'];
+				$list					= ErpOrderProductBom::where('order_product_id',$model['order_product_id'])->with(['actually_material','product_bom','order_product'])->select();
+				$data 					= [];
+				$is_lack 				= false;
+				$material_num 			= [];
+				foreach($list as $key=>$vo){
+					if(!empty($vo['actually_material']['id']) && $vo['actually_material']['status'] == 1){
+						
+						if(!isset($material_num[$vo['actually_material']['id']])){
+							$material_num[$vo['actually_material']['id']] 		= ErpMaterial::getActuallyStock($vo['actually_material']['id'],$vo['actually_material']['stock']);
+						}
+						
+						if($material_num[$vo['actually_material']['id']]>0){
+							$lack_num 	= $vo['num']>$material_num[$vo['actually_material']['id']]?($vo['num']-$material_num[$vo['actually_material']['id']]):0;
+						}else{
+							$lack_num 	= $vo['num'];
+						}
+						if($lack_num>0){
+							$is_lack 	= true;
+						}
+						$material_num[$vo['actually_material']['id']] = $material_num[$vo['actually_material']['id']] - $vo['num'];
+						$data[] 		= [
+							'type'=>1,	
+							'bill_type'=>$vo['bill_type'],		
+							'order_product_bom_id'=>$vo['id'],
+							'order_produce_id'=>$model['id'],
+							'order_product_id'=>$model['order_product_id'],
+							'order_id'=>$model['order_id'],
+							'num'=>$vo['num'],
+							'lack_num'=>$lack_num,
+							//'use_num'=>$vo['num']-$lack_num,
+							'sn'=>$model['produce_sn'].'-'.$key,
+							'material_id'=>$vo['actually_material']['id'],
+							'material_type'=>$vo['actually_material']['type'],
+							//'material_sn'=>$vo['actually_material']['sn'],
+							//'material_name'=>$vo['actually_material']['name'],
+							//'material_unit'=>$vo['actually_material']['unit'],
+							//'material_category'=>$vo['actually_material']['category_name'],
+							//'material_surface'=>$vo['actually_material']['surface'],
+							//'material_stuff'=>$vo['actually_material']['material'],
+							'material_color'=>$vo['actually_material']['color']?$vo['actually_material']['color']:($vo['product_bom']&&$vo['product_bom']['color_follow']&&$vo['order_product']['color']?$vo['order_product']['color']:'无'),
+						];
+					
+						if($vo['actually_material']['type'] == 2 && $lack_num > 0){
+							//部件拆bom
+							$bom 					= ErpMaterialBom::where('material_id',$vo['actually_material']['id'])->with(['related_material'])->select();
+							foreach($bom as $kk=>$vv){
+								if($vv['related_material'] && $vv['related_material']['status'] == 1){
+									$num 				= $vv['num']*$lack_num;
+
+									if(!isset($material_num[$vv['related_material_id']])){
+										$material_num[$vv['related_material_id']] 	= ErpMaterial::getActuallyStock($vv['related_material']['id'],$vv['related_material']['stock']);
+									}
+									
+									if($material_num[$vv['related_material_id']]>0){
+										$bom_lack_num 	= $num>$material_num[$vv['related_material_id']]?($num-$material_num[$vv['related_material_id']]):0;
+									}else{
+										$bom_lack_num 	= $num;
+									}
+									
+									$material_num[$vv['related_material_id']] = $material_num[$vv['related_material_id']] - $num;
+									
+									$data[] = [
+										'type'=>2,
+										'bill_type'=>$vo['bill_type'],		
+										'order_product_bom_id'=>$vo['id'],
+										'order_produce_id'=>$model['id'],
+										'order_product_id'=>$model['order_product_id'],
+										'order_id'=>$model['order_id'],
+										'num'=>$num,
+										'lack_num'=>$bom_lack_num,
+										//'use_num'=>$num-$bom_lack_num,
+										'sn'=>$model['produce_sn'].'-'.$key.'-'.$kk,
+										'material_id'=>$vv['related_material']['id'],
+										'material_type'=>$vv['related_material']['type'],
+										//'material_sn'=>$vv['related_material']['sn'],
+										//'material_name'=>$vv['related_material']['name'],
+										//'material_unit'=>$vv['related_material']['unit'],
+										//'material_category'=>$vv['related_material']['category_name'],
+										//'material_surface'=>$vv['related_material']['surface'],
+										//'material_stuff'=>$vv['related_material']['material'],
+										'material_color'=>$vv['related_material']['color']?$vv['related_material']['color']:($vo['color_follow']&&$vo['order_product']['color']?$vo['order_product']['color']:'无'),
+									];
+								}
+							}
+						}
+					}
+				}
+				(new ErpOrderProduceBom)->saveAll($data);
+		
+				$model->save(['check_time'=>time(),'check_status'=>$is_lack?ErpOrderProduceEnum::CHECK_STATUS_FAILED:ErpOrderProduceEnum::CHECK_STATUS_SUCCESS]);
+			}
+        }catch (\Exception $e){
+            return ['msg'=>'操作失败'.$e->getMessage(),'code'=>201];
+        }
+    }
+    
+	
+    public static function getStart($id){
+		$produce 		= ErpOrderProduce::alias('a')
+		->join('erp_order_product b','a.order_product_id = b.id','LEFT')
+		->where('a.id','in',$id)->column('a.id,a.product_id,a.produce_sn,a.produce_date,a.order_id,b.product_model,b.product_specs','a.id');
+		$dict_data		= DictData::where('type_id','in','1,2,4,7')->column('name','id');
+		$data 			= ErpOrderProduceBom::alias('a')
+		->join('erp_material b','a.material_id = b.id','LEFT')
+		->field('a.*,b.produce_type,b.name as material_name,b.sn as material_sn,b.unit as material_unit,b.surface as material_surface,b.material as material_stuff,b.remark,b.cid,b.stock')
+		->where('a.order_produce_id','in',$id)->select()->toArray();
+		
+		$ids 			= ErpMaterialOutMaterial::alias('a')->join('erp_material_stock b','a.material_stock_id = b.id','LEFT')
+		->where('b.type',ErpMaterialStockEnum::TYPE_OUT_PRODUCE_GET)->where('b.order_id','in',array_column($produce,'order_id'))->column('a.material_id');
+		
+		$wage 			= ErpOrderProduceProcess::alias('a')->join('erp_process b','a.process_id = b.id','LEFT')->where('a.order_produce_id','in',array_column($produce,'id'))->order('b.sort asc,b.id asc')->select();
+		foreach($wage as $vo){
+			if(empty($produce[$vo['order_produce_id']]['wage'])){
+				$produce[$vo['order_produce_id']]['wage'] 	= [];
+			}
+			$produce[$vo['order_produce_id']]['wage'][] 	= $vo;
+		}
+		
+		/*
+		$bom1 			= [1=>[],2=>[]];
+		$bom2 			= [1=>[],2=>[]];
+		
+		foreach($data as $vo){
+			if($vo['type'] == 1){
+				if(empty($bom1[$vo['material_type']][$vo['material_id']])){
+					$bom1[$vo['material_type']][$vo['material_id']]				= $vo;
+				}else{
+					$bom1[$vo['material_type']][$vo['material_id']]['num']		= $bom1[$vo['material_type']][$vo['material_id']]['num'] + $vo['num'];
+					$bom1[$vo['material_type']][$vo['material_id']]['lack_num']	= $bom1[$vo['material_type']][$vo['material_id']]['lack_num'] + $vo['lack_num'];
+				}
+				if(empty($lack_produce[$vo['material_id']])){
+					$lack_produce[$vo['material_id']] 	= [];
+				}
+				if(empty($lack_produce[$vo['material_id']][$vo['order_produce_id']])){
+					$lack_produce[$vo['material_id']][$vo['order_produce_id']] = ['lack_num'=>$vo['lack_num'],'produce_sn'=>$produce[$vo['order_produce_id']]['produce_sn']];
+				}else{
+					$lack_produce[$vo['material_id']][$vo['order_produce_id']]['lack_num'] += $vo['lack_num'];
+				}
+			}
+			if($vo['lack_num'] > 0){
+				$is_lack 	= true;
+				if(empty($bom2[$vo['material_type']][$vo['material_id']])){
+					$bom2[$vo['material_type']][$vo['material_id']]				= $vo;
+				}else{
+					$bom2[$vo['material_type']][$vo['material_id']]['num']		= $bom2[$vo['material_type']][$vo['material_id']]['num'] + $vo['num'];
+					$bom2[$vo['material_type']][$vo['material_id']]['lack_num']	= $bom2[$vo['material_type']][$vo['material_id']]['lack_num'] + $vo['lack_num'];
+				}
+			}
+		}
+		*/
+		
+		$bom1 = $bom2 = [];
+		$lack_produce	= [];
+		$enough_component = [];
+		$total_material_ids = [];
+		
+		foreach($data as $vo){
+			$vo['bill_type_name'] 	= !empty($dict_data[$vo['bill_type']])?$dict_data[$vo['bill_type']]:'';
+			$vo['category_name']	= !empty($dict_data[$vo['cid']])?$dict_data[$vo['cid']]:'';
+			$vo['produce_type_name']= !empty($dict_data[$vo['produce_type']])?$dict_data[$vo['produce_type']]:'';
+			if($ids && in_array($vo['material_id'],$ids)){
+				$vo['is_out']		= 1;
+			}else{
+				$vo['is_out']		= 0;
+			}
+			if(empty($lack_produce[$vo['material_id']])){
+				$lack_produce[$vo['material_id']] 	= [];
+			}
+			if(empty($lack_produce[$vo['material_id']][$vo['order_produce_id']])){
+				$lack_produce[$vo['material_id']][$vo['order_produce_id']] = ['lack_num'=>$vo['lack_num'],'produce_sn'=>$produce[$vo['order_produce_id']]['produce_sn']];
+			}else{
+				$lack_produce[$vo['material_id']][$vo['order_produce_id']]['lack_num'] += $vo['lack_num'];
+			}	
+			if(!in_array($vo['material_id'],$total_material_ids)){
+				$total_material_ids[] 	= $vo['material_id'];
+			}				
+			
+			
+			if($vo['material_type'] == 2){
+				if(empty($bom1[$vo['material_id']])){
+					$vo['ids']								= $vo['id'];
+					$bom1[$vo['material_id']]				= $vo;
+				}else{
+					$bom1[$vo['material_id']]['num']		= $bom1[$vo['material_id']]['num'] + $vo['num'];
+					$bom1[$vo['material_id']]['lack_num']	= $bom1[$vo['material_id']]['lack_num'] + $vo['lack_num'];
+					$bom1[$vo['material_id']]['ids']		= $bom1[$vo['material_id']]['ids'].','.$vo['id'];
+				}
+				if($vo['lack_num'] == 0 ){
+					$enough_component[] = $vo['material_id'];
+				}				
+			}
+			if($vo['material_type'] == 1){
+				if(empty($bom2[$vo['material_id']])){
+					$vo['ids']								= $vo['id'];
+					$bom2[$vo['material_id']]				= $vo;
+				}else{
+					$bom2[$vo['material_id']]['num']		= $bom2[$vo['material_id']]['num'] + $vo['num'];
+					$bom2[$vo['material_id']]['lack_num']	= $bom2[$vo['material_id']]['lack_num'] + $vo['lack_num'];
+					$bom2[$vo['material_id']]['ids']		= $bom2[$vo['material_id']]['ids'].','.$vo['id'];
+				}
+			}
+		}
+		
+		if($enough_component){
+			$material_bom 	= ErpMaterialBom::where('material_id','in',$enough_component)->field('related_material_id')->select();
+			foreach($material_bom as $vo){
+				if(!in_array($vo['related_material_id'],$total_material_ids)){
+					$total_material_ids[] 	= $vo['related_material_id'];
+				}		
+			}
+		}
+		$total_material = ErpMaterial::where('id','in',array_unique($total_material_ids))->select();		
+		
+		return ['dict_data'=>$dict_data,'total_material'=>$total_material,'produce'=>$produce,'bom1'=>$bom1,'bom2'=>$bom2,'lack_produce'=>$lack_produce];
+    }	
+	
+    public static function getProduction($produce_date,$max=7){
+		$dates 			= [];
+		$default 		= config('web.default_produce_num');
+		$produce_date	= $produce_date?$produce_date:date('Y-m-d');
+		for($i=0;$i<$max;$i++){
+			$date 		= date("Y-m-d",strtotime($produce_date." +".$i." day"));
+			$setting	= ErpProductionSetting::where('produce_date',$date)->find();
+			$dates[] 	= ['produce_date'=>$date,'produce_num'=>empty($setting['id'])?$default:$setting['produce_num'],'produce'=>ErpOrderProduce::where('produce_date',$date)->column('produce_sn')];
+		}
+		return $dates;
+    }
+	
+	public static function goSetDefaultProduction($data){
+		try {
+			set_web($data);
+		}catch (\Exception $e){
+            return ['msg'=>'操作失败'.$e->getMessage(),'code'=>201];
+        }
+	}
+	
+	public static function goSetProduction($data){
+		try {
+			//验证
+			$validate 	= new ErpProductionSettingValidate;
+			if(!$validate->scene('save')->check($data)){
+				return ['msg'=>$validate->getError(),'code'=>201];
+			}
+			$model 		= ErpProductionSetting::where('produce_date',$data['produce_date'])->find();
+			if(empty($model['id'])){
+				$model	= new ErpProductionSetting;
+			}
+			$model->save($data);
+		}catch (\Exception $e){
+            return ['msg'=>'操作失败'.$e->getMessage(),'code'=>201];
+        }
+	}
+	
+	
+    public static function getOne($map)
+    {
+		if(is_array($map)){
+			return ErpOrderProduce::where($map)->find();
+		}else{
+			return ErpOrderProduce::find($map);
+		}
+    }
+	
+    // 下达生产
+    public static function goStart($id,$produce_date)
+    {
+		if(empty($produce_date)){
+			return ['msg'=>'排查日期不能为空','code'=>201];
+		}
+		$produce 			= ErpOrderProduce::where('id','in',$id)->column('*','id');
+		$produce_data 		= [];
+		$order_ids 			= [];
+		if(empty($produce)){
+			return ['msg'=>'数据不存在','code'=>201];
+		}
+		$production			= self::getProduction($produce_date,1);
+		if($production[0]['produce_num'] < count($production[0]['produce']) + count($produce)){
+			return ['msg'=>'当天产量不足','code'=>201];
+		}
+		$count 				= ErpOrderProduce::withTrashed()->whereDay('pass_down_time')->group('order_sn')->count() + 1;
+		$order_sn			= date('ymd').sprintf("%02d",$count);
+		
+		foreach($produce as $vo){
+			if($vo['produce_status'] != ErpOrderProduceEnum::PRODUCE_STATUS_NO){
+				return ['msg'=>$vo['produce_sn'].'已排产','code'=>201];
+			}
+			$produce_data[]	= ['id'=>$vo['id'],'order_sn'=>$order_sn,'produce_date'=>$produce_date,'produce_status'=>ErpOrderProduceEnum::PRODUCE_STATUS_PROGRESS,'pass_down_time'=>time()];
+			$order_ids[]	= $vo['order_id'];
+		}
+		$order_ids 			= array_unique($order_ids);
+		
+		Db::startTrans();
+        try {
+			(new ErpOrderProduce)->saveAll($produce_data);
+            
+			$order_data 			= [];
+			foreach($order_ids as $vo){
+				if(ErpOrderProduce::where('order_id',$vo)->where('produce_status',ErpOrderProduceEnum::PRODUCE_STATUS_NO)->count()){
+					$order_data[]	= ['id'=>$vo,'produce_status'=>ErpOrderEnum::PRODUCE_STATUS_PART,'order_status'=>ErpOrderEnum::ORDER_STATUS_PRODUCING];
+				}else{
+					$order_data[]	= ['id'=>$vo,'produce_status'=>ErpOrderEnum::PRODUCE_STATUS_All,'order_status'=>ErpOrderEnum::ORDER_STATUS_PRODUCING];
+				}
+			}
+			(new ErpOrder)->saveAll($order_data);
+
+			Db::commit();
+        }catch (\Exception $e){
+			Db::rollback();
+            return ['msg'=>'操作失败'.$e->getMessage(),'code'=>201];
+        }
+    }
+
+	// 创建物料出库单(领料出库)
+    public static function goOut($id,$material_ids)
+    {
+		$map 			= [];
+		$map[]			= ['order_produce_id','in',$id];
+		if($material_ids){
+			$map[]		= ['material_id','in',$material_ids];
+		}
+		//$ids 			= ErpMaterialOutMaterial::alias('a')->join('erp_material_stock b','a.material_stock_id = b.id','LEFT')->where('b.type',ErpMaterialStockEnum::TYPE_OUT_PRODUCE_GET)->where('b.order_id','in',ErpOrderProduce::where('id','in',$id)->column('order_id'))->column('a.material_id');
+		//if($ids){
+			//$map[]		= ['material_id','not in',$ids];
+		//}
+		$bom 			= ErpOrderProduceBom::with(['material'])->where($map)->select();
+		if($bom->isEmpty()){
+			return ['msg'=>'请选择物料','code'=>201];
+		}
+		$produce_sn		= ErpOrderProduce::where('id','in',$id)->where('id','in',$bom->column('order_produce_id'))->column('produce_sn');
+		
+		$enter_data 	= ErpMaterialEnterMaterial::
+		fieldRaw('id,material_id,can_out_num,freeze_out_stock,can_out_num - freeze_out_stock as num')
+		->whereRaw('can_out_num>freeze_out_stock')->where('can_out_num','>',0)->where('material_id','in',$bom->column('material_id'))->order('id asc')->select()->toArray();
+		$enter			= [];
+		foreach($enter_data as $vo){
+			$enter[$vo['material_id']][] = $vo;
+		}
+		
+		$material 			= [];
+		foreach($bom as $vo){
+			//if($vo['material_type'] == 1 || $vo['use_num']>0){
+				$stock_num 	= $vo['num'];			
+				if(!empty($enter[$vo['material_id']])){
+					foreach($enter[$vo['material_id']] as $k=>$v){
+						if($v['num']){
+							if($stock_num > $v['num']){	
+								$enter[$vo['material_id']][$k]['num'] 				= 0;
+								$material[$vo['material_type']][$vo['order_id']][] 	= ['enter_material_id'=>$v['id'],'stock_num'=>$v['num'],'id'=>$vo['material_id'],'data_id'=>$vo['id']];	
+								$stock_num											= $stock_num - $v['num'];
+							}else{
+								$enter[$vo['material_id']][$k]['num'] 				= $v['num'] - $stock_num;
+								$material[$vo['material_type']][$vo['order_id']][] 	= ['enter_material_id'=>$v['id'],'stock_num'=>$stock_num,'id'=>$vo['material_id'],'data_id'=>$vo['id']];	
+								$stock_num 											= 0;
+								break;
+							}
+						}
+					}
+				}else{
+					return ['msg'=>$vo['material']['name'].'没库存批次','code'=>201];
+				}
+				if($vo['material']['stock'] <= 0){
+					return ['msg'=>$vo['material']['name'].'库存不足','code'=>201];
+				}
+
+				if($stock_num){
+					return ['msg'=>$vo['material']['name'].'库存不足','code'=>201];
+					$material[$vo['material_type']][$vo['order_id']][] 				= ['enter_material_id'=>0,'stock_num'=>$stock_num,'id'=>$vo['material_id'],'data_id'=>$vo['id']];
+				}
+			//}
+		}
+		if(!$material){
+			return ['msg'=>'物料数量为空','code'=>201];
+		}
+		
+		Db::startTrans();
+        try {			
+			foreach($material as $k1=>$v1){
+				foreach($v1 as $k2=>$v2){
+					if($v2){
+						ErpMaterialOutLogic::goAdd(['material_type'=>$k1,'type'=>ErpMaterialStockEnum::TYPE_OUT_PRODUCE_GET,'order_id'=>$k2,'material'=>$v2,'stock_date'=>date('Y-m-d'),'remark'=>'','produce_sn'=>$produce_sn]);
+					}
+				}
+			}
+			
+			Db::commit();
+        }catch (\Exception $e){
+			Db::rollback();
+            return ['msg'=>'操作失败'.$e->getMessage(),'code'=>201];
+        }
+    }
+
+	public static function 	getListMap($query=[]){
+		$map	 	= [];
+		$map[]		= ['a.produce_status', '<>', ErpOrderProduceEnum::PRODUCE_STATUS_NO];
+		if(!empty($query['check_status'])) {
+			$map[]	= ['a.check_status', '=', $query['check_status']];
+        }
+		if(!empty($query['produce_status'])) {
+			$map[]	= ['a.produce_status', '=', $query['produce_status']];
+        }
+		if(!empty($query['region_type'])) {
+			$map[]	= ['b.region_type', '=', $query['region_type']];
+        }		
+		if(!empty($query['customer_name'])) {
+			$map[]	= ['b.customer_name', 'like', '%' . $query['customer_name'] . '%'];
+        }
+		if(!empty($query['act'])) {
+			if($query['act'] == 1){
+				$map[]	= ['a.produce_status', '<>', ErpOrderProduceEnum::PRODUCE_STATUS_FINISH];
+			}else{
+				$map[]	= ['a.produce_status', '=', ErpOrderProduceEnum::PRODUCE_STATUS_FINISH];
+			}
+        }			
+        if(!empty($query['order_sn'])) {
+			$map[]	= ['b.order_sn', 'like', '%' . $query['order_sn'] . '%'];
+        }
+        if(!empty($query['product_model'])) {
+			$map[]	= ['c.product_model', 'like', '%' . $query['product_model'] . '%'];
+        }		
+		
+		if(!empty($query['delivery_time'])) {
+			$time 		= is_array($query['delivery_time'])?$query['delivery_time']:explode('至',$query['delivery_time']);
+			if(!empty($time[0])){
+				$map[]	= ['b.delivery_time', '>=', strtotime(trim($time[0]))];
+			}
+			if(!empty($time[1])){
+				$map[]	= ['b.delivery_time', '<', strtotime(trim($time[1]))+24*3600];
+			}
+        }
+		if(!empty($query['create_time'])) {
+			$time 		= is_array($query['create_time'])?$query['create_time']:explode('至',$query['create_time']);
+			if(!empty($time[0])){
+				$map[]	= ['b.create_time', '>=', strtotime(trim($time[0]))];
+			}
+			if(!empty($time[1])){
+				$map[]	= ['b.create_time', '<', strtotime(trim($time[1]))+24*3600];
+			}
+        }	
+		if(!empty($query['produce_date'])) {
+			$time 		= is_array($query['produce_date'])?$query['produce_date']:explode('至',$query['produce_date']);
+			if(!empty($time[0])){
+				$map[]	= ['a.produce_date', '>=', (trim($time[0]))];
+			}
+			if(!empty($time[1])){
+				$map[]	= ['a.produce_date', '<=', (trim($time[1]))];
+			}
+        }	
+		if(!empty($query['finish_date'])) {
+			$time 		= is_array($query['finish_date'])?$query['finish_date']:explode('至',$query['finish_date']);
+			if(!empty($time[0])){
+				$map[]	= ['a.finish_date', '>=', (trim($time[0]))];
+			}
+			if(!empty($time[1])){
+				$map[]	= ['a.finish_date', '<=', (trim($time[1]))];
+			}
+        }
+		if(isset($query['approve_status']) && $query['approve_status'] !== '') {
+			$map[]		= ['a.approve_status', '=', $query['approve_status']];
+        }
+		return $map;
+	}
+	
+	
+	
+	
+
+	// 获取列表
+    public static function getList($query=[],$limit=10)
+    {
+		$map 			= self::getListMap($query);
+		$orderby 		= [];	
+		if(!empty($query['sort']) && !empty($query['order'])) {
+			$orderby[$query['sort']]= $query['order'];
+		}
+		$orderby['a.id']= 'asc';
+		$field 			= 'a.*,b.order_sn,b.delivery_time,b.address,b.salesman_id,b.order_remark,b.shipping_type,b.customer_name,b.salesman_name,b.region';		
+		$admins 		= self::getAdmins();
+		$list 			= ErpOrderProduce::alias('a')->join('erp_order b','a.order_id = b.id','LEFT')->join('erp_order_product c','a.order_product_id = c.id','LEFT')->with(['order_product.bom'])->where($map)->field($field)->order($orderby)->append(['check_status_desc','produce_status_desc','approve_status_desc','produce_type_desc','can_approve','order_product.project_html'])->paginate($limit);
+		$data 			= $list->items();
+		$tmp 			= ErpOrderProduceProcess::where('order_produce_id','in',array_column($data,'id'))->where('process_id','in',ErpProcess::where('is_default',1)->where('status',1)->column('id'))->select();
+		$process		= [];
+		foreach($tmp as $vo){
+			$process[$vo['order_produce_id']][$vo['process_id']] = substr($vo['create_time'],0,10);
+		}
+		$count 			= [];
+		$tmp 			= ErpOrderLog::field('order_product_id,count(id) as log_num')->where('order_product_id','in',array_column($data,'order_product_id'))->group('order_product_id')->select();
+		foreach($tmp as $vo){
+			$count[$vo['order_product_id']] = $vo['log_num'];
+		}
+		foreach($data as &$item){
+			$item['num_desc'] 			= $item['queue_num'].'/'.$item['order_product']['product_num'];
+			$item['shipping_type']		= ErpOrderEnum::getShippingTypeDesc($item['shipping_type']);
+			$item['bom']				= $item['order_product']['project_html'];
+			$item['salesman']			= empty($admins[$item['salesman_id']])?'':$admins[$item['salesman_id']]['username'];
+			$item['log_num']			= empty($count[$item['order_product_id']])?0:$count[$item['order_product_id']];
+			if(!empty($process[$item['id']])){
+				foreach($process[$item['id']] as $k=>$v){
+					$item['process'.$k]	= $v;
+				}
+			}
+			$item['region_name']		= $item['region']?implode('',Region::where('id','in',$item['region'])->order('id asc')->column('name')):'';
+		}
+		
+        return ['code'=>0,'data'=>$data,'extend'=>['count' => $list->total(), 'limit' => $limit]];
+    }
+
+	public static function goCancel($id){
+		$list 				= ErpOrderProduce::where('id','in',$id)->select();
+		$order_ids 			= [];
+		$ids 				= [];
+		foreach($list as $vo){
+			if($vo['produce_status'] == ErpOrderProduceEnum::PRODUCE_STATUS_FINISH){
+				return ['msg'=>$vo['produce_sn'].'已生产完成','code'=>201];	
+			}
+			$order_ids[] 	= $vo['order_id'];
+			$ids[]		 	= $vo['id'];			
+		}
+		Db::startTrans();
+        try {
+			ErpOrderProduce::where('id','in',$ids)->update(['approve_status'=>ErpOrderProduceEnum::APPROVE_STATUS_NO,'check_status'=>ErpOrderProduceEnum::CHECK_STATUS_NO,'produce_date'=>'','check_time'=>0,'produce_status'=>ErpOrderProduceEnum::PRODUCE_STATUS_NO]);	
+			ErpOrderProduceBom::where('order_produce_id','in',$ids)->delete();	
+			$order_data 			= [];
+			foreach($order_ids as $vo){
+				if(ErpOrderProduce::where('order_id',$vo)->where('produce_status','<>',ErpOrderProduceEnum::PRODUCE_STATUS_NO)->count()){
+					$order_data[]	= ['id'=>$vo,'produce_status'=>ErpOrderEnum::PRODUCE_STATUS_PART,'order_status'=>ErpOrderEnum::ORDER_STATUS_PRODUCING];
+				}else{
+					$order_data[]	= ['id'=>$vo,'produce_status'=>ErpOrderEnum::PRODUCE_STATUS_NO,'order_status'=>ErpOrderEnum::ORDER_STATUS_WAIT_PRODUCE];
+				}
+			}
+			(new ErpOrder)->saveAll($order_data);
+			Db::commit();
+        }catch (\Exception $e){
+			Db::rollback();
+            return ['msg'=>'操作失败'.$e->getMessage(),'code'=>201];
+        }
+	}
+
+
+	public static function getBom($id,$type=1,$order_product_bom_id=0,$material_id=''){
+		$map 		= [];
+		$map[] 		= ['a.order_produce_id','in',$id];
+		if($order_product_bom_id){
+			$map[]	= ['a.order_product_bom_id','in',$order_product_bom_id];
+		}
+		if($material_id){
+			$map[]	= ['a.material_id','in',$material_id];
+		}	
+		if($type){
+			$map[] 	= ['a.type','=',$type];
+		}		
+		
+		$list 		=  ErpOrderProduceBom::alias('a')
+		->join('erp_material b','a.material_id = b.id','LEFT')
+		->join('dict_data c','b.cid = c.id','LEFT')
+		->field('a.*,b.stock,b.processing_way,b.name as material_name,b.sn as material_sn,b.unit as material_unit,b.surface as material_surface,b.material as material_stuff,b.remark,c.name as material_category,b.cid as material_cid')
+		->where($map)->select()->toArray();
+		
+		$tmp 		= [];
+		foreach($list as $vo){
+			if(empty($tmp[$vo['material_id']][$vo['material_color']])){
+				$tmp[$vo['material_id']][$vo['material_color']] 				= $vo;
+			}else{
+				$tmp[$vo['material_id']][$vo['material_color']]['id'] 			= $tmp[$vo['material_id']][$vo['material_color']]['id'].','.$vo['id'];
+				$tmp[$vo['material_id']][$vo['material_color']]['order_product_bom_id'] 			= $tmp[$vo['material_id']][$vo['material_color']]['order_product_bom_id'].','.$vo['order_product_bom_id'];
+				
+				$tmp[$vo['material_id']][$vo['material_color']]['num'] 			= $tmp[$vo['material_id']][$vo['material_color']]['num'] + $vo['num'];
+				$tmp[$vo['material_id']][$vo['material_color']]['lack_num']		= $tmp[$vo['material_id']][$vo['material_color']]['lack_num'] + $vo['lack_num'];
+			}
+		}
+		$data 		= [];
+		foreach($tmp as $v1){
+			foreach($v1 as $v2){
+				$data[]	= $v2;;
+			}
+		}
+		return $data ;
+	}
+	
+	public static function getRecheck($id){
+		$list				= ErpOrderProduceBom::alias('a')->join('erp_material b','a.material_id = b.id','LEFT')->where('a.id','in',$id)->field('a.id,a.order_produce_id,a.num,a.lack_num,a.material_color,a.material_id,b.stock')->select();
+		$data 				= [];
+		$material_num 		= [];
+		foreach($list as $vo){			
+			if(!isset($material_num[$vo['material_id']])){
+				$material_num[$vo['material_id']] 	= ErpMaterial::getActuallyStock($vo['material_id'],$vo['stock'],$list->column('id'));
+			}
+			if($material_num[$vo['material_id']]>0){
+				$lack_num 	= $vo['num']>$material_num[$vo['material_id']]?($vo['num']-$material_num[$vo['material_id']]):0;
+			}else{
+				$lack_num 	= $vo['num'];
+			}
+			//,'use_num'=>$vo['num'] - $lack_num
+			$data[] 		= ['lack_num'=>$lack_num,'id'=>$vo['id'],'order_produce_id'=>$vo['order_produce_id'],'material_id'=>$vo['material_id'],'material_color'=>$vo['material_color']];
+			$material_num[$vo['material_id']] = $material_num[$vo['material_id']] - $vo['num'];
+		}	
+		return ['data'=>$data];
+	}
+	
+	public static function goRecheck($id){ 
+		Db::startTrans();
+		try {
+			$data		= self::getRecheck($id);
+			(new ErpOrderProduceBom)->saveAll($data['data']);
+			
+			foreach($data['data'] as $vo){
+				$count	= ErpOrderProduceBom::where('order_produce_id',$vo['order_produce_id'])->where('lack_num','>',0)->count();
+				ErpOrderProduce::where('id',$vo['order_produce_id'])->update(['check_status'=>$count?ErpOrderProduceEnum::CHECK_STATUS_FAILED:ErpOrderProduceEnum::CHECK_STATUS_SUCCESS]);
+			}
+			
+			Db::commit();
+        }catch (\Exception $e){
+			Db::rollback();
+            return ['msg'=>'操作失败'.$e->getMessage(),'code'=>201];
+        }
+	}
+	
+	// 获取列表
+    public static function getSchedule($query=[],$limit=10)
+    {
+		$map	 	= [];
+		if(!empty($query['customer_name'])) {
+			$map[]	= ['b.customer_name', 'like', '%' . $query['customer_name'] . '%'];
+        }	
+        if(!empty($query['order_sn'])) {
+			$map[]	= ['b.order_sn', 'like', '%' . $query['order_sn'] . '%'];
+        }
+        if(!empty($query['produce_sn'])) {
+			$map[]	= ['a.produce_sn', 'like', '%' . $query['produce_sn'] . '%'];
+        }	
+        if(!empty($query['produce_finish_sn'])) {
+			$map[]	= ['a.produce_finish_sn', 'like', '%' . $query['produce_finish_sn'] . '%'];
+        }		
+        if(!empty($query['product_name'])) {
+			$map[]	= ['c.product_name', 'like', '%' . $query['product_name'] . '%'];
+        }
+        if(!empty($query['product_model'])) {
+			$map[]	= ['c.product_model', 'like', '%' . $query['product_model'] . '%'];
+        }	
+        if(!empty($query['salesman_id'])) {
+			$map[]	= ['b.salesman_id', '=', $query['salesman_id']];
+        }
+	    if(!empty($query['region_type'])) {
+			$map[]	= ['b.region_type', '=', $query['region_type']];
+        }	
+        if(!empty($query['orer_time'])) {
+			$time 		= is_array($query['orer_time'])?$query['orer_time']:explode('至',$query['orer_time']);
+			if(!empty($time[0])){
+				$map[]	= ['b.create_time', '>', strtotime(trim($time[0]))];
+			}
+			if(!empty($time[1])){
+				$map[]	= ['b.create_time', '>', strtotime(trim($time[1]))+24*3600];
+			}
+        }		
+		$field 			= 'a.*,b.order_sn,b.delivery_time,b.address,b.salesman_id,b.customer_name,b.order_remark,b.region_type,b.create_time as order_time';		
+		$admins 		= self::getAdmins();
+		$list 			= ErpOrderProduce::alias('a')->join('erp_order b','a.order_id = b.id','LEFT')->join('erp_order_product c','a.order_product_id = c.id','LEFT')
+		->with(['order_product.bom','shipping'])->where($map)->field($field)->order('a.id','asc')->append(['produce_status_desc','order_product.project_html','shipping.shipping_status_desc'])->group('a.id')->paginate($limit)->each(function($item, $key) use($admins){
+			$item->delivery_date 	= $item->delivery_time;
+			$item->region_type_desc	= RegionTypeEnum::getDesc($item->region_type);
+			$item->salesman			= empty($admins[$item->salesman_id])?'':$admins[$item->salesman_id]['username'];
+			$item->order_date		= date('Y-m-d',$item->order_time);
+			
+			
+			return $item;
+		});
+        return ['code'=>0,'data'=>$list->items(),'extend'=>['count' => $list->total(), 'limit' => $limit]];
+    }
+	
+	public static function getScheduleDetail($id)
+    {
+		$model 	= ErpOrderProduce::where('id',$id)->find();
+		$bom 	= ErpOrderShippingLogic::produceBom($model['id'],1);
+		$follow = ErpOrderProduceFollow::alias('a')
+		->join('erp_order_produce_process b','a.order_produce_id = b.order_produce_id and a.process_id = b.process_id','LEFT')
+		->field('a.*,b.process_name,b.follow_name')
+		->where('a.order_produce_id',$id)->select()->toArray();
+		$code 	= [];
+	
+		foreach($follow as $vo){
+			if($vo['num']){
+				$code[$vo['num']] = $vo;
+			}
+			if($vo['after_num']){
+				$code[$vo['after_num']] = $vo;
+			}
+		}
+		$res 	= ErpMaterialCode::alias('a')
+		->join('erp_material b','a.material_id = b.id','LEFT')
+		->join('erp_purchase_order c','a.purchase_order_id = c.id','LEFT')
+		->join('erp_supplier d','c.supplier_id = d.id','LEFT')
+		->where('a.code','in',array_keys($code))->column('a.code,a.data_id,a.data_type,b.sn,b.name,c.order_sn as purchase_order_sn,c.order_date as purchase_order_date','a.code');
+		
+		$enter 		= ErpMaterialEnterMaterial::alias('a')->join('erp_material_stock b','a.material_stock_id = b.id','LEFT')->where('a.id','in',array_column($res,'data_id'))->column('a.check_date,a.check_username,b.order_sn as enter_order_sn,b.stock_date as enter_stock_date,b.supplier_id','a.id');
+		$supplier	= ErpSupplier::where('id','in',array_column($enter,'supplier_id'))->column('name','id');
+		
+		foreach($code as $key=>&$vo){
+			if(!empty($res[$key])){
+				$vo = array_merge($res[$key],$vo);
+			}
+			if(!empty($vo['data_type']) && $vo['data_type'] == 'erp_material_enter_material' && !empty($enter[$vo['data_id']])){
+				$vo = array_merge($vo,$enter[$vo['data_id']]);
+			}
+			if(!empty($vo['supplier_id']) && !empty($supplier[$vo['supplier_id']])){
+				$vo['supplier_name'] = $supplier[$vo['supplier_id']];
+			}			
+			
+		}
+	
+		return ['model'=>$model,'bom'=>$bom,'code'=>$code];
+	}
+	
+	public static function getFollowDetail($id,$follow_id)
+    {
+		$produce 		= ErpOrderProduce::with(['order_product'=>function($query){return $query->field('id,product_model,product_specs,add_project,change_project,product_name,color,product_num');},'order'=>function($query){return $query->field('id,order_sn,order_product_num,customer_name');}])->where('id',$id)->find();
+		if(empty($produce['id'])){
+			throw new \Exception("产品不存在");
+		}
+		$follow 		= ErpOrderProduceFollow::where('id',$follow_id)->find();
+		if(empty($follow['id'])){
+			throw new \Exception("工序不存在");
+		}
+		$produce_process = ErpOrderProduceProcess::where('order_produce_id',$produce['id'])->where('process_id',$follow['process_id'])->find();
+		if(empty($produce_process['id'])){
+			throw new \Exception("工序错误");
+		}		
+		
+		$partn 			= $follow?$follow['partn']:[];
+		$component 		= $follow?$follow['component']:[];
+		
+		$all_process 		= ErpOrderProduceProcess::alias('a')
+		->join('erp_process b','a.process_id = b.id','LEFT')
+		->join('erp_follow c','b.follow_id = c.id','LEFT')
+		->where('a.order_produce_id',$produce['id'])->order(['b.sort'=>'asc','b.id'=>'asc'])->column('a.id,a.process_id,a.process_name,a.price,a.status,a.confirm_date,a.username,b.is_inspect,b.follow_id,b.description,c.name as follow_name','a.process_id');
+
+
+		return ['produce'=>$produce ,'partn'=>$partn ,'component'=>$component,'follow'=>$follow,'produce_process'=>$produce_process,'all_process'=>$all_process,'bg' => 1];
+	}	
+	
+	
+	public static function getProduceReport($id,$process_id)
+    {
+		$produce 		= ErpOrderProduce::with(['order_product'=>function($query){return $query->field('id,product_model,product_specs,add_project,change_project,product_name,color,product_num');},'order'=>function($query){return $query->field('id,order_sn,order_product_num,customer_name');}])->where('id',$id)->find();
+		if(empty($produce['id'])){
+			throw new \Exception("产品不存在");
+		}
+		$process 		= ErpProcess::where('id',$process_id)->find();
+		if(empty($process['id'])){
+			throw new \Exception("工序错误");
+		}	
+		
+		$all_process 		= ErpOrderProduceProcess::alias('a')
+		->join('erp_process b','a.process_id = b.id','LEFT')
+		->join('erp_follow c','b.follow_id = c.id','LEFT')
+		->where('a.order_produce_id',$produce['id'])->order(['b.sort'=>'asc','b.id'=>'asc'])->column('a.id,a.process_id,a.process_name,a.price,a.status,a.confirm_date,a.username,b.is_inspect,b.follow_id,b.description,c.name as follow_name','a.process_id');
+
+		return ['produce'=>$produce ,'process'=>$process,'all_process'=>$all_process,'bg' => 1,'page'=>request()->param('page/d',1)];
+	}	
+	
+	
+	
+	public static function getFollowLog($id,$process_id){
+		$list = ErpOrderProduceProcessLog::where('order_produce_id',$id)->where('process_id',$process_id)->order(['id'=>'asc'])->select();
+		return ['list'=>$list];
+	}
+	
+	public static function goEditSn($data){
+		if(empty($data['id']) || empty($data['produce_sn'])){
+			return ['msg'=>'参数错误','code'=>201];
+		}
+		$model = ErpOrderProduce::where('id',$data['id'])->find();
+		if(empty($model['id'])){
+			return ['msg'=>'产品不存在','code'=>201];
+		}
+		if(ErpOrderProduce::where('produce_sn',$data['produce_sn'])->count()){
+			return ['msg'=>'产品编码已存在','code'=>201];
+		}
+		try {
+			$model->save($data);
+		}catch (\Exception $e){
+            return ['msg'=>'操作失败'.$e->getMessage(),'code'=>201];
+        }
+	}
+	
+	public static function goEditRemark($id,$remark){
+		if(empty($id)){
+			return ['msg'=>'参数错误','code'=>201];
+		}
+		$model = ErpOrderProduce::where('id',$id)->find();
+		if(empty($model['id'])){
+			return ['msg'=>'产品不存在','code'=>201];
+		}
+		try {
+			ErpOrderProduct::where('id',$model['order_product_id'])->update(['remark'=>$remark]);
+		}catch (\Exception $e){
+            return ['msg'=>'操作失败'.$e->getMessage(),'code'=>201];
+        }
+	}	
+
+
+	public static function goEditFinishSn($data){
+		if(empty($data['id']) || empty($data['produce_finish_sn'])){
+			return ['msg'=>'参数错误','code'=>201];
+		}
+		$model = ErpOrderProduce::where('id',$data['id'])->find();
+		if(empty($model['id'])){
+			return ['msg'=>'产品不存在','code'=>201];
+		}
+		if(ErpOrderProduce::where('produce_finish_sn',$data['produce_finish_sn'])->count()){
+			return ['msg'=>'产品序列号已存在','code'=>201];
+		}
+		try {
+			$model->save($data);
+		}catch (\Exception $e){
+            return ['msg'=>'操作失败'.$e->getMessage(),'code'=>201];
+        }
+	}
+
+
+	public static function goPurchase($ids){
+		if(empty($ids)){
+			return ['msg'=>'请选择产品','code'=>201];
+		}
+		$list		= ErpOrderProduce::where('id','in',$ids)->select();
+		$ids 		= [];
+		foreach($list as $vo){
+			if(!$vo['can_purchase']){
+				return ['msg'=>$vo['produce_sn'].'不能委外采购','code'=>201];
+			}
+			$ids[] = $vo['id'];
+		}
+		if(empty($ids)){
+			return ['msg'=>'请选择产品','code'=>201];
+		}		
+		try {
+			ErpOrderProduce::where('id','in',$ids)->update(['produce_date'=>date('Y-m-d'),'produce_type'=>ErpOrderProduceEnum::PRODUCE_TYPE_2,'produce_status'=>ErpOrderProduceEnum::PRODUCE_STATUS_PURCHASE]);
+        }catch (\Exception $e){
+            return ['msg'=>'操作失败'.$e->getMessage(),'code'=>201];
+        }
+	}	
+	
+	public static function goApprove($ids){
+		if(empty($ids)){
+			return ['msg'=>'请选择产品','code'=>201];
+		}
+		$list		= ErpOrderProduce::with(['order'])->where('id','in',$ids)->select();
+		$data 		= [];
+		$date 		= date('Y-m-d');
+		$ids 		= [];
+		foreach($list as $vo){
+			if(!$vo['can_approve']){
+				return ['msg'=>$vo['produce_sn'].'已审核','code'=>201];
+			}
+			$ids[]		= $vo['id'];
+			if($vo['produce_type'] == ErpOrderProduceEnum::PRODUCE_TYPE_2){
+				$data[]	= ['data_id'=>$vo['id'],'apply_num'=>1,'delivery_date'=>$vo['order']['delivery_time'],'apply_date'=>$date,'type'=>2,'data_type'=>ErpPurchaseApplyEnum::DATA_TYPE_PRODUCE,'username'=>self::$adminUser['username']];
+			}
+		}
+		if(empty($ids)){
+			return ['msg'=>'请选择产品','code'=>201];
+		}		
+		Db::startTrans();
+		try {
+			if($data){
+				(new ErpPurchaseApply)->saveAll($data);
+			}
+			ErpOrderProduce::where('id','in',$ids)->update(['approve_status'=>ErpOrderProduceEnum::APPROVE_STATUS_YES]);
+			Db::commit();
+        }catch (\Exception $e){
+			Db::rollback();
+            return ['msg'=>'操作失败'.$e->getMessage(),'code'=>201];
+        }
+	}	
+
+	public static function goCancelProduce($ids){
+		if(empty($ids)){
+			return ['msg'=>'请选择产品','code'=>201];
+		}
+		try {
+			ErpOrderProduce::where('id','in',$ids)->update(['cancel_produce'=>1]);
+        }catch (\Exception $e){
+            return ['msg'=>'操作失败'.$e->getMessage(),'code'=>201];
+        }
+	}	
+	
+	
+	public static function getProduceByEnter($enter_material_id){
+		$code	= ErpMaterialCode::where('data_id',$enter_material_id)->where('data_type','erp_material_enter_material')->column('code');
+		$data	= ErpOrderProduceFollow::alias('a')
+		->join('erp_order_produce b','a.order_produce_id = b.id','LEFT')
+		->join('erp_order c','b.order_id = c.id','LEFT')
+		->field('b.finish_date,b.produce_sn,c.order_sn,c.customer_name,c.create_time,c.salesman_name')
+		->where('a.num|a.after_num','in',$code)->select();
+		
+		return $data;
+	}
+	
+	
+	public static function getStat($region_type,$year){
+		if($region_type == 2){
+			$data 	= Region::where('parent_id',0)->where('id','<>',100000)->where('status',1)->field('id,name')->select()->toArray();
+		}else{
+			$data 	= Region::where('parent_id',100000)->field('id,name')->where('status',1)->select()->toArray();
+		}
+		$product 	= ErpProduct::field('id,name,sn')->select();
+		
+		foreach($data as &$vo){
+			foreach($product as $item){
+				$vo['num'][] = ErpOrderProduce::alias('a')
+				->join('erp_order b','a.order_id = b.id','LEFT')
+				->where('a.product_id',$item['id'])->where('b.region','find in set',$vo['id'])->where('b.salesman_approve',1)->count();
+			}
+			$vo['total']	= array_sum($vo['num']);
+		}
+		return ['product'=>$product,'data'=>$data,'region_type'=>$region_type,'year'=>$year];
+	}
+	
+	
+	public static function getSupplierStat($region,$year,$month){
+		$data 		= ErpCustomerLogic::getAll()->toArray();
+		$product 	= ErpProduct::field('id,name,sn')->select();
+		$where 		= [];
+		$where[]	= ['c.salesman_approve','=',1];
+		if($region){
+			$where[]= ['c.region','find in set',$region];
+		}
+		if($year){
+			$where[]= ['c.create_time','>=',strtotime($year.'-01-01 00:00:00')];
+			$where[]= ['c.create_time','<=',strtotime($year.'-12-31 23:59:59')];
+		}
+		if($month){
+			$year	= $year?$year:date('Y');
+			$where[]= ['c.create_time','>=',strtotime($year.'-'.sprintf("%03d",$month).'-01 00:00:00')];
+			$where[]= ['c.create_time','<=',strtotime($year.'-'.sprintf("%03d",$month).'-31 23:59:59')];
+		}
+		$num 		= [];
+		$tmp 		= ErpOrderProduce::alias('b')->join('erp_order c','b.order_id = c.id','LEFT')->where($where)->group('c.customer_id,b.product_id')->field('count(b.id) as num,b.product_id,c.customer_id')->select();
+		foreach($tmp as $vo){
+			$num[$vo['customer_id']][$vo['product_id']] = $vo['num'];
+		}
+		
+		foreach($data as &$vo){
+			$vo['num'] = [];
+			foreach($product as $item){
+				$vo['num'][] = empty($num[$vo['id']][$item['id']])?0:$num[$vo['id']][$item['id']];
+			}
+			$vo['total']	= array_sum($vo['num']);
+		}
+		return ['product'=>$product,'data'=>$data,'region'=>$region,'year'=>$year,'month'=>$month,'province'=>Region::where('parent_id',100000)->field('id,name')->where('status',1)->select()];
+	}	
+	
+	
+	public static function getRegionStat($year){
+		$data 		= Region::where('parent_id',100000)->field('id,name')->where('status',1)->select()->toArray();
+		$product 	= ErpProduct::field('id,name,sn')->select();
+		$where 		= [];
+		$where[]	= ['b.salesman_approve','=',1];
+		if($year){
+			$where[]= ['b.create_time','>=',strtotime($year.'-01-01 00:00:00')];
+			$where[]= ['b.create_time','<=',strtotime($year.'-12-31 23:59:59')];
+		}
+		foreach($data as &$vo){
+			$vo['num'] = [];
+			foreach($product as $item){
+				$vo['num'][] = ErpOrderProduce::alias('a')
+				->join('erp_order b','a.order_id = b.id','LEFT')
+				->where('a.product_id',$item['id'])->where('b.region','find in set',$vo['id'])->where($where)->count();
+			}
+			$vo['total']	= array_sum($vo['num']);
+		}
+		return ['product'=>$product,'data'=>$data,'year'=>$year];
+	}	
+	
+	
+
+	public static function  goSaveReport($id,$report){
+		$model 	= ErpOrderProduce::where('id',$id)->find();
+		$report = array_merge($model['report']?$model['report']:[],$report);
+		
+		$model->save(['report'=>$report]);
+	}
+	
+	
+	public static function goEditUdi($id,$udi){
+		if(empty($id)){
+			return ['msg'=>'参数错误','code'=>201];
+		}
+		$model = ErpOrderProduce::where('id',$id)->find();
+		if(empty($model['id'])){
+			return ['msg'=>'产品不存在','code'=>201];
+		}
+		try {
+			$model->save(['udi'=>$udi]);
+		}catch (\Exception $e){
+            return ['msg'=>'操作失败'.$e->getMessage(),'code'=>201];
+        }
+	}
+	
+	
+	public static function getStatement($query=[],$limit=10)
+    {
+		$map	 	= [];
+		if(!empty($query['customer_name'])) {
+			$map[]	= ['b.customer_name', 'like', '%' . $query['customer_name'] . '%'];
+        }	
+        if(!empty($query['order_sn'])) {
+			$map[]	= ['b.order_sn', 'like', '%' . $query['order_sn'] . '%'];
+        }
+        if(!empty($query['produce_sn'])) {
+			$map[]	= ['a.produce_sn', 'like', '%' . $query['produce_sn'] . '%'];
+        }	
+        if(!empty($query['produce_finish_sn'])) {
+			$map[]	= ['a.produce_finish_sn', 'like', '%' . $query['produce_finish_sn'] . '%'];
+        }		
+        if(!empty($query['product_name'])) {
+			$map[]	= ['c.product_name', 'like', '%' . $query['product_name'] . '%'];
+        }
+        if(!empty($query['product_model'])) {
+			$map[]	= ['c.product_model', 'like', '%' . $query['product_model'] . '%'];
+        }	
+        if(!empty($query['salesman_id'])) {
+			$map[]	= ['b.salesman_id', '=', $query['salesman_id']];
+        }		
+        if(!empty($query['orer_time'])) {
+			$time 		= is_array($query['orer_time'])?$query['orer_time']:explode('至',$query['orer_time']);
+			if(!empty($time[0])){
+				$map[]	= ['b.create_time', '>', strtotime(trim($time[0]))];
+			}
+			if(!empty($time[1])){
+				$map[]	= ['b.create_time', '>', strtotime(trim($time[1]))+24*3600];
+			}
+        }		
+		$field 			= 'a.*,b.order_sn,b.delivery_time,b.address,b.salesman_id,b.customer_name,b.order_remark,b.region_type,b.create_time as order_time';		
+		$admins 		= self::getAdmins();
+		$list 			= ErpOrderProduce::alias('a')->join('erp_order b','a.order_id = b.id','LEFT')->join('erp_order_product c','a.order_product_id = c.id','LEFT')
+		->with(['order_product','process'=>function($query){return $query->field('id,process_name,order_produce_id,produce_follow_id,process_id')->where('confirm_date','<>','');}])->where($map)->field($field)->order('a.id','asc')->append(['produce_status_desc'])->group('a.id')->paginate($limit)->each(function($item, $key) use($admins){
+			$item->delivery_date 	= $item->delivery_time;
+			$item->region_type_desc	= RegionTypeEnum::getDesc($item->region_type);
+			$item->salesman			= empty($admins[$item->salesman_id])?'':$admins[$item->salesman_id]['username'];
+			$item->order_date		= date('Y-m-d',$item->order_time);
+			
+			
+			return $item;
+		});
+        return ['code'=>0,'data'=>$list->items(),'extend'=>['count' => $list->total(), 'limit' => $limit]];
+    }
+}

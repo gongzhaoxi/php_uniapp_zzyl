@@ -1,0 +1,1061 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.pear-btn .layui-icon-delete{font-size: 18px;float: right;}
+.red{color:red;}
+#production-timeline,#production-form{display:none;}
+.production-timeline .count{color: rgb(51, 51, 51);margin-right:20px;}
+.production-timeline ul li{color: rgb(153, 153, 153);}
+.production-timeline .layui-text p{margin-top:0px;font-size:13px;}
+.layui-tab-title .btn{float:right;position: relative;
+line-height: 40px;min-width: 65px;padding: 0 15px;text-align: center;cursor: pointer;display: inline-block;vertical-align: middle;font-size: 14px;}
+.lack_num {background:red;color:#fff;cursor: pointer;}
+
+.btn .layui-select-title .layui-input {height: 28px;margin-top: -8px;}
+.btn .layui-form-select dl dt,.btn .layui-form-select dl dd {line-height: 28px;}
+.btn .layui-form-select dl {top: 28px;}
+.btn .layui-select-title .layui-input {height: 32px;margin-top: -3px;}
+.btn .layui-form-select dl dt,.btn .layui-form-select dl dd {line-height: 32px;}
+.btn .layui-form-select dl {top: 32px;}
+.btn.layui-select-title .layui-input {height: 38px;margin-top: 0;}
+.btn .layui-form-select dl dt,.btn .layui-form-select dl dd {line-height: 38px;text-align: left;}
+.btn .layui-form-select dl {top: 38px;}
+#mtable>div{width:48%;display:inline-block;float:left;}
+#mtable>div:last-child{float:right;}
+#mtable th{min-width:40px;}
+#mtable td{overflow:auto;}
+.layui-tab-content{padding: 0px;}
+.layui-tab-title .btn2{float:right;position: relative;line-height: 40px;min-width: 65px;padding: 0 15px;text-align: center;cursor: pointer;display: inline-block;vertical-align: middle;font-size: 14px;}
+
+.wage{margin-bottom:5px;}
+.wage .name{padding: 9px 0 !important;line-height: 20px;text-align: center;background: rgb(210, 227, 243);}
+.wage button{padding: 0 8px;}
+</style>
+<form class="layui-form" action="" method="post" lay-filter="form-filter">
+	<div class="mainBox">
+		<div class="main-container">
+			<blockquote class="layui-elem-quote">
+				排产产品编码<span class="layui-badge" style="margin-left:10px;">注：排产可选周期最长 7天；</span>
+				<div class="layui-form-item" style="float: right; width:715px;margin:0 !important;padding:0 !important; margin-top:-15px !important;">
+					<div class="layui-form-item layui-inline">
+						<input type="text" name="produce_date" id="produce_date" value="{$produce_date}" autocomplete="off" placeholder="日期" class="layui-input" style="width: 100px;">						
+					</div>	
+					<button type="button" class="pear-btn pear-btn-md pear-btn-success" lay-submit lay-filter="start"><i class="layui-icon layui-icon-ok-circle"></i>下达生产</button>
+					<button type="button" class="pear-btn pear-btn-md pear-btn-danger"  lay-submit lay-filter="check"><i class="layui-icon layui-icon-refresh-3"></i>重新排查</button>
+					<button type="button" class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="view"><i class="layui-icon layui-icon-date"></i>查看生产周期表</button>
+					<button type="button" class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="set"><i class="layui-icon layui-icon-set-fill"></i>设置日产量</button>
+					<button type="button" class="pear-btn pear-btn-warming  pear-btn-md" lay-submit lay-filter="print-product-tag">打印产品标签</button>
+					<button type="button" class="pear-btn pear-btn-warming  pear-btn-md" lay-submit lay-filter="print-schedule">打印排产单</button>	
+				</div>
+			</blockquote>
+			<div class="layui-form-item remove-div">
+				{volist name="model['produce']" id="vo"}
+				<button type="button" plain="" class="pear-btn pear-btn-primary  pear-btn-xs" lay-submit lay-filter="remove" data-id="{$vo['id']}">{$vo['produce_sn']}<i class="layui-icon layui-icon-delete"></i></button>
+				{/volist}
+			</div>	
+			
+			<div class="layui-form-item">当天产量值：<span class="red">{$production[0]['produce_num']}</span> 台；当天已排产总量：<span class="red">{:count($production[0]['produce'])}</span> 台；当前选中排产总量：<span class="red">{:count($model['produce'])}</span> 台</div>
+			<div class="layui-tab  layui-tab-brief" lay-filter="tab" id="tab">
+				<ul class="layui-tab-title">
+					<li data-jmreport="22" data-select="select-total" data-type="1" data-selectvalue="" class="layui-this">总表-组件</li>
+					<li data-jmreport="26" data-select="select-total" data-type="2" data-selectvalue="" >总表-零件</li>
+					<li data-jmreport="22" data-select="select-component" data-type="3" data-selectvalue="">足料-组件</li>
+					<li data-jmreport="26" data-select="select-partn" data-type="4" data-selectvalue="">足料-零件</li>
+					<li data-jmreport="22" data-select="select-component" data-type="5" data-selectvalue="">欠料-组件</li>
+					<li data-jmreport="26" data-select="select-partn" data-type="6" data-selectvalue="">欠料-零件</li>
+					<li data-select="">工序工资</li>
+					<li data-select="">打印更改配置方案</li>
+					<div class="btn" >	
+						<div class="layui-input-inline select-component select">
+							<select lay-filter="bill_type" id="bill_type_select">
+								<option value="">全部类别</option>
+								{volist name="bill_type" id="vo"}
+								<option value="{$vo['id']}">{$vo['name']}</option>
+								{/volist}
+							</select>
+						</div>
+						<div class="layui-input-inline select-partn select" style="display:none;">
+							<select lay-filter="produce_type" id="produce_type_select">
+								<option value="">全部生产物料类别</option>
+								{volist name="produce_type" id="vo"}
+								<option value="{$vo['id']}">{$vo['name']}</option>
+								{/volist}
+								<option value="0">未分类组</option>
+							</select>
+						</div>
+						<button type="button" class="layui-btn layui-btn-xs layui-btn-success act-3 act-4" lay-submit lay-filter="out">申请领料</button>		
+						<button type="button" class="layui-btn layui-btn-xs layui-bg-blue act-5" lay-submit lay-filter="plan">计划生产</button>	
+						<button type="button" class="layui-btn layui-btn-xs layui-bg-blue act-6" lay-submit lay-filter="purchase">申请采购</button>	
+						<button type="button" class="layui-btn layui-btn-warm layui-btn-xs act-3 act-4" lay-submit lay-filter="print-tag">打印标签</button>
+						<button type="button" class="layui-btn layui-btn-warm layui-btn-xs act-3 act-4" lay-submit lay-filter="print-material">打印领料单</button>	
+						<button type="button" class="layui-btn layui-btn-warm layui-btn-xs act-5 act-6" lay-submit lay-filter="print-material2">打印欠料单</button>	
+						<button type="button" class="layui-btn layui-btn-warm layui-btn-xs act-1 act-2" lay-submit lay-filter="print-material3">打印总表</button>
+						
+					</div>
+					
+				</ul>	
+				<!-- 总表-组件 -->
+				
+				<div class="layui-tab-content">
+					<div class="layui-tab-item layui-show">
+						<table class="layui-table component-table">
+							<thead>
+								<tr>
+									<th><input type="checkbox"  title="序号" lay-filter="checkbox-filter1"></th>
+									<th>物料编号</th>
+									<th>物料名称</th>	
+									<th>当前库存</th>								
+									<th>单位</th>
+																	
+									<th>颜色</th>
+									<th>备注</th>
+								</tr> 
+							</thead>
+							<tbody>
+								{php}$iii=1;{/php}
+								{volist name="model['total_material']" id="vo"}
+								{if $vo['type'] == 2}
+								<tr >
+									<td><input type="checkbox" name="material_ids[]" value="{$vo['id']}" data-ids="{$vo['id']}" title="{$iii}" class="checkbox-filter checkbox-filter1"> </td>
+									<td>{$vo['sn']}</td>
+									<td>{$vo['name']}</td>
+									<td>{$vo['stock']}</td>
+									<td>{$vo['unit']}</td>
+									<td>{$vo['color']}</td>
+									<td>{$vo['remark']}</td>
+								</tr>
+								{php}$iii++;{/php}
+								{/if}
+								{/volist}
+							</tbody>
+						</table>
+					</div>
+					<!-- 总表-零件 -->
+					<div class="layui-tab-item">
+						<table class="layui-table partn-table">
+							<thead>
+								<tr>
+									<th><input type="checkbox"  title="序号" lay-filter="checkbox-filter2"></th>
+									<th>物料编号</th>
+									<th>物料名称</th>
+									<th>当前库存</th>
+									<th>单位</th>
+									<th>生产物料类别</th>
+									<th>材料</th>
+									<th>表面</th>
+									<th>颜色</th>
+									<th>备注</th>
+								</tr> 
+							</thead>
+							<tbody>
+								{php}$iii=1;{/php}
+								{volist name="model['total_material']" id="vo"}
+								{if $vo['type'] == 1}
+								<tr >
+									<td><input type="checkbox" name="material_ids[]" value="{$vo['id']}"  data-ids="{$vo['id']}" title="{$iii}" class="checkbox-filter checkbox-filter2"></td>
+									<td>{$vo['sn']}</td>
+									<td>{$vo['name']}</td>
+									<td>{$vo['stock']}</td>
+									<td>{$vo['unit']}</td>
+									<td>{$model['dict_data'][$vo['produce_type']]|default=''}</td>
+									<td>{$vo['stuff']|default=''}</td>
+									<td>{$vo['surface']}</td>
+									<td>{$vo['color']}</td>
+									<td>{$vo['remark']}</td>
+								</tr>
+								{php}$iii++;{/php}
+								{/if}
+								{/volist}
+							</tbody>
+						</table>
+					</div>
+					<!-- 足料-组件 -->
+					<div class="layui-tab-item">
+						<table class="layui-table component-table">
+							<thead>
+								<tr>
+									<th><input type="checkbox"  title="序号" lay-filter="checkbox-filter3"></th>
+									<th>物料编号</th>
+									<th>物料名称</th>	
+									<th>当前库存</th>
+									<th>需求数量</th>
+									<th>可领数量</th>
+									<th>单位</th>
+									<th>类别</th>											
+									<th>颜色</th>
+									<th>备注</th>
+								</tr> 
+							</thead>
+							<tbody>
+								{php}$index = 0;{/php}
+								{volist name="model['bom1']" id="vo"}
+								{if $vo['lack_num'] == 0}
+								{php}$index++;{/php}
+								<tr class="bill_type-{$vo['bill_type']}">
+									<td><input type="checkbox" name="material_ids[]" value="{$vo['material_id']}"  data-ids="{$vo['ids']}" title="{$index}" class="checkbox-filter checkbox-filter3"></td>
+									<td>{$vo['material_sn']}</td>
+									<td>{$vo['material_name']}</td>
+									<td>{$vo['stock']}</td>
+									<td>{$vo['num']}</td>
+									<td>{$vo['use_num']}</td>
+									<td>{$vo['material_unit']}</td>
+									<td>{$vo['bill_type_name']}</td>
+									<td>{$vo['material_color']}</td>
+									<td>{$vo['remark']}</td>
+								</tr>
+								{/if}
+								{/volist}
+							</tbody>
+						</table>
+					</div>
+					<!-- 足料-零件 -->					
+					<div class="layui-tab-item">
+						<table class="layui-table partn-table">
+							<thead>
+								<tr>
+									<th><input type="checkbox"  title="序号" lay-filter="checkbox-filter4"></th>
+									<th>物料编号</th>
+									<th>物料名称</th>
+									<th>当前库存</th>
+									<th>需求数量</th>
+									<th>可领数量</th>
+									<th>单位</th>
+									<th>生产物料类别</th>
+									<th>材料</th>
+									<th>表面</th>
+									<th>颜色</th>
+									<th>备注</th>
+								</tr> 
+							</thead>
+							<tbody>
+								{php}$index = 0;{/php}
+								{volist name="model['bom2']" id="vo"}
+								{if $vo['lack_num'] == 0}
+								{php}$index++;{/php}
+								<tr class="produce_type-{$vo['produce_type']}">
+									<td><input type="checkbox" name="material_ids[]"  data-ids="{$vo['ids']}" value="{$vo['material_id']}" title="{$index}" class="checkbox-filter checkbox-filter4"></td>
+									<td>{$vo['material_sn']}</td>
+									<td>{$vo['material_name']}</td>
+									<td>{$vo['stock']}</td>
+									<td>{$vo['num']}</td>
+									<td>{$vo['use_num']}</td>
+									<td>{$vo['material_unit']}</td>
+									<td>{$vo['produce_type_name']}</td>
+									<td>{$vo['material_stuff']}</td>
+									<td>{$vo['material_surface']}</td>
+									<td>{$vo['material_color']}</td>
+									<td>{$vo['remark']}</td>
+								</tr>
+								{/if}
+								{/volist}
+							</tbody>
+						</table>
+					</div>
+					<!-- 欠料-组件 -->
+					<div class="layui-tab-item">
+						<table class="layui-table component-table">
+							<thead>
+								<tr>
+									<th><input type="checkbox"  title="序号" lay-filter="checkbox-filter5"></th>
+									<th>物料编号</th>
+									<th>物料名称</th>	
+									<th>需求数量</th>
+									<th>欠缺数量</th>
+									<th>单位</th>
+									<th>类别</th>											
+									<th>颜色</th>
+									<th>备注</th>
+								</tr> 
+							</thead>
+							<tbody>
+								{php}$index = 0;{/php}
+								{volist name="model['bom1']" id="vo"}
+								{if $vo['lack_num'] > 0}
+								{php}$index++;{/php}
+								<tr class="bill_type-{$vo['bill_type']}">
+									<td><input type="checkbox" name="material_ids[]"  data-ids="{$vo['ids']}" value="{$vo['material_id']}" title="{$index}" class="checkbox-filter checkbox-filter5"></td>
+									<td>{$vo['material_sn']}</td>
+									<td>{$vo['material_name']}</td>
+									<td>{$vo['num']}</td>
+									<td>{$vo['lack_num']}</td>
+									<td>{$vo['material_unit']}</td>
+									<td>{$vo['bill_type_name']}</td>
+									<td>{$vo['material_color']}</td>
+									<td>{$vo['remark']}</td>
+								</tr>
+								{/if}
+								{/volist}
+							</tbody>
+						</table>
+					</div>
+					<!-- 欠料-零件 -->
+					<div class="layui-tab-item">
+						<table class="layui-table partn-table">
+							<thead>
+								<tr>
+									<th><input type="checkbox"  title="序号" lay-filter="checkbox-filter6"></th>
+									<th>物料编号</th>
+									<th>物料名称</th>
+									<th>需求数量</th>
+									<th>欠缺数量</th>
+									<th>单位</th>
+									<th>生产物料类别</th>
+									<th>材料</th>
+									<th>表面</th>
+									<th>颜色</th>
+									<th>备注</th>
+								</tr> 
+							</thead>
+							<tbody>
+								{php}$index = 0;{/php}
+								{volist name="model['bom2']" id="vo"}
+								{if $vo['lack_num'] > 0}
+								{php}$index++;{/php}
+								<tr class="produce_type-{$vo['produce_type']}">
+									<td><input type="checkbox" name="material_ids[]"  data-ids="{$vo['ids']}" value="{$vo['material_id']}" title="{$index}" class="checkbox-filter checkbox-filter6"></td>
+									<td>{$vo['material_sn']}</td>
+									<td>{$vo['material_name']}</td>
+									<td>{$vo['num']}</td>
+									<td>{$vo['lack_num']}</td>
+									<td>{$vo['material_unit']}</td>
+									<td>{$vo['produce_type_name']}</td>
+									<td>{$vo['material_stuff']}</td>
+									<td>{$vo['material_surface']}</td>
+									<td>{$vo['material_color']}</td>
+									<td>{$vo['remark']}</td>
+								</tr>
+								{/if}
+								{/volist}
+							</tbody>
+						</table>
+					</div>	
+					<div class="layui-tab-item">
+						<table class="layui-table">
+							<colgroup>
+								<col width="80">
+								<col width="200">
+								<col width="100">
+								<col width="100">
+								<col>
+								<col width="80">
+							</colgroup>
+						<thead>
+							<tr>
+								<th>序号</th>
+								<th>产品编号</th>
+								<th>型号</th>
+								<th>款式</th>
+								<th>工序工资记录</th>
+								<th>操作</th>
+							</tr> 
+						</thead>
+						<tbody>
+							{volist name="model['produce']" id="vo"}
+							<tr>
+								<td>{$i}</td>
+								<td>{$vo['produce_sn']}</td>
+								<td>{$vo['product_model']}</td>
+								<td>{$vo['product_specs']}</td>
+								<td>
+									<div class="layui-row wage-con">
+										{if !empty($vo['wage'])}
+										{foreach $vo['wage'] as $v}
+										<div class="layui-col-xs3 wage" id="wage{$v['process_id']}">
+											<div class="layui-row">
+												<div class="layui-col-xs5">
+													<input type="hidden"  value="{$v['order_produce_id']}" class="order_produce_id">
+													<input type="hidden"  value="{$v['process_id']}" class="process_id">
+													<input type="hidden"  value="{$v['product_id']}" class="product_id">
+													<div class="name"> {$v['process_name']}</div>
+												</div>
+												<div class="layui-col-xs3">
+													<input type="text"  value="{$v['price']}" lay-verify="required" placeholder="请输入" autocomplete="off" class="layui-input price">
+												</div>
+												<div class="layui-col-xs4">
+													<div class="layui-btn-group">
+														<button type="button" class="layui-btn "><i class="layui-icon layui-icon-edit"></i> </button>
+														<button type="button" class="layui-btn layui-bg-red "><i class="layui-icon layui-icon-delete"></i> </button>
+													</div>
+												</div>
+											</div>
+										</div>
+										{/foreach}
+										{/if}
+									</div>
+								</td>
+								<td>
+									<button type="button" ts-selected="{if !empty($vo['wage'])}{:implode(',',array_column($vo['wage'],'process_id'))}{/if}" data-order_produce_id="{$vo['id']}" data-product_id="{$vo['product_id']}" class="layui-btn add-wage" id="add-wage-{$i}">添加工序</button>
+								</td>
+							</tr>
+							{/volist}
+						</tbody>
+						</table>
+					</div>
+					
+					<!-- 打印更改配置方案 -->
+					<div class="layui-tab-item">
+						<button type="button" style="margin-bottom:10px;" class="layui-btn layui-btn-normal layui-btn-sm print">打印</button>
+						<div id="mtable">
+							<div>
+								<button type="button" class="layui-btn" id="add_material" ts-selected="">新增物料</button>
+								<table class="layui-table" border="1">
+									<thead>
+										<tr>
+											<th>序号</th>
+											<th>物料编号</th>
+											<th>物料名称</th>
+											<th>数量</th>
+											<th>单位</th>
+											<th>备注</th>
+										</tr>									
+									</thead>
+									<tbody id="add_material_tbody">
+									
+									</tbody>
+								</table>
+							</div>
+							<div>
+								<button type="button" class="layui-btn" id="delete_material" ts-selected="">取消物料</button>
+								<table class="layui-table" border="1">
+									<thead>
+										<tr>
+											<th>序号</th>
+											<th>物料编号</th>
+											<th>物料名称</th>
+											<th>数量</th>
+											<th>单位</th>
+											<th>备注</th>
+										</tr>									
+									</thead>
+									<tbody id="delete_material_tbody">
+							
+									</tbody>
+								</table>
+							</div>						
+						</div>						
+					</div>						
+				</div>
+			</div>
+		</div>
+	</div>
+</form>
+<div id="production-timeline">
+	<div class="layui-card">
+		<div class="layui-card-body">
+			<ul class="layui-timeline production-timeline">
+				{foreach $production as $key=>$vo}
+				<li class="layui-timeline-item">
+					<i class="layui-icon layui-timeline-axis">&#xe63f;</i>
+					<div class="layui-timeline-content layui-text">
+						<h3 class="layui-timeline-title">日期：{$vo['produce_date']}  </h3>
+						<ul>
+							<li>当天产量值：<span class="count">{$vo['produce_num']} 台</span>当天排产总量：<span class="count">{:count($vo['produce'])} 台</span></li>
+							<li>当天排产产品(编码)：</li>
+						</ul>
+						<p>{:implode('、',$vo['produce'])}</p>
+					</div>
+				</li>
+				{/foreach}
+			</ul>
+		</div>
+	</div>
+</div>
+<div id="production-form">
+	<div class="layui-card">
+		<div class="layui-card-body">
+			<form class="layui-form" action="{:url('setDefaultProduction')}" method="post" data-reload="7" data-callback="reloadLocation" data-noshowmsg="1">
+				<div class="layui-form-item">
+					<label class="layui-form-label">统一设置</label>
+					<div class="layui-input-inline">
+						<input type="text" lay-verify="required|number" autocomplete="off" value="{:config('web.default_produce_num')}" name="default_produce_num" placeholder="请输入日产值,不可为空" autocomplete="off" class="layui-input">
+					</div>
+					<button type="submit" class="layui-btn layui-btn-normal" lay-submit="" lay-filter="*">保存</button>
+				</div>
+			</form>
+			<hr>
+			<h2>调整七天内日产值</h2>
+			{foreach $production as $key=>$vo}
+			<form class="layui-form" action="{:url('setProduction')}" method="post" data-reload="7" data-callback="reloadLocation" data-noshowmsg="1">
+				<div class="layui-form-item">
+					<label class="layui-form-label">{$vo['produce_date']}<input type="hidden" autocomplete="off"  name="produce_date" value="{$vo['produce_date']}"></label>
+					<div class="layui-input-inline">
+						<input type="text" maxlength="100" name="produce_num" autocomplete="off" lay-verify="required|number" value="{$vo['produce_num']}" placeholder="请输入日产值,不可为空" autocomplete="off" class="layui-input">
+					</div>
+					<button type="submit" class="layui-btn layui-btn-normal" lay-submit="" lay-filter="*">保存</button>
+				</div>
+			</form>
+			{/foreach}
+		</div>
+	</div>
+</div>
+{/block}
+{block name="js"}
+<script src="/static/tool/jquery.min.js"></script>
+<script src="/static/tool/jQuery.print.min.js"></script>
+{/block}
+{block name="script"}
+<script>
+	var lack_produce = {:json_encode($model['lack_produce'])} ;
+	layui.use(['table', 'form', 'jquery','common','laydate','tableSelect'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		let laydate = layui.laydate;
+		let layer = layui.layer;
+		let element = layui.element;
+		var tableSelect = layui.tableSelect;
+		
+		element.on('tab(bom-1)', function(data){
+			if(data.index == 0){
+				$('.select-component').show();
+				$('.select-partn').hide();
+			}else{
+				$('.select-partn').show();
+				$('.select-component').hide();
+			}
+		});
+		
+		$('.btn button').hide();
+		$('.btn .act-1').show();
+		$('.btn .select').hide();
+  
+		//一些事件触发
+		element.on('tab(tab)', function(data){
+			var n = $(this).data('select');
+			var v = $(this).data('selectvalue');
+			var t = $(this).data('type');
+			$('.btn .select').hide();
+			$('.btn button').hide();
+			$('.btn .act-'+t).show();
+
+			if(n != 'select-total' && n){
+				$('.btn .'+n).show();
+				$('.btn .'+n+' select').val(v);
+				form.render('select');
+			}
+			/*
+			if(n == ''){
+				$('.btn').hide();
+			}else if(n == 'select-total'){
+				$('.btn').hide();
+				$('.btn2').show();
+			}else{
+				$('.btn').show();
+				$('.btn2').hide();
+				$('.btn .'+n).show();
+				$('.btn .'+n+' select').val(v);
+				form.render('select');
+			}*/
+		});			
+		
+		
+		laydate.render({ 
+			elem: '#produce_date',
+			type: 'date',
+			min: '{:date('Y-m-d')}',
+			trigger: 'click',
+			done: function(value, date, endDate){
+				location.replace('{:url('start')}?id={$id}&produce_date='+value);
+			}
+		});
+
+		form.on('submit(view)', function(data) {	
+			layer.open({
+				title:'七天生产周期表',
+				type: 1,
+				area: ['700px', '80%'],
+				content: $('#production-timeline').html()
+			});
+			return false;
+		});
+		form.on('submit(set)', function(data) {	
+			layer.open({
+				title:'设置日产量',
+				type: 1,
+				area: ['420px'],
+				content: $('#production-form').html()
+			});
+			return false;
+		});		
+		
+		form.on('submit(remove)', function(data) {	
+			if($('.remove-div button').length <= 1){
+				layer.msg('至少保留一个产品');return false;
+			}
+			var id = $(this).data('id');
+			layer.confirm('确认移除？',function(){
+				var arr = '{$id}'.split(",");	
+				var ids = [];
+				layui.each(arr, function (index, item) {
+					if(item != id){
+						ids.push(item);
+					}
+				})
+				location.replace('{:url('start')}?id='+ids.join(',')+'&produce_date='+$('#produce_date').val());
+			});	
+			return false;
+		});		
+		
+		window.reloadLocation = function(res){
+			layer.alert(res.msg,{closeBtn:false},function(){
+				location.reload();
+			});	
+		}
+		form.on('submit(check)', function(data) {
+			/*
+			layer.confirm('确认重新排查？',function(){
+				var load_index 	= layer.load(2);
+				var arr = '{$id}'.split(",");				
+				layui.each(arr, function (index, item) {
+					$.ajax({
+						url: '{:url('check')}?id=' + item,
+						success: function (result) {
+						
+						},
+						async: false
+					});
+				})
+				location.reload()
+			});	*/
+			layerConfirm('确认重新排查？','{:url('check')}',{id:'{$id}'},function(){
+				location.reload()
+			})
+			return false;
+		});
+		
+		form.on('submit(start)', function(data) {
+			if(!$('#produce_date').val()){
+				layer.msg('请选择排产日期');return false;
+			}
+			layerConfirm('确认下达生产？','{:url('start')}',{id:'{$id}',produce_date:$('#produce_date').val()},function(){
+				location.replace('{:url('view')}?id={$id}');
+			})
+			return false;
+		});		
+		
+		form.on('submit(out)', function(data) {
+			var material_ids = [];
+			$('.layui-show .checkbox-filter:checked').each(function(){
+				var item = $(this).val();
+				if(material_ids.indexOf(item) == -1){
+					material_ids.push(item);
+				}
+			})
+			if(material_ids.length == 0){
+				layer.msg('请选择物料');
+				return false;
+			}
+			layerConfirm('确认申请领料？','{:url('out')}',{id:'{$id}',material_ids:material_ids},function(){
+				//location.reload(true);
+			})
+			return false;
+		});		
+		
+		form.on('submit(plan)', function(data) {
+			var material_ids = [];
+			$('.layui-show .checkbox-filter:checked').each(function(){
+				var item = $(this).val();
+				if(material_ids.indexOf(item) == -1){
+					material_ids.push(item);
+				}
+			})
+			if(material_ids.length == 0){
+				layer.msg('请选择物料');
+				return false;
+			}
+			layerConfirm('确认添加计划下达？','{:url('plan')}',{id:'{$id}',material_ids:material_ids},function(){
+				//location.reload(true);
+			})
+			return false;
+		});			
+		
+		form.on('submit(purchase)', function(data) {
+			var material_ids = [];
+			$('.layui-show .checkbox-filter:checked').each(function(){
+				var item = $(this).val();
+				if(material_ids.indexOf(item) == -1){
+					material_ids.push(item);
+				}
+			})
+			if(material_ids.length == 0){
+				layer.msg('请选择物料');
+				return false;
+			}
+			
+			openLayer('采购申请','{:url('purchaseApply')}?id={$id}&material_ids='+material_ids.join(','),'90%','90%');
+			
+			//layerConfirm('确认添加采购申请？','{:url('purchaseApply')}',{id:'{$id}',material_ids:material_ids},function(){
+				//location.reload(true);
+			//})
+			return false;
+		});			
+		
+		
+		$('.lack_num').click(function(){
+			var id = $(this).data('id');		
+			var html = '<div style="margin: 20px;"><table  class="layui-table"><thead><tr><th>序号</th><th>产品编码</th><th>欠缺数量</th></tr>';
+			var i=1;
+			layui.each(lack_produce[id], function (index, item) {
+				if(item.lack_num>0){
+					html += '<tr><td>'+(i)+'</td><td>'+item.produce_sn+'</td><td>'+item.lack_num+'</td></tr>';
+					i++;
+				}
+				
+			})
+			html += '</table></div>';
+			
+			layer.open({
+				type: 1, 
+				title:$(this).data('sn')+'欠缺数量',
+				area: ['500px', '400px'],
+				content: html
+			});
+		})
+		
+		form.on('submit(print-tag)', function(data) {
+			var id = [];
+			$('.layui-show .checkbox-filter:checked').each(function(){
+				id.push($(this).data('ids'));
+			})
+			if(id.length == 0){
+				layer.msg('请选择物料');
+				return false;
+			}	
+			toPrintPage(21,{id:id.join(',')})
+			return false;
+		});
+		
+		form.on('submit(print-product-tag)', function(data) {
+			toPrintPage(27,{id:'{$id}'})
+			return false;
+		});	
+		
+		form.on('submit(print-schedule)', function(data) {
+			toPrintPage(25,{id:'{$id}'})
+			return false;
+		});		
+		
+		form.on('submit(print-material)', function(data) {
+			var ids = [];
+			$('.layui-show .checkbox-filter:checked').each(function(){
+				var item = $(this).data('ids');
+				if(ids.indexOf(item) == -1){
+					ids.push(item);
+				}
+			})
+			if(ids.length == 0){
+				layer.msg('请选择物料');
+				return false;
+			}
+			toPrintPage($('#tab .layui-tab-title .layui-this').data('jmreport'),{id:ids.join(',')})
+		});
+		
+		form.on('submit(print-material3)', function(data) {
+			var ids = [];
+			$('.layui-show .checkbox-filter:checked').each(function(){
+				var item = $(this).data('ids');
+				if(ids.indexOf(item) == -1){
+					ids.push(item);
+				}
+			})
+			if(ids.length == 0){
+				layer.msg('请选择物料');
+				return false;
+			}
+			toPrintPage(29,{id:ids.join(',')})
+		});			
+		
+		
+		form.on('submit(print-lack)', function(data) {
+			toPrintPage($(data.elem).closest('ul').find('.layui-this').data('jmreport'),{id:'{$id}'})
+		});
+		
+		form.on('select(bill_type)', function(data){
+			$('.layui-show .checkbox-filter').prop('checked',false);
+			$('#tab .layui-tab-title .layui-this').data('selectvalue',data.value);
+			if(data.value){
+				$('#tab .layui-tab-content .layui-show .layui-table tbody tr').hide();
+				$('#tab .layui-tab-content .layui-show .layui-table .bill_type-'+data.value).show();
+			}else{
+				$('#tab .layui-tab-content .layui-show .layui-table tr').show();
+			}
+			form.render('checkbox');	
+		});      
+		
+		form.on('select(produce_type)', function(data){
+			$('#tab .layui-tab-title .layui-this').data('selectvalue',data.value);
+			if(data.value !== ''){
+				$('#tab .layui-tab-content .layui-show .layui-table tbody tr').hide();
+				$('#tab .layui-tab-content .layui-show .layui-table .produce_type-'+data.value).show();
+			}else{
+				$('#tab .layui-tab-content .layui-show .layui-table tr').show();
+			}
+			$('.layui-show .checkbox-filter').prop('checked',false);
+			form.render('checkbox');	
+		});		
+		
+		$('.print').click(function(){
+			$("#mtable").print();
+		})
+		
+		
+		tableSelect.render({
+			elem: '#add_material',
+			checkedKey: 'id',
+			searchKey: 'keyword',
+			searchPlaceholder: '物料名称/编码',
+			table: {
+				url: '{:url('Common/material')}',		
+				cols: [[
+					{type: 'radio' },
+					{field: 'sn',title: '物料编码',align: 'left',unresize: false,width:300},
+					{field: 'name',title: '物料名称',align: 'left',unresize: false,width:300},
+					{field: 'type_desc',title: '类型',align: 'left',unresize: false},
+				]]
+			},
+			done: function (elem, data) {
+				if($('#add_material_tr'+data.data[0]['id']).length == 0){
+					var len = $('#add_material_tbody tr').length + 1;
+					var html = '<tr id="add_material_tr'+data.data[0]['id']+'">';
+					html += '		<td>'+len+'</td>';	
+					html += '		<td class="del">'+data.data[0]['sn']+'</td>';
+					html += '		<td>'+data.data[0]['name']+'</td>';
+					html += '		<td><div contenteditable="true">1</div></td>';
+					html += '		<td>'+data.data[0]['unit']+'</td>';
+					html += '		<td><div contenteditable="true"></div></td>';
+					html += '	</tr>';
+					$('#add_material_tbody').append(html);	
+				}
+			}
+		})
+		
+		tableSelect.render({
+			elem: '#delete_material',
+			checkedKey: 'id',
+			searchKey: 'keyword',
+			searchPlaceholder: '物料名称/编码',
+			table: {
+				url: '{:url('Common/material')}',		
+				cols: [[
+					{type: 'radio' },
+					{field: 'sn',title: '物料编码',align: 'left',unresize: false,width:300},
+					{field: 'name',title: '物料名称',align: 'left',unresize: false,width:300},
+					{field: 'type_desc',title: '类型',align: 'left',unresize: false},
+				]]
+			},
+			done: function (elem, data) {
+				if($('#delete_material_tr'+data.data[0]['id']).length == 0){
+					var len = $('#delete_material_tbody tr').length + 1;
+					var html = '<tr id="delete_material_tr'+data.data[0]['id']+'">';
+					html += '		<td>'+len+'</td>';	
+					html += '		<td class="del">'+data.data[0]['sn']+'</td>';
+					html += '		<td>'+data.data[0]['name']+'</td>';
+					html += '		<td><div contenteditable="true">1</div></td>';
+					html += '		<td>'+data.data[0]['unit']+'</td>';
+					html += '		<td><div contenteditable="true"></div></td>';
+					html += '	</tr>';
+					$('#delete_material_tbody').append(html);	
+				}
+			}
+		})	
+		
+		
+		$("#mtable tbody").on("mouseenter",".del", function(){
+			layer.tips('点击物料编号可删除', $(this),{ tips: 3});
+		});      
+		
+		$("#mtable tbody").on("click",".del", function(){
+			var tr = $(this).closest('tr');
+			var tbody = $(this).closest('tbody');
+			layer.confirm('确认删除？', {icon: 3}, function(){
+				tr.remove();
+				layui.layer.closeAll();
+				resetTableInd(tbody)
+			});
+		}); 
+		
+		function resetTableInd(tbody){
+			var i = 1;
+			$(tbody).find('tr').each(function(){
+				$(this).find('td').eq(0).html(i);
+				i++;
+			})
+		}
+		
+		form.on('checkbox(checkbox-filter1)', function(data){
+			var bill_type = $('#bill_type_select').val()
+			if(bill_type){
+				$('.checkbox-filter1').prop('checked',false);
+				if(data.elem.checked == true){
+					$('.bill_type-'+bill_type+' .checkbox-filter1').prop('checked',data.elem.checked)
+				}
+			}else{
+				$('.checkbox-filter1').prop('checked',data.elem.checked)
+			}
+			form.render('checkbox');
+		});
+		form.on('checkbox(checkbox-filter2)', function(data){
+			var produce_type = $('#produce_type_select').val()
+			if(produce_type){
+				$('.checkbox-filter2').prop('checked',false);
+				if(data.elem.checked == true){
+					$('.produce_type-'+produce_type+' .checkbox-filter2').prop('checked',data.elem.checked)
+				}
+			}else{
+				$('.checkbox-filter2').prop('checked',data.elem.checked)
+			}
+			form.render('checkbox');	
+		});		
+		form.on('checkbox(checkbox-filter3)', function(data){
+			var bill_type = $('#bill_type_select').val()
+			if(bill_type){
+				$('.checkbox-filter3').prop('checked',false);
+				if(data.elem.checked == true){
+					$('.bill_type-'+bill_type+' .checkbox-filter3').prop('checked',data.elem.checked)
+				}
+			}else{
+				$('.checkbox-filter3').prop('checked',data.elem.checked)
+			}
+			form.render('checkbox');
+		});			
+		form.on('checkbox(checkbox-filter4)', function(data){
+			var produce_type = $('#produce_type_select').val()
+			if(produce_type){
+				$('.checkbox-filter4').prop('checked',false);
+				if(data.elem.checked == true){
+					$('.produce_type-'+produce_type+' .checkbox-filter4').prop('checked',data.elem.checked)
+				}
+			}else{
+				$('.checkbox-filter4').prop('checked',data.elem.checked)
+			}
+			form.render('checkbox');	
+		});			
+		form.on('checkbox(checkbox-filter5)', function(data){
+			var bill_type = $('#bill_type_select').val()
+			if(bill_type){
+				$('.checkbox-filter5').prop('checked',false);
+				if(data.elem.checked == true){
+					$('.bill_type-'+bill_type+' .checkbox-filter5').prop('checked',data.elem.checked)
+				}
+			}else{
+				$('.checkbox-filter5').prop('checked',data.elem.checked)
+			}
+			form.render('checkbox');
+		});			
+		form.on('checkbox(checkbox-filter6)', function(data){
+			var produce_type = $('#produce_type_select').val()
+			if(produce_type){
+				$('.checkbox-filter6').prop('checked',false);
+				if(data.elem.checked == true){
+					$('.produce_type-'+produce_type+' .checkbox-filter6').prop('checked',data.elem.checked)
+				}
+			}else{
+				$('.checkbox-filter6').prop('checked',data.elem.checked)
+			}
+			form.render('checkbox');	
+		});			
+		
+		
+		$('.add-wage').each(function(){
+			var order_produce_id = $(this).data('order_produce_id');
+			var product_id = $(this).data('product_id');
+			
+			var tr = $(this).closest('tr');
+			tableSelect.render({
+				elem: '#'+$(this).attr('id'),
+				checkedKey: 'id',
+				searchKey: 'keyword',
+				searchPlaceholder: '工序名称/编码',
+				table: {
+					url: '{:url('common/processWage')}?type=1&product_id='+product_id,		
+					cols: [[
+						{type: 'checkbox' },
+						{field: 'sn',title: '工艺组编码',align: 'center',unresize: true,width:120},
+						{field: 'name',title: '工艺组名称',align: 'center',unresize: true},
+						{field: 'price',title: '报工单价',align: 'center',unresize: true},
+					]]
+				},
+				done: function (elem, data) {
+					var html = '';
+					var process_id = [];
+					
+					$.each(data.data, function(index, item) {
+						if(tr.find('#wage'+item.id).length == 0){
+							item.order_produce_id = order_produce_id;
+							html += getHtml(item);
+							process_id.push(item.id);
+						}
+					});
+					
+					if(html){
+						ajaxActionCall('{:url('erp.OrderProduceProcess/add')}',{order_produce_id:order_produce_id,process_id:process_id,product_id:product_id},function(){
+							tr.find('.wage-con').append(html);
+						})
+					}
+				}
+			})
+		
+		})
+		
+		function getHtml(data){
+			var html = '';
+			html += '<div class="layui-col-xs3 wage" id="wage'+data.id+'">';
+			html += '	<div class="layui-row">';
+			html += '		<div class="layui-col-xs5">';
+			html += '		<input type="hidden"  value="'+data.order_produce_id+'" class="order_produce_id">';
+			html += '			<input type="hidden"  value="'+data.id+'" class="process_id">';
+			html += '			<input type="hidden"  value="'+data.product_id+'" class="product_id">';
+			html += '			<div class="name">'+data.name+'</div>';
+			html += '		</div>';
+			html += '		<div class="layui-col-xs3">';
+			html += '			<input type="text"  value="'+data.price+'" lay-verify="required|number" placeholder="请输入" autocomplete="off" class="layui-input price">';
+			html += '		</div>';
+			html += '		<div class="layui-col-xs4">';
+			html += '			<div class="layui-btn-group">';
+			html += '				<button type="button" class="layui-btn "><i class="layui-icon layui-icon-edit"></i> </button>';
+			html += '				<button type="button" class="layui-btn layui-bg-red "><i class="layui-icon layui-icon-delete"></i> </button>';
+			html += '			</div>';
+			html += '		</div>';
+			html += '	</div>';
+			html += '</div>';
+			return html;
+		}
+		
+		
+		$(".wage-con").on("click",".layui-bg-red",function(){
+			var obj = $(this).closest(".wage");
+			var tr = $(this).closest("tr");
+			layer.open({
+				shade: false,
+				content: '确认删除？',
+				btn: ['确定', '取消'],
+				yes: function (index) {
+					
+					ajaxActionCall('{:url('erp.OrderProduceProcess/remove')}',{order_produce_id:obj.find('.order_produce_id').val(),process_id:obj.find('.process_id').val()},function(){
+						obj.remove();
+						layer.closeAll();
+						var ids = [];
+						tr.find(".wage").each(function(){
+							ids.push($(this).find('.process_id').val());
+						})
+						tr.find('.add-wage').attr('ts-selected',ids.join(','));	
+					})
+
+				}
+			});
+		});	
+		
+		
+		$(".wage-con").on("click",".layui-icon-edit",function(){
+			var obj = $(this).closest(".wage");
+			var tr = $(this).closest("tr");
+			ajaxActionCall('{:url('erp.OrderProduceProcess/edit')}',{order_produce_id:obj.find('.order_produce_id').val(),process_id:obj.find('.process_id').val(),price:obj.find('.price').val()},function(){
+				
+			})
+		});		
+		
+	})
+</script>
+{/block}
+
+

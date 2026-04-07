@@ -1,0 +1,196 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-input-block {margin-left: 150px;}
+.layui-form-label {width: 120px;}
+.print{display:none;}
+.layui-col-md4{margin-bottom:5px;}
+.project_html .html{display:none;}
+.bom{margin:10px;font-size:12px;line-height:30px;}
+.bom .title{font-weight:600;font-size:13px;}
+</style>
+<form class="layui-form" action="" method="post" data-reload="7" data-callback="submitCallBack">
+	<input type="hidden"  name="order_id" id="order_id"  value="">
+	<input type="hidden"  name="type" value="enter_purchase">
+	<input type="hidden"  name="material_type" value="1">
+	<input type="hidden"  name="warehous_type" value="{$warehous_type}">
+	<div class="mainBox">
+		<div class="main-container">
+			<blockquote class="layui-elem-quote">单据单头信息</blockquote>
+			<div class="layui-form-item">	
+				<div class="layui-row" >
+					<div class="layui-col-md4">
+						<label class="layui-form-label">供应商</label>
+						<div class="layui-input-block">
+							<select name="supplier_id" lay-verify="required" lay-search="" {if $supplier_id}disabled="disabled"{/if}>
+								{foreach $supplier as $key=>$vo}
+								<option value="{$vo['id']}" {if $supplier_id == $vo['id']}selected{/if}>{$vo['name']}</option>
+								{/foreach}
+							</select>
+						</div>
+					</div>
+					{if $warehous_type == 1 || $warehous_type == 3}
+					<div class="layui-col-md4">
+						<label class="layui-form-label">入库批次号</label>
+						<div class="layui-input-block">
+							<input type="text"   name="batch_number" value="" lay-verify="required" placeholder="请填写,不可为空" autocomplete="off" class="layui-input">
+						</div>	
+					</div>	
+						
+					<div class="layui-col-md4">
+						<label class="layui-form-label">&nbsp;</label>
+						<input type="hidden" name="check_status" value="0" >
+						<div class="layui-input-block">
+							 <input type="checkbox" name="check_status" value="1" checked title="需质检">
+						</div>	
+					</div>					
+					{/if}
+					{if $warehous_type == 2}
+					<div class="layui-col-md4">
+						<label class="layui-form-label">采购日期</label>
+						<div class="layui-input-block">
+							<input type="text"  readonly name="purchase_date" value="{$model['order_date']}" lay-verify="required" placeholder="请选择,不可为空" autocomplete="off" class="layui-input date">
+						</div>	
+					</div>	
+					{/if}					
+					<div class="layui-col-md4">
+						<label class="layui-form-label">入库日期</label>
+						<div class="layui-input-block">
+							<input type="text"  readonly name="stock_date" value="{:date('Y-m-d')}" lay-verify="required" placeholder="请选择,不可为空" autocomplete="off" class="layui-input date">
+						</div>	
+					</div>
+					<div class="layui-col-md4">
+						<label class="layui-form-label">备注/用途说明</label>
+						<div class="layui-input-block">
+							<input type="text" maxlength="255" name="remark"  placeholder="请输入" autocomplete="off" class="layui-input">
+						</div>	
+					</div>						
+				</div>	
+			</div>			
+			<blockquote class="layui-elem-quote">相关物料信息</blockquote>
+			<table class="layui-table">
+				<thead>
+					<tr>
+						{if $warehous_type == 1 || $warehous_type == 3}
+						<th>物料编码</th>
+						<th>物料名称</th>
+						<th>仓位</th>
+						<th>入库数量</th>
+						<th>备注</th>
+						<th>操作</th>
+						{/if}
+						{if $warehous_type == 2}
+						<th>销售合同号</th>
+						<th>产品编码</th>
+						<th style="width:100px">型号</th>
+						<th style="width:100px">款式</th>
+						<th style="width:120px">仓位</th>
+						<th style="width:80px">数量</th>
+						<th style="width:100px">备注</th>
+						<th style="width:80px">具体参数</th>
+						<th style="width:80px">操作</th>
+						{/if}
+					</tr> 
+				</thead>
+				<tbody id="tbody">
+					{foreach $list as $vo}	
+					<tr id="material_{$vo['id']}"><input type="hidden"  name="material[{$vo['id']}][id]" value="{$vo['id']}" >
+						{if $warehous_type == 1 || $warehous_type == 3}
+						<td>{$vo['sn']}</td>
+						<td>{$vo['name']}</td>
+						<td>
+							<select name="material[{$vo['id']}][warehouse_id]" lay-search lay-verify="required|number"  >
+							<option value="">请选择</option>
+							{foreach $warehouse as $v}	
+							{if $vo['material_type'] == $v['type']}
+							<option value="{$v['id']}" {if $vo['material_warehouse_id'] == $v['id']}selected{/if} >{$v['name']}</option>
+							{/if}
+							{/foreach}		
+							</select>
+						</td>
+						<td><input type="text"  name="material[{$vo['id']}][stock_num]" value="{$vo['apply_num']-$vo['warehous_num']}" class="layui-input stock_num" data-key="stock_num" lay-verify="required|number" placeholder="请输入数量"></td>
+						<td><input type="text"  name="material[{$vo['id']}][remark]" value="" class="layui-input remark" data-key="remark" placeholder=""></td>
+						<td><button type="button" onclick="deleteMaterial({$vo['id']})" class="layui-btn layui-btn-xs layui-btn-danger">删除</button></td>
+						{/if}
+						{if $warehous_type == 2}
+						<td>{$vo['order_sn']}</td>
+						<td>{$vo['produce_sn']}</td>
+						<td>{$vo['product_model']}</td>
+						<td>{$vo['product_specs']}</td>
+						<td>
+							<select name="material[{$vo['id']}][warehouse_id]"  lay-search lay-verify="required|number"  >
+							<option value="">请选择</option>
+							{foreach $warehouse as $v}	
+							<option value="{$v['id']}">{$v['name']}</option>
+							{/foreach}		
+							</select>
+						</td>
+						<td><input type="text"  name="material[{$vo['id']}][stock_num]" readonly value="{$vo['apply_num']-$vo['warehous_num']}" data-key="apply_num" class="layui-input apply_num" lay-verify="required|number" placeholder="请输入数量"></td>
+						<td>{$vo['order_product_remark']}</td>
+						<td class="project_html">查看<div class="html">{$vo['order_product']['project_html']|raw}</div></td>
+						<td><button type="button" onclick="deleteMaterial({$vo['id']})" class="layui-btn layui-btn-xs layui-btn-danger">删除</button></td>
+						{/if}
+					</tr>
+					{/foreach}
+				</tbody>
+			</table>
+		</div>
+	</div>
+	<div class="bottom">
+		<div class="button-container">
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm submit" lay-submit="" lay-filter="*"><i class="layui-icon layui-icon-ok"></i>提交</button>
+			<button type="button" class="layui-btn layui-btn-warm layui-btn-sm print"><i class="layui-icon layui-icon-print"></i>打印</button>
+	
+		</div>
+	</div>
+</form>
+{/block}
+{block name="script"}
+<script>
+layui.use(['tableSelect','select'], function () {
+	var $ = layui.jquery;
+	var tableSelect = layui.tableSelect;
+	var form = layui.form;
+	var select = layui.select;
+	var warehouses = {:json_encode($warehouse)};
+	
+	window.submitCallBack = function (res){
+		$('.submit').hide();
+		$('.print').show();
+		$('.print').click(function(){
+			toPrintPage({$warehous_type == 1 || $warehous_type == 3?76:75},{id:res.data.id.join(',')});
+		});
+		toPrintPage({$warehous_type == 1 || $warehous_type == 3?76:75},{id:res.data.id.join(',')});
+		parent.layui.table.reload('dataTable');
+		parent.layui.table.reload('materialTable');
+	}
+	
+	window.deleteMaterial = function(_id){
+		$('#material_'+_id).remove();	
+	}
+	
+	$(".layui-table").on("keydown",".layui-input",function(){
+		if (event.keyCode == 40) {
+			$(this).closest('tr').next().find('.'+$(this).data('key')).focus();
+		}else if (event.keyCode == 38) {
+			$(this).closest('tr').prev().find('.'+$(this).data('key')).focus();
+		}else if (event.keyCode == 13 || event.keyCode == 39) {
+			//右一个
+			$(this).closest('td').next().find('.layui-input').focus();
+		}else if (event.keyCode == 37) {
+			//左一个
+			$(this).closest('td').prev().find('.layui-input').focus();
+		}
+	});
+	
+	$('.project_html').click(function(){
+		layer.open({
+			type: 1, 
+			area: ['500px', '300px'],
+			content: '<div class="bom">'+$(this).find('.html').html()+'</div>'
+		});
+	})	
+	
+});
+</script>
+{/block}

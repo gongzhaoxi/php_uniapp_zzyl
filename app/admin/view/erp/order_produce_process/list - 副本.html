@@ -1,0 +1,163 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-table-cell { height:auto;}
+.bom{margin:10px;font-size:12px;line-height:30px;}
+.bom .title{font-weight:600;font-size:13px;}
+</style>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="" id="searchForm">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline" style="width:190px;">
+					<input type="text" name="finish_date" placeholder="入库日期" class="layui-input rangedate">					
+				</div>	
+				<div class="layui-form-item layui-inline" style="width:190px;">
+					<input type="text" name="create_time" placeholder="报工日期" class="layui-input rangedate">	
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<select name="process_id" >
+						<option value="">工艺组</option>
+						{foreach $process as $key=>$vo}
+						<option value="{$vo['id']}">{$vo['name']}</option>
+						{/foreach}
+					</select>
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<select name="user_id" >
+						<option value="">员工</option>
+						{foreach $users as $key=>$vo}
+						<option value="{$vo['id']}">{$vo['name']}</option>
+						{/foreach}
+					</select>
+				</div>				
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+					<button type="reset" class="pear-btn pear-btn-md"><i class="layui-icon layui-icon-refresh"></i>重置</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	<button class="pear-btn pear-btn-primary pear-btn-sm" lay-event="export"><i class="layui-icon layui-icon-export"></i>导出</button>
+</script>
+<script type="text/html" id="bom">
+	<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="bom">查看</button>
+</script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('list')}',
+			page: true,
+			limit:90,
+			height:'full-170',			
+			cols: [[
+				{field: 'region_type_desc',title: '订单性质',align: 'center',unresize: false,width: {:get_col_width('region_type_desc',100)}},
+				{field: 'process_name',title: '工艺组',align: 'center',unresize: false,width: {:get_col_width('process_name',100)}},
+				{field: 'create_time',title: '报工日期',align: 'center',unresize: false,width: {:get_col_width('create_time',170)}},
+				{field: 'user_id',title: '员工姓名',align: 'center',unresize: false,width: {:get_col_width('user_id',100)}, templet: function(d){return d.user?d.user.name:'';}},
+				{field: 'finish_date',title: '入库日期',align: 'center',unresize: false,width: {:get_col_width('finish_date',120)}},
+				{field: 'produce_sn',title: '产品编码',align: 'center',unresize: false,width: {:get_col_width('produce_sn')}},
+				{field: 'model',title: '型号',align: 'center',unresize: false,width: {:get_col_width('model',100)}, templet: function(d){return d.order_product?d.order_product.product_model:'';}},
+				{field: 'specs',title: '款式',align: 'center',unresize: false,width: {:get_col_width('specs',80)}, templet: function(d){return d.order_product?d.order_product.product_specs:'';}},
+				{field: 'unit',title: '单位',align: 'center',unresize: false,width: {:get_col_width('unit',80)}, templet: function(d){return d.order_product?d.order_product.product_unit:'';}},
+				{field: 'order_sn',title: '销售合同号',align: 'center',unresize: false,width: {:get_col_width('order_sn',140)}},
+				{field: 'address',title: '收货地址',align: 'center',unresize: false,width: {:get_col_width('address')}},
+				{field: 'contacts',title: '联系人',align: 'center',unresize: false,width: {:get_col_width('contacts',100)}},
+				{field: 'bom',title: '具体配置',align: 'center',unresize: false,width: {:get_col_width('bom',100)}, templet:'#bom'},
+				{field: 'salesman',title: '业务员',align: 'center',unresize: false,width: {:get_col_width('salesman',100)}},
+			]],
+			cellMinWidth: 80,
+			//skin: 'line',
+			toolbar: '#toolbar',
+			defaultToolbar: [{
+				title: '刷新',
+				layEvent: 'refresh',
+				icon: 'layui-icon-refresh',
+			}, 'filter']
+		});
+
+		table.on('sort(dataTable)', function(obj){
+			table.reload('dataTable', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+
+		table.on('tool(dataTable)', function(obj) {
+			if (obj.event === 'remove') {
+				layerConfirm('确定要删除该客户?','{:url('remove')}',{ids:[obj.data['id']]},function(res){
+					obj.del();
+				})
+			} else if (obj.event === 'edit') {
+				openLayer('修改客户','{:url('edit')}?id='+obj.data['id'],'80%','90%');
+			}else if (obj.event === 'bom') {
+				layer.open({
+					type: 1, 
+					area: ['500px', '300px'],
+					content: '<div class="bom">'+obj.data.order_product.bom_html+'</div>'
+				});
+			}
+		});
+
+		table.on('toolbar(dataTable)', function(obj) {
+			if (obj.event === 'refresh') {
+				table.reload('dataTable');
+			}else if (obj.event === 'export') {
+				var index = layui.layer.load(1);
+				let column 	= [{text:'订单性质',key:'region_type_desc'},{text:'工艺组',key:'process_name'},{text:'报工日期',key:'create_time'},{text:'员工姓名',key:'user.name'},{text:'入库日期',key:'finish_date'},{text:'产品编码',key:'produce_sn'},{text:'型号',key:'order_product.product_model'},{text:'款式',key:'order_product.product_specs'},{text:'单位',key:'order_product.product_unit'},{text:'销售合同号',key:'order_sn'},{text:'收货地址',key:'address'},{text:'联系人',key:'contacts'},{text:'具体配置',key:'order_product.bom_html'},{text:'业务员',key:'salesman'}];
+				$.ajax({
+					type : "get",
+					url : "{:url('list')}?limit=100000",
+					data: $('#searchForm').serialize(),
+					success : function(data) {
+						layui.layer.close(index);
+						if (data.count > 0) {
+							jsonToExcel(column, [column], data.data, '计件统计')
+						}else{
+							layui.layer.msg('暂无数据');
+						}
+					}
+				});
+			}
+		});
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+		
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+	})
+</script>
+{/block}
+
+

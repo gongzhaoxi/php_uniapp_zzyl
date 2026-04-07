@@ -1,0 +1,136 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.process .name{height: 35px;line-height: 35px;background: rgb(0, 150, 136);color:#fff;text-align: center;}
+.process .count{height: 35px;line-height: 35px;	background: rgb(237, 237, 237);	font-weight: bold;text-align: center;color: rgb(0, 73, 255);}
+#searchForm{margin-top:0;}
+.layui-table td, .layui-table th{text-align:center;}
+#dataList .b-b td{border-top: 1px solid #eee;}
+#dataList tr td:first-child{border-left: 1px solid #eee;}
+#dataList tr td:last-child{border-right: 1px solid #eee;}
+#dataList td{border:none;}
+.h3{text-align: center;color: rgb(24, 144, 255);}
+
+
+#dataList tr:last-child{border-bottom: 1px solid #eee;}
+</style>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="" id="searchForm">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="customer_name" placeholder="客户名称/订货单位" class="layui-input">					
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="order_sn" placeholder="销售合同" class="layui-input">	
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="produce_sn" placeholder="产品编码" class="layui-input">	
+				</div>	
+				<div class="layui-form-item layui-inline" style="width:190px;">
+					<input type="text" name="delivery_time" placeholder="交货日期" class="layui-input rangedate">	
+				</div>								
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+					<button type="button" class="pear-btn pear-btn-md export"><i class="layui-icon layui-icon-export"></i>导出</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+
+<div class="layui-card">
+	<div class="layui-card-body">
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+
+
+{/block}
+{block name="js"}
+<script type="text/javascript" src="/static/tool/jquery.min.js"></script>
+<script type="text/javascript" src="/static/tool/jquery.table2excel.js"></script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('produce')}',
+			page: true,
+			limit:90,
+			height:'full-170',
+			title:'生产进度',
+			cols: [
+				[
+					{type: 'numbers',title:'序号',rowspan: 2},
+					{field: 'customer_name',title: '客户名称',align: 'center',width: {:get_col_width('customer_name',120)},rowspan: 2, hide: getTableFieldIsHide('dataTable','customer_name')},
+					{field: 'order_sn',title: '销售合同',align: 'center',width: {:get_col_width('order_sn',150)},rowspan: 2, hide: getTableFieldIsHide('dataTable','order_sn')},
+					{field: 'produce_date',title: '上线日期',align: 'center',width: {:get_col_width('produce_date',120)},rowspan: 2, hide: getTableFieldIsHide('dataTable','produce_date')},
+					{field: 'model',title: '型号',align: 'center',width: {:get_col_width('model',120)},rowspan: 2, hide: getTableFieldIsHide('dataTable','model')},
+					{field: 'specs',title: '款式',align: 'center',width: {:get_col_width('specs',120)},rowspan: 2, hide: getTableFieldIsHide('dataTable','specs')},
+					{field: 'produce_sn',title: '产品编码',align: 'center',width: {:get_col_width('produce_sn',170)},rowspan: 2, hide: getTableFieldIsHide('dataTable','produce_sn')},
+					{field: 'address',title: '生产工艺组进度',align: 'center',width: {:get_col_width('address')},colspan: {:count($process)}, hide: getTableFieldIsHide('dataTable','address')},
+				],
+				[
+					{volist name="process" id="vo"}					
+					{field: 'process{$vo['id']}',title: '{$vo['name']}',align: 'center',width: {:get_col_width('process'.$vo['id'],180)}, hide: getTableFieldIsHide('dataTable','process{$vo['id']}')},
+					{/volist}
+				]
+			],
+			cellMinWidth: 100,
+			
+			//skin: 'line',
+			toolbar: '#toolbar',
+			defaultToolbar: [{
+				title: '刷新',
+				layEvent: 'refresh',
+				icon: 'layui-icon-refresh',
+			}, 'filter', 'print', 'exports']
+		});
+
+		table.on('sort(dataTable)', function(obj){
+			table.reload('dataTable', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+		
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+		table.on('colToggled(dataTable)', function(obj){
+			setTableFieldIsHide(obj.config.id,obj.col.field,obj.col.hide);
+		});
+
+		$('.export').click(function(){
+			var data = form.val('searchForm');
+			exportData('{:url('produceExport')}',data);
+		})
+	})
+</script>
+{/block}
+
+

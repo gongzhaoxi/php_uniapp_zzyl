@@ -1,0 +1,335 @@
+<?php
+declare (strict_types = 1);
+namespace app\index\logic;
+use think\facade\Db;
+use app\index\validate\{ErpOrderProduceProcessValidate,ErpOrderProduceErrorValidate};
+use app\common\model\{ErpOrderProduceProcess,ErpMaterial,ErpOrderProduceError,ErpProductStock,ErpMaterialAllocateMaterial,ErpProcessMaterial,ErpMaterialBom};
+use app\common\model\ErpOrderProduce;
+use app\common\model\ErpOrderProduceBom;
+use app\common\model\{ErpProcess};
+use app\common\model\ErpOrder;
+use app\common\model\ErpFollow;
+use app\common\model\ErpFollowItem;
+use app\common\model\ErpOrderProduceFollow;
+use app\common\model\ErpOrderProduceProcessLog;
+
+use app\common\enum\{ErpOrderProduceEnum,ErpProductStockEnum};
+use app\common\enum\ErpOrderProduceProcessEnum;
+use app\common\enum\ErpOrderEnum;
+class ErpOrderProduceProcessLogic{
+
+	public static function getProcess($produce_id,$user_id)
+    {
+		$process 		= ErpOrderProduceProcess::alias('a')
+		->join('erp_process b','a.process_id = b.id','LEFT')
+		->join('erp_follow c','b.follow_id = c.id','LEFT')
+		->field('a.id,a.process_id,a.process_name,a.price,a.status,a.confirm_date,a.username,b.is_end,b.is_inspect,b.follow_id,b.description,c.name as follow_name')
+		->where('a.order_produce_id',$produce_id)
+		->where('b.user_id','find in set',$user_id)->order(['b.sort'=>'asc','b.id'=>'asc'])->select()->toArray();
+
+		return $process ;
+	}
+
+	
+    public static function goErrorAdd($data,$userInfo)
+    {
+		$user_id	= $userInfo['user_id'];
+        //验证
+        $validate	= new ErpOrderProduceErrorValidate;
+        if(!$validate->check($data)){
+			return ['msg'=>$validate->getError(),'code'=>201];
+		}
+		$process 	= ErpProcess::where('id',$data['process_id'])->find();
+		if(!empty($process['id'])) {
+			if(!in_array($user_id,$process['user_id'])){
+				return ['msg'=>'你没权限操作该流程','code'=>201];
+			}
+		}
+		$produce 	= ErpOrderProduce::where('produce_sn',$data['produce_sn'])->find();
+		if(!empty($produce['id'])) {
+			if($produce['produce_status'] == ErpOrderProduceEnum::PRODUCE_STATUS_NO) {
+				return ['msg'=>'产品未排产','code'=>201];
+			}
+			if($produce['produce_status'] == ErpOrderProduceEnum::PRODUCE_STATUS_FINISH) {
+				return ['msg'=>'产品已生产完成','code'=>201];
+			}
+		}
+		if(!empty($process['id']) && !empty($produce['id']) && ErpOrderProduceProcess::where('process_id',$process['id'])->where('order_produce_id',$produce['id'])->where('status',1)->count()){
+			return ['msg'=>'该流程已完成','code'=>201];
+		}
+		$data['user_id']			= $user_id;
+		$data['order_produce_id']	= empty($produce['id'])?0:$produce['id'];
+		$data['process_name']		= empty($process['name'])?'':$process['name'];
+		$data['username']			= $userInfo['name'];
+		$data['create_time']		= time();
+        try {
+			ErpOrderProduceError::create($data);
+			if(!empty($produce['id'])) {
+				$produce->save(['error_time'=>time()]);
+			}
+        }catch (\Exception $e){
+            return ['msg'=>'操作失败'.$e->getMessage(),'code'=>201];
+        }
+    }	
+	
+	public static function getFollow($produce_sn,$process_id,$user_id)
+    {
+		$produce 		= ErpOrderProduce::with(['order_product'=>function($query){return $query->field('id,product_model,product_specs,add_project,change_project,product_name,color,product_num');},'order'=>function($query){return $query->field('id,order_sn,order_product_num,customer_name');}])->where('produce_sn',$produce_sn)->append(['order_product.project_html'])->find();
+		if(empty($produce['id'])){
+			 return ['msg'=>'产品不存在','code'=>201];
+		}
+		$process 		= ErpProcess::where('id',$process_id)->where('user_id','find in set',$user_id)->find();
+		if(empty($process['id'])){
+			return ['msg'=>'工序不存在','code'=>201];
+		}
+		$follow 		= ErpFollow::where('id',$process['follow_id'])->find();
+		$follow_item	= ErpFollowItem::field('id,image,title,type,checked,is_num,follow_id')->where('follow_id','=',$process['follow_id'])->order(['id'=>'asc'])->select()->toArray();
+		$produce_follow	= ErpOrderProduceFollow::where('follow_id','=',$process['follow_id'])->where('process_id','=',$process['id'])->where('order_produce_id','=',$produce['id'])->column('id,remark,num,after_num','follow_item_id');
+	
+		$follow_product		= [];
+		$follow_process		= [];
+		foreach($follow_item as $k=>$v){
+			$v['remark'] 				= '';
+			$v['num'] 					= '';
+			$v['after_num'] 			= '';
+			$v['produce_follow_id'] 	= '';
+			$v['image'] 				= get_browse_url($v['image']);
+			$v['checked'] 				= $v['checked']?true:false;
+			$v['order_produce_id'] 		= $produce['id'];
+			$v['process_id'] 			= $process['id'];
+			if(!empty($produce_follow[$v['id']])){
+				$v['checked'] 			= true;
+				$v['remark'] 			= $produce_follow[$v['id']]['remark'];
+				$v['num'] 				= $produce_follow[$v['id']]['num'];
+				$v['after_num'] 		= $produce_follow[$v['id']]['after_num'];
+				$v['produce_follow_id']	= $produce_follow[$v['id']]['id'];
+			}
+			if($v['type'] == 1){
+				$follow_product[]		= $v;
+			}else{
+				$follow_process[]		= $v;
+			}
+		}
+		return ['process_list'=>self::getProcess($produce['id'],$user_id),'produce'=>$produce,'process'=>$process ,'follow'=>$follow ,'follow_product'=>$follow_product,'follow_process'=>$follow_process];
+	}
+	
+
+	public static function goProcessInspect($produce_sn,$process_id,$userInfo)
+	{
+		$data 		= self::getProduceFollow($produce_sn,$process_id,$userInfo['user_id']);
+		ErpOrderProduceFollow::where('id',$data['follow']['id'])->update(['inspect_date'=>date('Y-m-d H:i:s'),'inspect_user_id'=>$userInfo['user_id'],'inspect_username'=>$userInfo['name']]);
+		ErpOrderProduceProcessLog::create(['remark'=>$data['process']['name'].'生产巡检完成','process_id'=>$data['process']['id'],'order_produce_id'=>$data['produce']['id'],'user_id'=>$userInfo['user_id'],'username'=>$userInfo['name']]);
+	}
+	
+    public static function goProcessFinish($produce_sn,$process_id,$userInfo,$warehouse_id='')
+    {
+        try {
+			$data 		= self::getProduceFollow($produce_sn,$process_id,$userInfo['user_id']);
+			
+			$produce 	= $data['produce'];
+			if($produce['produce_status'] == ErpOrderProduceEnum::PRODUCE_STATUS_NO) {
+				throw new \Exception("产品未排产");
+			}			
+
+			$model 		= $data['produce_process'];
+			if($model['status'] == 1){
+				throw new \Exception("该流程已完成");
+			}
+
+			$follow 	= $data['follow'];
+
+			if(($data['component'] || $data['partn']) && empty($follow['id'])){
+				$follow 							= new ErpOrderProduceFollow;
+				$follow_data 						= ['username'=>$userInfo['name'],'user_id'=>$userInfo['user_id']];
+				$follow_data['process_id'] 			= $process_id;
+				$follow_data['order_produce_id'] 	= $produce['id'];
+				$follow_data['component'] 			= $data['component'];
+				$follow_data['partn'] 				= $data['partn'];
+				$follow->save($follow_data);
+			}
+
+			ErpOrderProduceProcessLog::create(['remark'=>$data['process']['name'].'上报完工','process_id'=>$process_id,'order_produce_id'=>$produce['id'],'user_id'=>$userInfo['user_id'],'username'=>$userInfo['name']]);			
+			
+			//if(!in_array($userInfo['user_id'],$data['process']['user_id'])){
+				//throw new \Exception("你没权限操作该流程");
+			//}
+
+			//if($produce['produce_status'] == ErpOrderProduceEnum::PRODUCE_STATUS_FINISH) {
+				//throw new \Exception("产品已生产完成");
+			//}
+
+			$produce_update 						= [];
+			$produce_update['process_id'] 			= $data['process']['id'];
+			if($data['process']['id'] == 3){
+				$count 								= ErpOrderProduceProcess::where('confirm_date','>=',date('Y-m-01 00:00:00'))->where('process_id',3)->count()+1;
+				$produce_update['produce_finish_sn']= date('ym').sprintf("%04d",$count);
+			}
+			if($data['process']['is_end'] == 1){
+				$produce_update['finish_date'] 		= date('Y-m-d');
+				$produce_update['finish_username']	= $userInfo['name'];
+				$produce_update['produce_status']	= ErpOrderProduceEnum::PRODUCE_STATUS_WAIT;
+				ErpProductStock::create(['username'=>$userInfo['name'],'type'=>$produce['cancel_produce']?ErpProductStockEnum::TYPE_CANCEL_PRODUCE:ErpProductStockEnum::TYPE_PRODUCE,'order_produce_id'=>$produce['id'],'warehouse_id'=>$warehouse_id,'product_id'=>$produce['product_id'],'order_id'=>$produce['order_id'],'order_product_id'=>$produce['order_product_id'],'supplier_id'=>0,'stock_date'=>date('Y-m-d'),'purchase_date'=>'','remark'=>'']);
+			}
+			$produce->save($produce_update);
+			
+			$update								= [];
+			$update['user_id']					= $userInfo['user_id'];
+			$update['username']					= $userInfo['name'];
+			$update['status']					= 1;
+			$update['confirm_date']				= date('Y-m-d H:i:s');
+			if(!empty($follow['id'])){
+				$update['produce_follow_id']	= $follow['id'];
+			}
+			$model->save($update);			
+
+        }catch (\Exception $e){
+            return ['msg'=>'操作失败'.$e->getMessage(),'code'=>201];
+        }
+    }
+
+	
+	public static function  goProductCheck($id,$report){
+		$model 	= ErpOrderProduce::where('id',$id)->find();
+		$report = array_merge($model['report']?$model['report']:[],$report?$report:[]);
+		
+		$model->save(['report'=>$report]);
+	}
+
+	public static function  getOneMaterial($sn){
+		return ErpMaterial::field('id,sn,name')->where('sn',$sn)->find();
+	}
+	
+	
+	public static function getFollowEdit($produce_id)
+    {
+		$produce 	= ErpOrderProduce::with(['order_product'=>function($query){return $query->field('id,product_model,product_specs,add_project,change_project,product_name,color,product_num');},'order'=>function($query){return $query->field('id,order_sn,order_product_num,customer_name');}])->where('id',$produce_id)->find();
+		if(empty($produce['id'])){
+			throw new \Exception("产品不存在");
+		}
+		$follow		= ErpOrderProduceFollow::alias('a')->join('erp_process b','a.process_id = b.id','LEFT')->where('a.order_produce_id','=',$produce['id'])->field('a.*,b.name')->select();
+		return ['produce'=>$produce ,'follow'=>$follow];
+	}	
+	
+	
+	public static function goFollowEdit($data,$userInfo)
+    {
+		try {
+			if($data){
+				$produce_follow		= ErpOrderProduceFollow::where('id','in',array_column($data,'id'))->column('id,remark,num,after_num,process_id,order_produce_id','id');
+				$update				= [];
+				$log 				= [];
+				foreach($data as $k=>$v){
+
+					$str 			= '';
+					if($v['num'] != $produce_follow[$v['id']]['num']){
+						$str		.= '`编号`从`'.$produce_follow[$v['id']]['num'].'`到`'.$v['num'].'`;';
+					}
+					if($v['after_num'] != $produce_follow[$v['id']]['after_num']){
+						$str		.= '`换后编号`从`'.$produce_follow[$v['id']]['after_num'].'`到`'.$v['after_num'].'`;';
+					}					
+					if($v['remark'] != $produce_follow[$v['id']]['remark']){
+						$str		.= '`备注`从`'.$produce_follow[$v['id']]['remark'].'`到`'.$v['remark'].'`;';
+					}
+					if($str){
+						$log[] 		= ['remark'=>$v['title'].'的'.$str,'process_id'=>$produce_follow[$v['id']]['process_id'],'order_produce_id'=>$produce_follow[$v['id']]['order_produce_id'],'user_id'=>$userInfo['user_id'],'username'=>$userInfo['name']];
+						$update[] 	= ['id'=>$v['id'],'remark'=>$v['remark'],'num'=>$v['num'],'after_num'=>$v['after_num']];
+					}
+				}						
+	
+				if($update){
+					(new ErpOrderProduceFollow)->saveAll($update);
+				}
+				if($log){
+					(new ErpOrderProduceProcessLog)->saveAll($log);
+				}
+			}
+		}catch (\Exception $e){
+            return ['msg'=>'操作失败'.$e->getMessage(),'code'=>201];
+        }		
+	}
+	
+	
+	
+	public static function getProduceFollow($produce_sn,$process_id,$user_id)
+    {
+		$produce 		= ErpOrderProduce::with(['order_product'=>function($query){return $query->field('id,product_model,product_specs,add_project,change_project,product_name,color,product_num');},'order'=>function($query){return $query->field('id,order_sn,order_product_num,customer_name');}])->where('produce_sn',$produce_sn)->find();
+		if(empty($produce['id'])){
+			throw new \Exception("产品不存在");
+		}
+		$process 		= ErpProcess::where('id',$process_id)->where('user_id','find in set',$user_id)->find();
+		if(empty($process['id'])){
+			throw new \Exception("工序不存在");
+		}
+		$produce_process 	= ErpOrderProduceProcess::where('order_produce_id',$produce['id'])->where('process_id',$process['id'])->find();
+		if(empty($produce_process['id'])){
+			throw new \Exception("工序错误");
+		}		
+		$follow 		= ErpOrderProduceFollow::where('order_produce_id',$produce['id'])->where('process_id',$process['id'])->find();
+		if(empty($follow['id'])){
+			$bom 			= ErpOrderProduceBom::alias('a')->join('erp_material b','a.material_id = b.id','LEFT')->field('a.num,a.material_id,b.type,b.sn,b.name,b.unit,b.remark')
+			->where('a.order_produce_id',$produce['id'])->where('a.type',1)->select();
+			$material_id	= ErpProcessMaterial::where('process_id',$process['id'])->column('material_id');
+			$partn 			= [];
+			$component 			= [];
+			foreach($bom as $vo){
+				if(in_array($vo['material_id'],$material_id)){
+					if($vo['type'] == 1){
+						if(empty($partn[$vo['material_id']])){
+							$partn[$vo['material_id']] 			= ['material_id'=>$vo['material_id'],'num'=>$vo['num'],'sn'=>$vo['sn'],'name'=>$vo['name'],'unit'=>$vo['unit'],'remark'=>$vo['remark'],'enter_order_sn'=>'','order_sn'=>''];
+						}else{
+							$partn[$vo['material_id']]['num']	= $partn[$vo['material_id']]['num'] + $vo['num'];
+						}
+					}else if($vo['type'] == 2){
+						$component[] = ['material_id'=>$vo['material_id'],'num'=>$vo['num'],'sn'=>$vo['sn'],'name'=>$vo['name']];
+					}
+				}
+			}
+			foreach($component as $key=>$vo){
+				$bom 				= ErpMaterialBom::where('material_id',$vo['material_id'])->with(['related_material'])->select();
+				foreach($bom as $kk=>$vv){
+					if(empty($partn[$vv['related_material_id']])){
+						$partn[$vv['related_material_id']] 			= ['material_id'=>$vv['related_material_id'],'num'=>$vo['num']*$vv['num'],'sn'=>$vv['related_material']['sn'],'name'=>$vv['related_material']['name'],'unit'=>$vv['related_material']['unit'],'remark'=>$vv['related_material']['remark'],'enter_order_sn'=>'','order_sn'=>''];
+					}else{
+						$partn[$vv['related_material_id']]['num']	= $partn[$vv['related_material_id']]['num'] + $vo['num']*$vv['num'];
+					}
+				}
+			}
+			$partn		= array_values($partn);
+			
+			//$subQuery 	= ErpMaterialAllocateMaterial::field('id,material_id,enter_order_sn,enter_batch_number,material_stock_id')->where('signed_date','<>','')->where('material_id', 'in', array_column($partn,'material_id'))->order('id desc')->buildSql();
+			//$allocat	= Db::table($subQuery . ' a')->join('erp_material_stock b','a.material_stock_id = b.id','LEFT')->group('a.material_id')->order('a.id', 'desc')->column('a.*,b.order_sn','a.material_id');
+			
+			$subQuery = ErpMaterialAllocateMaterial::field(['MAX(id) as id'])
+			->where('signed_date','<>','')->where('material_id', 'in', array_column($partn,'material_id'))
+			->group('material_id')
+			->buildSql();
+			
+			$allocat = ErpMaterialAllocateMaterial::alias('a')
+			->join([$subQuery => 'sub'], 'a.id = sub.id')
+			->join('erp_material_stock b','a.material_stock_id = b.id','LEFT')
+			->column('a.id,a.enter_material_id,a.material_id,a.enter_order_sn,a.enter_batch_number,a.material_stock_id,b.order_sn','a.material_id');
+			;			
+			
+			foreach($partn as $key=>$vo){
+				if(!empty($allocat[$vo['material_id']])){
+					$partn[$key]['enter_order_sn'] 	= $allocat[$vo['material_id']]['enter_order_sn'];
+					$partn[$key]['order_sn'] 		= $allocat[$vo['material_id']]['order_sn'];
+					$partn[$key]['enter_material_id'] = $allocat[$vo['material_id']]['enter_material_id'];
+				}
+			}
+		}else{
+			$partn 			= $follow['partn']?$follow['partn']:[];
+			$component 		= $follow['component']?$follow['component']:[];
+		}	
+		
+		$all_process 		= ErpOrderProduceProcess::alias('a')
+		->join('erp_process b','a.process_id = b.id','LEFT')
+		->join('erp_follow c','b.follow_id = c.id','LEFT')
+		->where('a.order_produce_id',$produce['id'])->order(['b.sort'=>'asc','b.id'=>'asc'])->column('a.id,a.process_id,a.process_name,a.price,a.status,a.confirm_date,a.username,b.is_inspect,b.follow_id,b.description,c.name as follow_name','a.process_id');
+
+		return ['produce'=>$produce,'process'=>$process ,'partn'=>$partn ,'component'=>$component,'follow'=>$follow,'produce_process'=>$produce_process,'all_process'=>$all_process];
+	}
+	
+	
+	
+}

@@ -1,0 +1,227 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.main{margin:0 5px;}
+.main>.layui-row{width:100%;}
+.layui-row .table1 thead tr{ background-color: #fff;}
+.table1 th{text-align:center;font-weight:600;font-size:18px;padding: 12px 0px;color:#000;}
+.table1 td{text-align:center;font-weight:600;font-size:22px;padding: 12px 0px;color:#000;}
+.table1 .count{color: rgb(24, 144, 255);font-size:28px;}
+.table2 .layui-table-cell{font-size:12px;padding: 0;height: 25px;line-height: 25px;}
+.table2 .layui-table td{border-width:1px;border-color: #fff;}
+.table3 td{font-size:12px;text-align:center;padding: 5px 0px;}
+.table3 .cur_month{color: rgb(24, 144, 255);font-size:16px;font-weight:600;}
+.table4 td{font-size:12px;text-align:right; padding: 5px 2px;line-height: 15px;}
+.layui-table td,.layui-table th,.layui-table-header,.layui-table-view{border-color:#007210;}
+.layui-table-view .layui-table th{border-right:none;}
+#layui-table-body,.layui-table-main{ overflow: hidden;}
+.layui-col-sm9{width: 83%;padding-right:0;}
+.layui-col-sm3{width: 17%; padding-right:0;}
+.table5 {text-align:center;}
+.table5 .count{color: rgb(24, 144, 255);font-size:28px;}
+.table5 td{font-size:12px;}
+
+
+.table6 {text-align:center;}
+.table6 .count{color: rgb(24, 144, 255);font-size:28px;}
+.table6 td{font-size:12px;}
+.table6 .sum{font-size:20px; font-weight: bold;}
+
+.table7 {text-align:center;}
+
+.layui-table.table5 td, .layui-table.table5 th{ padding: 5px 0px !important;}
+.layui-table.table6 td, .layui-table.table6 th{ padding: 5px 0px !important;}
+.layui-table.table7 td, .layui-table.table7 th{ padding: 5px 0px !important;}
+.laytable-cell-undefined{ width: 30px !important;}
+</style>
+<div class="main">
+	<div class="layui-row layui-col-space15">
+		<div class="layui-col-xs9 layui-col-sm9 layui-col-md9">
+			<table class="layui-table table1">
+				<thead>
+					<tr>
+						<th>{:config('web.sys_name')}</th>
+						<th>椅架完成</th>
+						<th>总装完成</th>
+						<th>检验合格</th>
+						<th>成品入库</th>
+					</tr> 
+				</thead>
+				<tbody>
+					<tr>
+						<td>生产进度</td>
+						<td class="count">{$count[0]}</td>
+						<td class="count">{$count[1]}</td>
+						<td class="count">{$count[2]}</td>
+						<td class="count">{$count[3]}</td>
+					</tr>
+				</tbody>
+			</table>	
+			<div class="table2">
+				<table id="table2" lay-filter="table2" lay-skin="nob"></table>
+			</div>
+		</div>
+		<div class="layui-col-xs3 layui-col-sm3 layui-col-md3">
+			<table class="layui-table table3">
+				<colgroup>
+					<col width="50%">
+					<col width="50%">
+				</colgroup>
+				<tbody>
+					<tr>
+						<td class="cur_month" colspan="2">{:date('Y年m月d日')}</td>
+					</tr>
+					<tr>
+						<td>月份</td>
+						<td>成品入库日均</td>
+					</tr>
+					{volist name="month" id="vo"}
+					<tr>
+						<td>{$vo['month']}</td>
+						<td>{$vo['count']}</td>
+					</tr>
+					{/volist}
+				</tbody>
+			</table>
+			<table class="layui-table table5">
+				<colgroup>
+					<col width="33%">
+					<col width="34%">
+					<col width="33%">
+				</colgroup>
+				<tbody>
+					<tr>
+						<td><strong>当天完成</strong></td>
+						<td><strong>当天计划</strong></td>
+						<td><strong>待生产数</strong></td>
+					</tr>
+					<tr>
+						<td class="count">{$count[2]}</td>
+						<td class="count">{$count[4]}</td>
+						<td class="count">{$count[6]}</td>
+					</tr>
+					<tr>
+						<td colspan="2"><strong>待上线数</strong></td>
+						<td class="count">{$count[5]}</td>
+					</tr>
+					<tr>
+						<td colspan="2"><strong>合计</strong></td>
+						<td class="count">{$count[6]+$count[5]}</td>
+					</tr>
+				</tbody>
+			</table>
+<!-- 			<table class="layui-table table6">
+				<colgroup>
+					<col width="50%">
+					<col width="50%">
+				</colgroup>
+				<tbody>
+					<tr>
+						<td colspan="2">待上线数</td>
+					</tr>
+					<tr>
+						<td class="sum">合计</td>
+						<td class="count">{$count[5]}</td>
+					</tr>					
+				</tbody>
+			</table>	 -->
+			<table class="layui-table table7">
+				<colgroup>
+					<col width="60%">
+					<col width="40%">
+				</colgroup>
+				<tbody>
+					<tr>
+						<td>产品型号-款式</td>
+						<td>台数</td>
+					</tr>
+					{volist name="wait_produce" id="vo"}
+					<tr>
+						<td align="left">{$vo['model']}{$vo['specs']}</td>
+						<td class="count">{$vo['count']}</td>
+					</tr>	
+					{/volist}					
+				</tbody>
+			</table>
+			<table class="layui-table table4">
+				 <colgroup>
+					<col width="50%">
+					<col width="50%">
+				</colgroup>
+				<tbody>
+					<tr>
+						<td colspan="2" style="text-align:center;">已检合格、等待包装</td>
+					</tr>
+					<tr>
+						<td style="text-align:center;">收货地址</td>
+						<td style="text-align:center;">产品编码</td>
+					</tr>
+					{volist name="pass_produce" id="vo"}
+					<tr>
+						<td>{$vo['address']}</td>
+						<td>{$vo['produce_sn']}</td>
+					</tr>
+					{/volist}
+				</tbody>
+			</table>		
+		</div>
+	</div>
+</div>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+		table.render({
+			elem: '#table2',
+			url: '{:url('produce')}?process_id={$process_id}',
+			page: false,
+			loading:false,
+			//height: 'full-120',
+			cols: [[
+				{if $process_id === 0}
+				{field: 'numbers',title: '序号',align: 'center',unresize: false,width:30},
+				{field: 'address',title: '收货地址',align: 'center',unresize: false,},
+				//{field: 'create_time',title: '上线日期',align: 'center',unresize: false,width:80},
+				{field: 'produce_date',title: '排产日期',align: 'center',unresize: false,width:80},
+				{field: 'order_sn',title: '销售合同号',align: 'center',unresize: false,width:100},
+				// {field: 'product_model',title: '产品型号',align: 'center',unresize: false,width:85},
+				// {field: 'product_specs',title: '款式',align: 'center',unresize: false,width:55},
+				{field:'',title:'产品型号',align: 'center',unresize: false,width:140,templet: function(d){return d.product_model+d.product_specs;}},
+				{field: 'produce_sn',title: '产品编码',align: 'center',unresize: false,width:105},
+				{field: 'process1',title: '椅架工序',align: 'center',unresize: false,width:90},
+				{else/},
+				{field: 'numbers',title: '序号',align: 'center',unresize: false,width:30},
+				{field: 'address',title: '收货地址',align: 'center',unresize: false,},
+				{field: 'produce_date',title: '排产日期',align: 'center',unresize: false,width:80},
+				{field: 'order_sn',title: '销售合同号',align: 'center',unresize: false,width:100},
+				// {field: 'product_model',title: '产品型号',align: 'center',unresize: false,width:75},
+				// {field: 'product_specs',title: '款式',align: 'center',unresize: false,width:45},
+				{field:'',title:'产品型号',align: 'center',unresize: false,width:120,templet: function(d){return d.product_model+d.product_specs;}},
+				{field: 'produce_sn',title: '产品编码',align: 'center',unresize: false,width:95},
+				{field: 'process1',title: '椅架工序',align: 'center',unresize: false,width:70},
+				{field: 'process2',title: '总装工序',align: 'center',unresize: false,width:70},
+				{field: 'process3',title: '检验工序',align: 'center',unresize: false,width:70},
+				{/if}
+				
+			]],
+			toolbar: false,
+			defaultToolbar: false,
+			done: function (res, curr, count) {
+				
+			}
+		});	
+
+		setInterval(function (){
+			location.reload();
+		},1*60*1000)
+
+	})
+</script>
+{/block}
+
+
+

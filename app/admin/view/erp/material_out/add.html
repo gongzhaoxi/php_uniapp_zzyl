@@ -1,0 +1,295 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-input-block {margin-left: 150px;}
+.layui-form-label {width: 120px;}
+.layui-col-md4{margin-bottom:10px;}
+</style>
+<form class="layui-form" action="" method="post" data-reload="7" data-callback="submitCallBack">
+	<input type="hidden"  name="order_id" id="order_id"  value="">
+	<input type="hidden"  name="material_type" id="material_type"  value="{$material_type}">
+	<div class="mainBox">
+		<div class="main-container">
+			<blockquote class="layui-elem-quote">单据单头信息</blockquote>
+			<div class="layui-form-item">
+				<div class="layui-row">
+					<div class="layui-col-md4">
+						<label class="layui-form-label">出库类型</label>
+						<div class="layui-input-block">
+							<select name="type" lay-verify="required" lay-filter="type">
+								{foreach $type as $key=>$vo}
+								{if !in_array($key,$hidden_key)}<option value="{$key}">{$vo}</option>{/if}
+								{/foreach}
+							</select>
+						</div>
+					</div>
+					<div class="layui-col-md4">
+						<label class="layui-form-label">出库批次号</label>
+						<div class="layui-input-block">
+							<input type="text"   name="batch_number" value="" placeholder="请填写,可为空" autocomplete="off" class="layui-input">
+						</div>	
+					</div>	
+					<div class="layui-col-md4">
+						<label class="layui-form-label">领料部门</label>
+						<div class="layui-input-block">
+							<select name="department" lay-search="">
+								{foreach $department as $key=>$vo}
+								<option value="{$vo['name']}" >{$vo['name']}</option>
+								{/foreach}
+							</select>
+						</div>
+					</div>					
+					<div class="layui-col-md4">
+						<label class="layui-form-label">出库日期</label>
+						<div class="layui-input-block">
+							<input type="text"  readonly name="stock_date" value="{:date('Y-m-d')}" lay-verify="required" placeholder="请选择,不可为空" autocomplete="off" class="layui-input date">
+						</div>	
+					</div>
+					<div class="layui-col-md4">
+						<label class="layui-form-label">需挂账销售合同</label>
+						<div class="layui-input-block">
+							<input type="text" maxlength="100" readonly id="order_sn" placeholder="请选择,可为空" autocomplete="off" class="layui-input">
+						</div>
+					</div>
+					<div class="layui-col-md4">
+						<label class="layui-form-label">备注/用途说明</label>
+						<div class="layui-input-block">
+							<input type="text" maxlength="255" name="remark"  placeholder="请输入" autocomplete="off" class="layui-input remark">
+						</div>	
+					</div>					
+				</div>
+			</div>			
+			<blockquote class="layui-elem-quote">相关物料信息</blockquote>
+			<div class="layui-row layui-col-space10">
+				<div class="layui-col-md11">
+					<select id="selectId"  xm-select="selectId" xm-select-radio  xm-select-search=""></select>
+				</div>
+				<div class="layui-col-md1">
+					<button type="button" class="layui-btn showSearch">高级筛选</button>
+				</div>
+			</div>
+			<table class="layui-table">
+				<thead>
+					<tr>
+						<th style="width: 135px;">物料编码</th>
+						<th>物料名称</th>
+						<th style="width: 240px;">入库批次号</th>
+						<th style="width: 100px;">现有库存量</th>
+						<th style="width:100px;">出库数量</th>
+						<th style="width:100px;">备注</th>
+						<th style="width: 70px;">操作</th>
+					</tr> 
+				</thead>
+				<tbody id="tbody">
+	
+				</tbody>
+			</table>
+		</div>
+		<div id="photoTlp" style="display:none;">
+			{:$form->optPhoto('__photo__')}
+		</div>
+	</div>
+	<div class="bottom">
+		<div class="button-container">
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*"><i class="layui-icon layui-icon-ok"></i>提交</button>
+		</div>
+	</div>
+</form>
+{/block}
+{block name="script"}
+<script>
+
+layui.use(['tableSelect','form','select'], function () {
+	var $ = layui.jquery;
+	var tableSelect = layui.tableSelect,form = layui.form;
+	var select = layui.select;
+	
+	tableSelect.render({
+		elem: '#order_sn',
+		checkedKey: 'id',
+		searchKey: 'keyword',
+		searchPlaceholder: '客户名称/销售合同号',
+		table: {
+			url: '{:url('common/order')}',			
+			cols: [[
+				{type: 'radio' },
+				{field: 'region_type_desc',title: '订单性质',align: 'center',unresize: false,width: 100},
+				{field: 'customer_name',title: '客户名称/订货单位',align: 'center',unresize: false,width: 200},
+				{field: 'order_sn',title: '销售合同号',align: 'center',unresize: false,width: 120},
+				{field: 'address',title: '收货地址/国家',align: 'center',unresize: false,width: 200},
+				{field: 'goods_num',title: '订购总数量',align: 'center',unresize: false,width: 120},
+			]]
+		},
+		done: function (elem, data) {
+			elem.val(data.data[0]['order_sn']);
+			$('#order_id').val(data.data[0]['id']);
+		}
+	})
+	
+	window.submitCallBack = function (res){
+		location.replace('{:url('edit')}?id='+res.data.id);
+	}
+	
+	window.deleteMaterial = function(_id){
+		$('#material_'+_id).remove();
+	}
+	
+	$("body").on("change",".stock_num",function(){
+		var value 	= $(this).val();
+		var old 	= $(this).data('old');
+		//value 		= value.replace(/[^\d]/g,"");
+		if(!(/^([1-9][0-9]*)$/.test(value)) || value <= 0){ 
+			layer.msg('请输入大于0的正整数');
+			$(this).val(old);
+			return ;
+		}
+		value = parseInt(value);
+		var material_id = $(this).closest('tr').find('.material_id').val();
+		var ids = select.value('material_'+material_id, 'val'); 
+		console.log(ids);
+		var num = 0 ;
+		$(this).closest('tr').find('.enter_material_id option').each(function(){
+			var v = ($(this).val()).toString();
+			if(ids.indexOf(v) != -1){
+				num = num + parseInt($(this).data('num'));
+			}
+		})
+		if(num > 0 && value > num){
+			layer.msg('最多出库数量'+num);
+			$(this).val(old);
+			return ;
+		}
+		$(this).data('old',value);
+	});
+	
+	
+	select.config("selectId",{
+		type:"post",
+		searchUrl:'{:url('common/materialStock?type='.$material_type)}&limit=50&status=1&warehouse_type=1,2',    //请求地址
+		searchName: "keyword",
+		keyName:"name",
+		keyVal:"id" , 
+		beforeSuccess: function(id, url, searchVal, result){
+			$.each(result.data, function(index, item) {
+				item._name = item.name;
+				item.name = '物料编码：'+item.sn + ' | 物料名称：' + item.name + ' | 现有库存：' + item.stock + '';
+			});
+			return result;
+		}
+	},false)
+	
+	select.on('selectId', function(id, vals, item, isAdd, isDisabled){
+		if($('#material_'+item.id).length>0){
+			layer.msg('物料已添加');	
+			$('#material_'+item.id).find('.stock_num').focus();
+		}else if(item && item.id && item.name){
+			addMaterial(item);
+		}
+		$('.xm-select-parent>.xm-form-select').removeClass('xm-form-selected');
+		return false;
+	});
+	
+
+	function addMaterial(item){
+		var stock_num = '';
+		var html = '<tr id="material_'+item.id+'"><input type="hidden"  name="material['+item.id+'][id]" value="'+item.id+'" class="material_id" >';
+		html += '	<td>'+item.sn+'</td>';
+		html += '	<td>'+(item._name?item._name:item.name)+'</td>';			
+		html += '	<td><select name="material['+item.id+'][enter_material_id]" class="enter_material_id" xm-select="material_'+item.id+'" required lay-verify="required" xm-select-checkbox>';
+		if(item.enter.length > 0){
+			layui.each(item.enter, function (index2, item2) {
+				html += '<option '+(index2==0?'selected':'')+' data-num="'+item2.num+'" value="'+item2.id+'" >'+item2.order_sn+'('+item2.num+')</option>';
+			})
+		}else{
+			//html += '<option selected data-num="0" value="0" >无</option>';
+		}
+		
+		html += '	</select></td>';
+		
+		html += '	<td>可出库：'+item.stock+'</br>已占用：'+item.freeze_out_stock+'</td>';
+		html += '	<td><input type="text" data-old="'+stock_num+'"  name="material['+item.id+'][stock_num]" value="'+stock_num+'"  data-key="stock_num" class="layui-input stock_num" lay-verify="required|number" placeholder="请输入数量"></td>';
+		html += '	<td><input type="text"  name="material['+item.id+'][remark]" value="" class="layui-input remark" data-key="remark" placeholder=""></td>';
+		html += '	<td><button type="button" onclick="deleteMaterial('+item.id+')" class="layui-btn layui-btn-xs layui-btn-danger">删除</button></td>';
+		html += '</tr>';
+		$('#tbody').prepend(html);	
+		$('#material_'+item.id).find('.stock_num').focus();
+		form.render();
+		select.render('material_'+item.id+'');
+		
+		select.on('material_'+item.id, function(id, vals, item, isAdd, isDisabled){
+			//console.log(vals);
+			var ids = [];
+			$.each(vals,function(idx,vo){
+				ids.push(vo.value);
+			})
+			var max_num = 0;
+		
+			$('#'+id+' .enter_material_id option').each(function(){
+				if(ids.indexOf($(this).val().toString()) != -1){
+					max_num = $(this).data('num');
+				}
+			})
+			max_num = parseInt(max_num);
+			var stock_num = $('#'+id+' .stock_num').val();
+			
+			if(max_num > 0 && stock_num && max_num < parseInt(stock_num)){
+				$('#'+id+' .stock_num').val(max_num);
+			}
+		},true);
+	}
+	
+	
+	$(".layui-table").on("keydown",".layui-input",function(){
+		if (event.keyCode == 40) {
+			$(this).closest('tr').next().find('.'+$(this).data('key')).focus();
+		}else if (event.keyCode == 38) {
+			$(this).closest('tr').prev().find('.'+$(this).data('key')).focus();
+		}else if (event.keyCode == 13 || event.keyCode == 39) {
+			//右一个
+			$(this).closest('td').next().find('.layui-input').focus();
+		}else if (event.keyCode == 37) {
+			//左一个
+			$(this).closest('td').prev().find('.layui-input').focus();
+		}
+	});
+	
+	$('.showSearch').click(function(){
+		layer.open({
+			type: 2
+			,title: '高级筛选'
+			,content: '{:url('common/materialStock')}?type={$material_type}&status=1&warehouse_type=1,2'
+			,area: ['95%','95%']
+			,success: function(layero, index){
+				var iframeWindow = window['layui-layer-iframe'+ index];
+				layero.find('iframe').contents().find('#confirmSelect').click(function(){
+					selectFuc();
+					return false;
+				})
+				
+				layero.find('iframe').contents().find('body').on("keydown", function(event) {
+					if (event.which === 13) {
+						selectFuc();
+						return false;
+					}
+				});
+				
+				function selectFuc(){
+					if(iframeWindow.selected_ids.length == 0){
+						layui.layer.msg('请选择物料');
+					}else{
+						$.each(iframeWindow.selected_items,function(idx,item){
+							if($('#material_'+item.id).length == 0){
+								addMaterial(item);
+							}
+						})
+						layui.layer.close(index);
+					}
+					return false;
+				}
+			}
+		});
+	})
+	
+});
+</script>
+{/block}

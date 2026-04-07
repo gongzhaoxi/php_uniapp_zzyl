@@ -1,0 +1,130 @@
+{extend name="base" /}
+{block name="body"}
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline">
+					<label class="layui-form-label">所属目录</label>
+					<div class="layui-input-inline">
+						<select name="path">
+							<option value="">全部</option>
+							{foreach $data as $k=>$v}
+								<option value="{$v.name}">{$v.name}</option>
+							{/foreach}
+						</select>
+					</div>
+				</div>
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+					<button type="reset" class="pear-btn pear-btn-md"><i class="layui-icon layui-icon-refresh"></i>重置</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	<button class="pear-btn pear-btn-primary pear-btn-md" lay-event="confirm"><i class="layui-icon layui-icon-ok-circle"></i>确认</button>
+	<button class="pear-btn pear-btn-primary pear-btn-md" lay-event="addPhoto"><i class="layui-icon layui-icon-add-1"></i>新增单文件</button>
+	<button class="pear-btn pear-btn-primary pear-btn-md" lay-event="addPhotos"><i class="layui-icon layui-icon-add-1"></i>新增多文件</button>
+</script>
+{/block}
+{block name="script"}
+<script>
+	let cb = null;
+	layui.use(['table', 'form', 'jquery'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		let opt = null;
+		window.child = function(obj) {opt = obj}
+		let cols = [
+			[ {
+					type: '{$type}'
+				},{
+					field: 'link',
+					title: '文件',
+					unresize: true,
+					align: 'center',
+					templet:function (d) {
+						return '<img class="photo" onerror="imgError(this)" lay-event="photo" data-href=" '+d.link+'" src=" '+d.link+'"></i>';
+					}
+				},{
+					field: 'name',
+					title: '文件名称',
+					unresize: true,
+					align: 'center'
+				},{
+					field: 'path',
+					title: '所属目录',
+					unresize: true,
+					align: 'center'
+				},{
+					field: 'create_time',
+					title: '创建时间',
+					unresize: true,
+					align: 'center'
+				}
+			]
+		]
+
+		window.imgError = function(obj){
+			$(obj).parent().html('<i class="layui-icon layui-icon-file-b"></i>  ')
+		}
+
+		table.render({
+			elem: '#dataTable',
+			url:  '{:url('optPhoto')}?file_type={$file_type}',
+			page: true,
+			cols: cols,
+			cellMinWidth: 70,
+			toolbar: '#toolbar',
+			defaultToolbar: [ 'filter'],
+			skin: 'line'
+		});
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+	
+		table.on('tool(dataTable)', function(obj) {
+			if (obj.event === 'photo') {
+				window.layerPhotos(obj.data.href);
+			}
+		});
+		
+		table.on('toolbar(dataTable)', function(obj) {
+			if (obj.event === 'addPhoto') {  
+				openLayer('新增单文件','{:url('admin.Photo/addPhoto')}' + '?name={$file_type}','80%','90%',function () {
+					table.reload('dataTable');
+				});
+			} else if (obj.event === 'addPhotos') {
+				openLayer('新增多文件','{:url('admin.Photo/addPhotos')}' + '?name={$file_type}','80%','90%',function () {
+					table.reload('dataTable');
+				});
+			}else if (obj.event === 'confirm') {
+				var checkStatus = table.checkStatus('dataTable');
+				if(checkStatus.data.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				opt(checkStatus.data);
+			}
+		});		
+		
+		window.refresh = function() {
+			table.reload('dataTable');
+		}
+
+	})
+</script>
+{/block}

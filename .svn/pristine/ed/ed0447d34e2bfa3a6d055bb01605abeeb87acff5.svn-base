@@ -1,0 +1,105 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-input-block {margin-left: 150px;}
+.layui-form-label {width: 120px;}
+</style>
+<form class="layui-form" action="" method="post" data-table="{$table}">
+	<input type="hidden"  name="product_id" id="product_id" value="{$product_id}">
+	<input type="hidden"  name="material_id" id="material_id">
+	<input type="hidden"  name="data_type" id="data_type" value="{$data_type}">
+	<input type="hidden"  name="project_id" id="project_id" value="{$project_id}">
+	<div class="mainBox">
+		<div class="main-container">
+			<div class="layui-form-item">
+				<label class="layui-form-label">物料</label>
+				<div class="layui-input-block">
+					<input type="text" readonly id="material_name" lay-verify="required" ts-selected="" placeholder="请选择,不可为空" autocomplete="off" class="layui-input">
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">数量</label>
+				<div class="layui-input-block">
+					<input type="number"  name="num" lay-verify="required|number" value="1" ts-selected="" placeholder="请填写,不可为空" autocomplete="off" class="layui-input">
+				</div>
+			</div>	
+			<div class="layui-form-item">
+				<label class="layui-form-label">类型</label>
+				<div class="layui-input-block">
+					<select name="bill_type" lay-verify="required">
+						<option value="0" >无</option>
+						{foreach $bill_type as $key=>$vo}
+						<option value="{$vo['id']}" >{$vo['name']}</option>
+						{/foreach}
+					</select>
+				</div>
+			</div>
+			{if $data_type != 4}
+			<div class="layui-form-item">
+				<label class="layui-form-label">颜色是否跟随产品</label>
+				<div class="layui-input-block">
+					<input type="radio" name="color_follow" value="1" title="是" >
+					<input type="radio" name="color_follow" value="0" title="否" checked>
+				</div>
+			</div>
+			{else/}
+				<input type="hidden"  name="color_follow"  value="0">
+			{/if}			
+			{if $data_type == 1}
+			<div class="layui-form-item">
+				<label class="layui-form-label">可换配</label>
+				<div class="layui-input-block">
+					<input type="radio" name="can_replace" value="1" title="是" >
+					<input type="radio" name="can_replace" value="0" title="否" checked>
+				</div>
+			</div>
+			{else/}
+				<input type="hidden"  name="can_replace"  value="0">
+			{/if}			
+		</div>
+	</div>
+	<div class="bottom">
+		<div class="button-container">
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*"><i class="layui-icon layui-icon-ok"></i>提交</button>
+			<button type="reset" class="layui-btn layui-btn-primary layui-btn-sm"><i class="layui-icon layui-icon-refresh"></i>重置</button>
+		</div>
+	</div>
+</form>
+{/block}
+{block name="script"}
+<script>
+layui.use(['tableSelect'], function () {
+	var $ = layui.jquery;
+	var tableSelect = layui.tableSelect;
+	tableSelect.render({
+		elem: '#material_name',
+		checkedKey: 'id',
+		searchKey: 'keyword',
+		searchPlaceholder: '物料名称/编码',
+		table: {
+			url: '{:url('material')}?status=1',		
+			cols: [[
+				{type: 'checkbox' },
+				{field: 'sn',title: '物料编码',align: 'left',unresize: true,width:300},
+				{field: 'name',title: '物料名称',align: 'left',unresize: true,width:300},
+				{field: 'type_desc',title: '属性',align: 'left',unresize: true,width:150},
+			]]
+		},
+		done: function (elem, data) {
+			//elem.val(data.data[0]['name']);
+			//$('#material_id').val(data.data[0]['id']);
+			
+			var name = [];
+			var id = [];
+			$.each(data.data,function(index,item){
+				name.push(item['name']);
+				id.push(item['id']);
+			})		
+			elem.val(name.join(','));
+			$('#material_id').val(id.join(','));
+			
+		}
+	})
+});
+</script>
+{/block}

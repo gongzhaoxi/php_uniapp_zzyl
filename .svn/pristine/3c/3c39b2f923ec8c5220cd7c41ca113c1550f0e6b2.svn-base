@@ -1,0 +1,379 @@
+{extend name="base" /}
+{block name="body"}
+{include file="erp/public/warehouse" /}
+<style>
+.left .layui-inline{width:85px;}
+</style>
+<div class="layui-row layui-col-space10">
+	<div class="layui-col-md4">
+		<div class="layui-card left">
+			<div class="layui-card-body">
+				<form class="layui-form" action="">
+					<div class="layui-form-item">
+						<div class="layui-form-item layui-inline">
+							<input type="text" name="order_sn" placeholder="盘点单号" class="layui-input">					
+						</div>	
+						<div class="layui-form-item layui-inline">
+							<input type="text" name="stock_date" placeholder="盘点日期" class="layui-input rangedate">	
+						</div>	
+						<div class="layui-form-item layui-inline">
+							<select name="status">
+								<option value="">状态</option>
+								{foreach $status as $key=>$vo}
+								<option value="{$key}" {if $default_status == $key}selected{/if}>{$vo}</option>
+								{/foreach}
+							</select>
+						</div>						
+						<div class="layui-form-item layui-inline" style="width:auto;">
+							<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+		<div class="layui-card">
+			<div class="layui-card-body">
+				<table id="dataTable" lay-filter="dataTable"></table>
+			</div>
+		</div>
+	</div>
+	<div class="layui-col-md8">
+		<div class="layui-card">
+			<div class="layui-card-body">
+				<form class="layui-form" action="" id="searchForm">
+					<div class="layui-form-item">
+						<div class="layui-form-item layui-inline">
+							<input type="text" name="keyword" placeholder="物料编码/名称" class="layui-input">					
+						</div>	
+						<div class="layui-form-item layui-inline">
+							<select name="cid" lay-search>
+								<option value="">物料类型</option>
+								{foreach $category as $key=>$vo}
+								<option value="{$vo['id']}">{$vo['name']}</option>
+								{/foreach}
+							</select>
+						</div>
+						<div class="layui-form-item layui-inline">
+							<select name="status">
+								<option value="">状态</option>
+								{foreach $material_status as $key=>$vo}
+								<option value="{$key}" {if 1 == $key}selected{/if}>{$vo}</option>
+								{/foreach}
+							</select>
+						</div>							
+						<div class="layui-form-item layui-inline">
+							<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="materialQuery"><i class="layui-icon layui-icon-search"></i>查询</button>
+							<button class="pear-btn pear-btn-warming pear-btn-sm" lay-submit lay-filter="print"><i class="layui-icon layui-icon-table"></i>打印盘点单</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+		<div class="layui-card">
+			<div class="layui-card-body">
+				<div class="empty" style="margin-top: 50px;margin-left: 220px;margin-bottom: 80px;" width="184" height="152">
+					请点击左边“行”，选择盘点单编号，查看明细！
+				</div>
+				<table id="materialTable" lay-filter="materialTable"></table>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script type="text/html" id="materialToolbar">
+	<button class="pear-btn pear-btn-primary pear-btn-sm" lay-event="export"><i class="layui-icon layui-icon-download-circle"></i>导出</button>
+	<button class="pear-btn pear-btn-success pear-btn-sm" lay-event="save"><i class="layui-icon layui-icon-upload"></i>保存并校正库存</button>
+	<button class="pear-btn pear-btn-danger pear-btn-sm" lay-event="cancel"><i class="layui-icon layui-icon-delete"></i>整批不合格</button>
+</script>
+<script type="text/html" id="toolbar">
+	<button class="pear-btn pear-btn-danger pear-btn-sm" lay-event="cancel">此单作废</button>
+	<button class="pear-btn pear-btn-success pear-btn-sm" lay-event="settle">结算</button>
+	<button class="pear-btn pear-btn-primary pear-btn-sm" lay-event="edit">修改</button>
+</script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		let material_stock_id;
+		var order_sn = '';
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('list')}?material_type={$material_type}?&status={$default_status}',
+			page: true,
+			height: 'full-300',
+			scrollPos:'fixed',
+			cols: [[
+				{type: 'radio',unresize: true,},
+				{field: 'order_sn',title: '盘点单编号',align: 'center',unresize: false,width: {:get_col_width('order_sn'.$material_type)}, hide: getTableFieldIsHide('dataTable','order_sn')},
+				{field: 'stock_date',title: '盘点日期',align: 'center',unresize: false,width: {:get_col_width('stock_date'.$material_type)}, hide: getTableFieldIsHide('dataTable','stock_date')},
+				{field: 'create_admin',title: '创建人',align: 'center',unresize: false,width: {:get_col_width('create_admin'.$material_type)}, hide: getTableFieldIsHide('dataTable','create_admin')},
+			]],
+			limit:100,
+			limits:[100,200,300,400,500],
+			cellMinWidth: 100,
+			toolbar: '#toolbar',
+			defaultToolbar: [{
+					title: '刷新',
+					layEvent: 'refresh',
+					icon: 'layui-icon-refresh',
+			}, 'filter'],
+		});
+
+		table.on('sort(dataTable)', function(obj){
+			table.reload('dataTable', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+
+		table.on('toolbar(dataTable)', function(obj) {
+			if (obj.event === 'cancel') {
+				var checkStatus = table.checkStatus('dataTable');
+				if(checkStatus.data.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				if (checkStatus.data[0].can_cancel == false) {
+					layer.msg(checkStatus.data[0].order_sn+'已作废或已结算');
+					return false;
+				}
+				layerConfirm('确认作废?','{:url('cancel')}',{id:checkStatus.data[0]['id']},function(res){
+					table.reload('materialTable');
+					table.reloadData('dataTable');
+					getWarehouseStat();
+				})
+			}else if (obj.event === 'refresh') {
+				table.reload('dataTable');
+			}else if (obj.event === 'settle') {
+				var checkStatus = table.checkStatus('dataTable');
+				if(checkStatus.data.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				if (checkStatus.data[0].can_settle == false) {
+					layer.msg(checkStatus.data[0].order_sn+'已作废或已结算');
+					return false;
+				}
+				layerConfirm('确认结算?','{:url('settle')}',{id:checkStatus.data[0]['id']},function(res){
+					table.reload('materialTable');
+					table.reloadData('dataTable');
+					getWarehouseStat();
+				})
+			}else if (obj.event === 'edit') {
+				var checkStatus = table.checkStatus('dataTable');
+				if(checkStatus.data.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				if (checkStatus.data[0].can_edit == false) {
+					layer.msg(checkStatus.data[0].order_sn+'禁止修改');
+					return false;
+				}
+				openLayer('修改','{:url('edit')}?id='+checkStatus.data[0]['id'],'80%','90%');
+			}
+		});
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+
+		form.on('submit(print)', function(data) {
+			if(!material_stock_id){
+				layui.layer.msg('请先选择盘点单');
+				return false;
+			}
+			toPrintPage(4,{id:material_stock_id});
+			return false;
+		});
+
+
+		form.on('submit(materialQuery)', function(data) {
+			if(!material_stock_id){
+				layui.layer.msg('请先选择盘点单');
+				return false;
+			}
+			table.reload('materialTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});		
+		
+		table.on('row(dataTable)',function (obj) {
+			window.renderData(obj.data)
+		})		
+		
+		window.renderData = function(order) {
+			$(".empty").hide();
+			material_stock_id = order.id
+			order_sn = order.order_sn;
+			table.render({
+				elem: '#materialTable',
+				url: "{:url('material')}?"+$('#searchForm').serialize()+"&material_stock_id="+material_stock_id,
+				page: true,
+				height: 'full-300',
+				limit:100,
+				limits:[100,200,300,400,500],
+				cols: [[
+					{type: 'checkbox'},
+					{field: 'enter_order_sn',title: '入库单号',align: 'center',unresize: false,width: {:get_col_width('enter_order_sn'.$material_type.'2',150)}, hide: getTableFieldIsHide('materialTable','enter_order_sn')},
+					{field: 'sn',title: '物料编码',align: 'center',unresize: false,width: {:get_col_width('sn'.$material_type.'2',150)},templet: function(d){return d.material?d.material.sn:'';}, hide: getTableFieldIsHide('materialTable','sn')},
+					{field: 'name',title: '物料名称',align: 'left',unresize: false,width: {:get_col_width('name'.$material_type.'2',250)},templet: function(d){return d.material?d.material.name:'';}, hide: getTableFieldIsHide('materialTable','name')},
+					{field: 'stock_before',title: '盘前库存量',align: 'center',unresize: false,width: {:get_col_width('stock_before'.$material_type.'2',100)}, hide: getTableFieldIsHide('materialTable','stock_before')},
+					{field: 'stock_after',title: '盘后库存量',align: 'center',unresize: false,width: {:get_col_width('stock_after'.$material_type.'2',100)}, edit: 'text', hide: getTableFieldIsHide('materialTable','stock_after')},
+					{field: 'stock_num',title: '盈/亏数量',align: 'center',unresize: false,width: {:get_col_width('stock_num'.$material_type.'2',100)}, hide: getTableFieldIsHide('materialTable','stock_num')},
+					{field: 'unit',title: '单位',align: 'center',unresize: false,width: {:get_col_width('unit'.$material_type.'2',100)},templet: function(d){return d.material?d.material.unit:'';}, hide: getTableFieldIsHide('materialTable','unit')},
+					{field: 'category_name',title: '物料分类',align: 'center',unresize: false,width: {:get_col_width('category_name'.$material_type.'2',120)},templet: function(d){return d.material?d.material.category_name:'';}, hide: getTableFieldIsHide('materialTable','category_name')},
+					{field: 'material',title: '材料',align: 'center',unresize: false,width: {:get_col_width('material'.$material_type.'2',100)},templet: function(d){return d.material?d.material.material:'';}, hide: getTableFieldIsHide('materialTable','material')},
+					{field: 'surface',title: '表面',align: 'center',unresize: false,width: {:get_col_width('surface'.$material_type.'2',100)},templet: function(d){return d.material?d.material.surface:'';}, hide: getTableFieldIsHide('materialTable','surface')},
+					{field: 'color',title: '颜色',align: 'center',unresize: false,width: {:get_col_width('color'.$material_type.'2',100)},templet: function(d){return d.material?d.material.color:'';}, hide: getTableFieldIsHide('materialTable','color')},
+					{field: 'remark',title: '备注',align: 'center',unresize: false,width: {:get_col_width('remark'.$material_type.'2',120)}, hide: getTableFieldIsHide('materialTable','remark')},
+					{field: 'status_desc',title: '状态',align: 'center',unresize: false,width: {:get_col_width('status_desc'.$material_type.'2',100)}, hide: getTableFieldIsHide('materialTable','status_desc')},
+				]],
+				//skin: 'line',
+				toolbar: '#materialToolbar',
+				defaultToolbar: [{
+					title: '刷新',
+					layEvent: 'refresh',
+					icon: 'layui-icon-refresh',
+				}, 'filter'],
+			});
+		}
+		
+		table.on('edit(materialTable)', function(obj){
+			if(obj.field == 'stock_after'){
+				obj.data.stock_num = obj.value  - obj.data.stock_before ;
+				obj.data.stock_after = obj.value ;
+				obj.update(obj.data) 
+			}
+		});	
+		
+		table.on('toolbar(materialTable)', function(obj) {
+			if (obj.event === 'export') {
+				var index = layui.layer.load(1);
+				let column 	= [{text:'物料编码',key:'material.sn'},{text:'物料名称',key:'material.name'},{text:'盘前库存量',key:'stock_before'},{text:'盘后库存量',key:'stock_after'},{text:'盈/亏数量',key:'stock_num'},{text:'单位',key:'material.unit'},{text:'物料分类',key:'material.category_name'},{text:'材料',key:'material.material'},{text:'表面',key:'material.surface'},{text:'颜色',key:'material.color'}];
+				$.ajax({
+					type : "get",
+					url : "{:url('material')}?limit=10000&material_stock_id="+material_stock_id,
+					data: $('#searchForm').serialize(),
+					success : function(data) {
+						layui.layer.close(index);
+						if (data.count > 0) {
+							jsonToExcel(column, [column], data.data, order_sn+'盘点物料')
+						}else{
+							layui.layer.msg('暂无数据');
+						}
+					}
+				});
+			
+			}else if (obj.event === 'cancel') {
+				var checkStatus = table.checkStatus('materialTable');
+				if(checkStatus.data.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				
+				var id = [];
+	
+				for(var i in checkStatus.data) {
+					if (checkStatus.data[i].can_cancel == true) {
+						id.push(checkStatus.data[i].id);
+					}else{
+						layer.msg(checkStatus.data[i].material.sn+'已作废');
+						return false;
+					}
+				}
+				
+				if(id.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				
+				layerConfirm('确认作废？','{:url('cancel')}',{id:material_stock_id,ids:id},function(){
+					table.reload('materialTable');
+					table.reloadData('dataTable');
+					getWarehouseStat();
+				})
+			}else if (obj.event === 'refresh') {
+				table.reload('materialTable');
+			} else if (obj.event === 'save') {			
+				var checkStatus = table.checkStatus('materialTable');
+				if(checkStatus.data.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				
+				var id = [];
+				var stock_after = {};
+				
+				for(var i in checkStatus.data) {
+					if (checkStatus.data[i].can_check == true) {
+						id.push(checkStatus.data[i].id);
+						stock_after[checkStatus.data[i].id] = checkStatus.data[i].stock_after
+					}else{
+						layer.msg(checkStatus.data[i].material.sn+'已校正或已作废');
+						return false;
+					}
+				}
+				
+				if(id.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				
+				layerConfirm('确认保存并校正库存？','{:url('confirm')}',{id:material_stock_id,ids:id,num:stock_after},function(){
+					table.reload('materialTable');
+					table.reloadData('dataTable');
+					getWarehouseStat();
+				})
+			} else if (obj.event === 'recycle') {
+				openLayer('回收站','{:url('recycle')}','80%','90%',function () {
+					table.reload('materialTable');
+				});
+			}
+		});
+		
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field+'{$material_type}',width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+		
+		table.on('colResized(materialTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field+'{$material_type}2',width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+		table.on('colToggled(dataTable)', function(obj){
+			setTableFieldIsHide(obj.config.id,obj.col.field,obj.col.hide);
+		});
+		table.on('colToggled(materialTable)', function(obj){
+			setTableFieldIsHide(obj.config.id,obj.col.field,obj.col.hide);
+		});
+		
+	})
+</script>
+{/block}
+
+

@@ -1,0 +1,286 @@
+<?php
+declare (strict_types = 1);
+namespace app\admin\logic;
+use app\admin\logic\BaseLogic;
+use app\common\model\ErpMaterial;
+use app\common\model\ErpMaterialAllocate;
+use app\common\model\ErpMaterialAllocateMaterial;
+use app\common\model\ErpMaterialChange;
+use app\common\model\ErpMaterialStockRecord;
+use app\common\model\ErpOrderProduceBom;
+use app\admin\validate\ErpMaterialAllocateValidate;
+use app\common\enum\ErpMaterialStockEnum;
+use app\common\enum\ErpMaterialAllocateMaterialEnum;
+use think\facade\Db;
+use app\common\model\ErpMaterialEnterMaterial;
+
+class ErpMaterialAllocateLogic extends BaseLogic{
+
+	// 获取列表
+    public static function getList($query=[],$limit=10)
+    {
+		$field = 'id,status,order_sn,type,create_admin,stock_date,from_warehouse_id,to_warehouse_id';
+        $list = ErpMaterialAllocate::withSearch(['query'],['query'=>$query])->with(['from_warehouse','to_warehouse'])->field($field)->where('data_type',ErpMaterialStockEnum::DATA_TYPE_ALLOCATE)->order('id','desc')->append(['can_cancel','status_desc','type_desc','can_edit'])->paginate($limit);
+        return ['code'=>0,'data'=>$list->items(),'extend'=>['count' => $list->total(), 'limit' => $limit]];
+    }
+
+	// 获取物料
+    public static function getMaterial($query=[],$limit=10)
+    {
+		$field 				= 'a.*,a.stock_num-a.signed_num as no_signed_num,b.type,b.name,b.sn,b.unit,erp_material_stock.order_sn,erp_material_stock.stock_date,erp_material_stock.from_warehouse_id,erp_material_stock.to_warehouse_id,erp_material_stock.create_admin';	
+		$query['_alias']	= 'a';
+		$query['_material_alias']= 'b';
+		$list 				= ErpMaterialAllocateMaterial::alias('a')->with(['from_warehouse','to_warehouse'])
+		->join('erp_material b','a.material_id = b.id','LEFT')
+		->join('erp_material_stock','a.material_stock_id = erp_material_stock.id','LEFT')
+		->withSearch(['query'],['query'=>$query])->field($field)->order('a.id','desc')->append(['status_desc','can_cancel','send_status_desc','can_returned'])->paginate($limit);
+        return ['code'=>0,'data'=>$list->items(),'extend'=>['count' => $list->total(), 'limit' => $limit]];
+    }
+
+	public static function createOrderSn(){
+		$count 	= ErpMaterialAllocate::withTrashed()->where('data_type',ErpMaterialStockEnum::DATA_TYPE_ALLOCATE)->whereDay('create_time')->count() + 1;
+		return 'DB'.date('Ymd').sprintf("%03d",$count);
+	}
+
+
+    // 添加
+    public static function goAdd($data)
+    {
+        //验证
+        $validate 	= new ErpMaterialAllocateValidate;
+        if(!$validate->scene('add')->check($data)){
+			return ['msg'=>$validate->getError(),'code'=>201];
+		}
+		$material	= $data['material'];
+		if($data['type'] == 'allocate' && !ErpMaterialLogic::checkOutMaterialStock(array_column($material,'id'))){
+			return ['msg'=>'请先处理相关物料盘点单','code'=>201];
+		}
+		unset($data['material']);
+		Db::startTrans();
+        try {
+			$res 						= self::checkMaterial($material);
+
+			$allocate_material			= [];
+			foreach($res['data'] as $k1=>$v1){
+				foreach($v1 as $k2=>$v2){
+					$data['order_sn']			= self::createOrderSn();
+					$data['create_admin'] 		= empty(self::$adminUser['username'])?'':self::$adminUser['username'];
+					$data['data_type']			= ErpMaterialStockEnum::DATA_TYPE_ALLOCATE;
+					$data['to_warehouse_id'] 	= $k1;
+					$data['from_warehouse_id'] 	= $k2;
+					$model 						= ErpMaterialAllocate::create($data);
+					foreach($v2 as $v3){
+						$v3['material_stock_id']= $model->id;
+						$allocate_material[]	= $v3;
+					}
+				}
+			}
+			
+			(new ErpMaterialAllocateMaterial)->saveAll($allocate_material);
+			
+			if($res['enter_material_update']){
+				(new ErpMaterialEnterMaterial)->saveAll($res['enter_material_update']);
+			}
+			
+			Db::commit();
+			return ['msg'=>'创建成功','code'=>200,'data'=>['id'=>$model->id]];
+        }catch (\Exception $e){
+			Db::rollback();
+            return ['msg'=>'操作失败'.$e->getMessage(),'code'=>201];
+        }
+    }
+    
+	public static function checkMaterial($material)
+    {
+		$enter 		= ErpMaterialEnterMaterial::alias('a')->join('erp_material_stock b','a.material_stock_id = b.id','LEFT')->whereRaw('a.can_out_num>a.freeze_out_stock')->where('a.can_out_num','>',0)->where('a.id','in',implode(',',array_column($material,'enter_material_id')))->field('a.id,b.order_sn,a.can_out_num,a.freeze_out_stock,a.can_out_num-a.freeze_out_stock as num,a.enter_batch_number')->column('a.id,b.order_sn,a.can_out_num,a.freeze_out_stock,a.can_out_num-a.freeze_out_stock as num,a.warehouse_id,a.enter_batch_number','a.id');
+		$data 		= [];
+		$update 	= [];
+		foreach($material as $vo){		
+			if(empty($vo['enter_material_id'])){
+				throw new \Exception($vo['sn'].'请选择入库批次号');	
+			}
+			$stock_num							= $vo['stock_num']	;
+			if(!empty($vo['enter_material_id'])){				
+				$ids 							= explode(',',(string)$vo['enter_material_id']);
+				foreach($ids as $v){
+					if(!empty($enter[$v]) && $enter[$v]['num'] > 0){						
+						if($enter[$v]['num'] >=  $stock_num){							
+							$update[] 							= ['id'=>$enter[$v]['id'],'freeze_out_stock'=>Db::raw('freeze_out_stock+'.$stock_num)];
+							$data[$vo['warehouse_id']][$enter[$v]['warehouse_id']][] = ['material_stock_id'=>0,'enter_material_id'=>$enter[$v]['id'],'enter_batch_number'=>$enter[$v]['enter_batch_number'],'enter_order_sn'=>$enter[$v]['order_sn'],'material_id'=>$vo['id'],'stock_num'=>$stock_num,'remark'=>empty($vo['remark'])?'':$vo['remark']];
+							$enter[$v]['num']					= $enter[$v]['num'] - $stock_num; 
+							$stock_num							= 0;
+							break;
+						}else{
+							$update[] 							= ['id'=>$enter[$v]['id'],'freeze_out_stock'=>Db::raw('freeze_out_stock+'.$enter[$v]['num'])];
+							$data[$vo['warehouse_id']][$enter[$v]['warehouse_id']][] = ['material_stock_id'=>0,'enter_material_id'=>$enter[$v]['id'],'enter_batch_number'=>$enter[$v]['enter_batch_number'],'enter_order_sn'=>$enter[$v]['order_sn'],'material_id'=>$vo['id'],'stock_num'=>$enter[$v]['num'],'remark'=>empty($vo['remark'])?'':$vo['remark']];
+							$stock_num							= $stock_num - $enter[$v]['num'];
+							$enter[$v]['num']					= 0; 
+						}
+					}
+				}
+			}
+			if($stock_num > 0){
+				throw new \Exception($vo['sn'].'批次可用量不足');	
+			}
+		}
+		return ['enter_material_update'=>$update,'data'=>$data];
+    }
+	
+    public static function getOne($map)
+    {
+		if(is_array($map)){
+			return ErpMaterialAllocate::where($map)->find();
+		}else{
+			return ErpMaterialAllocate::find($map);
+		}
+    }
+	
+	public static function goCancel($id,$ids){
+		$model 				= self::getOne($id);
+        if(empty($model['id'])) {
+			return ['msg'=>'调拨单不存在','code'=>201];
+		}
+		if($model['can_cancel'] == false) {
+			return ['msg'=>'出库单已作废','code'=>201];
+		}	
+		if($ids){
+			$out_material 	= ErpMaterialAllocateMaterial::with(['material'=>function($query){return $query->field('id,name,sn,stock');}])->where('material_stock_id',$model->id)->where('id','in',$ids)->select();
+		}else{
+			$out_material 	= ErpMaterialAllocateMaterial::with(['material'=>function($query){return $query->field('id,name,sn,stock');}])->where('material_stock_id',$model->id)->select();
+		}
+		
+		$out_material_update			= [];
+		$enter_material_update			= [];
+		foreach($out_material as $key=>$vo){
+			if($vo['can_cancel']){
+				$num 					= $vo['stock_num'] - $vo['signed_num'];
+				$out_material_update[]	= ['id'=>$vo['id'],'returned_num'=>$num,'status'=>ErpMaterialAllocateMaterialEnum::STATUS_CANCEL,'send_status'=>ErpMaterialAllocateMaterialEnum::SEND_STATUS_CANCEL,'returned_status'=>$num==$vo['stock_num']?ErpMaterialAllocateMaterialEnum::RETURNED_STATUS_ALL:ErpMaterialAllocateMaterialEnum::RETURNED_STATUS_PART];
+				if($num>0 && $vo['enter_material_id']){
+					$enter_material_update[]= ['id'=>$vo['enter_material_id'],'freeze_out_stock'=>Db::raw('freeze_out_stock-'.$num)];
+				}
+			}
+		}
+		try {
+			(new ErpMaterialAllocateMaterial)->saveAll($out_material_update);
+			if(ErpMaterialAllocateMaterial::where('status','<>',ErpMaterialAllocateMaterialEnum::STATUS_CANCEL)->where('material_stock_id',$model->id)->count() == 0){
+				$model->save(['status'=>ErpMaterialStockEnum::STATUS_CANCEL]);
+			}
+			foreach($enter_material_update as $vo){
+				ErpMaterialEnterMaterial::where('id',$vo['id'])->update($vo);
+			}
+		}catch (\Exception $e){
+            return ['msg'=>'操作失败'.$e->getMessage(),'code'=>201];
+        }
+	}	
+	
+	public static function goReturned($id,$ids){
+		$model 				= self::getOne($id);
+        if(empty($model['id'])) {
+			return ['msg'=>'调拨单不存在','code'=>201];
+		}
+		$allocate_material 					= ErpMaterialAllocateMaterial::with(['material'=>function($query){return $query->field('id,name,sn,stock');}])->where('material_stock_id',$model->id)->where('id','in',$ids)->select();
+		$allocate_material_update			= [];
+		$enter_material_update				= [];
+		foreach($allocate_material as $key=>$vo){
+			if($vo['can_returned']){
+				$num 						= $vo['stock_num'] - $vo['signed_num'];
+				$allocate_material_update[]	= ['id'=>$vo['id'],'returned_num'=>$num,'returned_status'=>$num==$vo['stock_num']?ErpMaterialAllocateMaterialEnum::RETURNED_STATUS_ALL:ErpMaterialAllocateMaterialEnum::RETURNED_STATUS_PART];
+				if($num>0 && $vo['enter_material_id']){
+					$enter_material_update[]= ['id'=>$vo['enter_material_id'],'freeze_out_stock'=>Db::raw('freeze_out_stock-'.$num)];
+				}
+			}
+		}
+		try {
+			(new ErpMaterialAllocateMaterial)->saveAll($allocate_material_update);
+			foreach($enter_material_update as $vo){
+				ErpMaterialEnterMaterial::where('id',$vo['id'])->update($vo);
+			}
+		}catch (\Exception $e){
+            return ['msg'=>'操作失败'.$e->getMessage(),'code'=>201];
+        }
+	}
+	
+	public static function goSend($id,$ids){
+		$model 				= self::getOne($id);
+        if(empty($model['id'])) {
+			return ['msg'=>'调拨单不存在','code'=>201];
+		}
+		try {
+			ErpMaterialAllocateMaterial::where('id','in',$ids)->update(['send_status'=>1,'send_by'=>self::$adminUser['username']]);
+		}catch (\Exception $e){
+            return ['msg'=>'操作失败'.$e->getMessage(),'code'=>201];
+        }
+	}	
+	
+	
+    // 编辑
+    public static function goEdit($data)
+    {
+        //验证
+        $validate 	= new ErpMaterialAllocateValidate;
+        if(!$validate->scene('edit')->check($data)){
+			return ['msg'=>$validate->getError(),'code'=>201];
+		}
+		$model 		= self::getOne($data['id']);
+        if(empty($model['id'])) {
+			return ['msg'=>'数据不存在','code'=>201];
+		}
+		if(!$model['can_edit']){
+			return ['msg'=>'当前状态不能修改','code'=>201];
+		}
+		$material	= empty($data['material'])?[]:$data['material'];
+		if($material && !ErpMaterialLogic::checkOutMaterialStock(array_column($material,'id'))){
+			return ['msg'=>'请先处理相关物料盘点单','code'=>201];
+		}
+		unset($data['material']);
+        try {
+            $model->save($data);	
+			//ErpMaterialAllocateMaterial::where('material_stock_id',$model->id)->delete();
+			if($material){
+				self::insertMaterial($model,$material);
+			}
+        }catch (\Exception $e){
+            return ['msg'=>'操作失败'.$e->getMessage(),'code'=>201];
+        }
+    }
+
+	
+	
+	
+	
+	
+
+    public static function getCount($query){
+		return ErpMaterialAllocate::withSearch(['query'],['query'=>$query])->field('id')->where('data_type',ErpMaterialStockEnum::DATA_TYPE_OUT)->order('id','desc')->count();
+    }
+
+	public static function goRemoveMaterial($id){
+		$model 			= ErpMaterialAllocateMaterial::where('id',$id)->find();
+        if(empty($model['id'])) {
+			return ['msg'=>'数据不存在','code'=>201];
+		}		
+		$stock 			= self::getOne($model['material_stock_id']);
+        if(empty($stock['id'])) {
+			return ['msg'=>'数据不存在','code'=>201];
+		}
+		if(!$stock['can_edit']){
+			return ['msg'=>'当前状态不能修改','code'=>201];
+		}
+		
+		Db::startTrans();
+		try {
+			if($model['enter_material_id']){
+				$enter 	= ErpMaterialEnterMaterial::where('id',$model['enter_material_id'])->find();
+				$num 	= $enter['freeze_out_stock'] - $model['stock_num'];
+				$enter->save(['freeze_out_stock'=>$num>0?$num:0]);
+			}
+			$model->delete();
+			Db::commit();
+			return ['msg'=>'删除成功','code'=>200];
+        }catch (\Exception $e){
+			Db::rollback();
+            return ['msg'=>'操作失败'.$e->getMessage(),'code'=>201];
+        }
+	}
+
+}

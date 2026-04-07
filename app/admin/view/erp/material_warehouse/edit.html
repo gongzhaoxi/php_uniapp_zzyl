@@ -1,0 +1,121 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-input-block {margin-left: 150px;}
+.layui-form-label {width: 120px;}
+</style>
+<form class="layui-form" action="" method="post">
+	 <input type="hidden" name="id" value="{$model['id']}" >
+	 <div class="mainBox">
+		<div class="main-container">
+			<div class="layui-form-item">
+				<label class="layui-form-label">客户编码</label>
+				<div class="layui-input-block">
+					<input type="text" maxlength="100" name="sn" value="{$model['sn']}"  lay-verify="required" placeholder="请输入客户编码,不可为空" autocomplete="off" class="layui-input">
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">客户名称/订货单位</label>
+				<div class="layui-input-block">
+					<input type="text" maxlength="100" name="name" value="{$model['name']}"  lay-verify="required" placeholder="请输入客户名称/订货单位,不可为空" autocomplete="off" class="layui-input">
+				</div>
+			</div>				
+			<div class="layui-form-item">
+				<label class="layui-form-label">联系人</label>
+				<div class="layui-input-block">
+					<input type="text" maxlength="100" name="contacts" value="{$model['contacts']}"  l placeholder="请输入" autocomplete="off" class="layui-input">
+				</div>
+			</div>				
+			<div class="layui-form-item">
+				<label class="layui-form-label">联系电话</label>
+				<div class="layui-input-block">
+					<input type="text" maxlength="100" name="phone" value="{$model['phone']}"   placeholder="请输入" autocomplete="off" class="layui-input">
+				</div>
+			</div>	
+			<div class="layui-form-item">
+				<input type="hidden" name="region" id="region" value="{$model->getData('region')}">
+				<label class="layui-form-label">收货地址/国家</label>
+				<div class="layui-input-block">
+					<ul id="demoTree" class="dtree" ></ul>
+				</div>
+			</div>			
+			<div class="layui-form-item">
+				<label class="layui-form-label">详细地址</label>
+				<div class="layui-input-block">
+					<input type="text" maxlength="255" name="address" value="{$model['address']}"   placeholder="请输入" autocomplete="off" class="layui-input">
+				</div>
+			</div>				
+			<div class="layui-form-item">
+				<label class="layui-form-label">域属</label>
+				<div class="layui-input-block">
+					<select name="region_type" lay-verify="required">
+						{foreach $region_type as $key=>$vo}
+						<option {if $model['region_type'] == $key}selected{/if} value="{$key}">{$vo}</option>
+						{/foreach}
+					</select>
+				</div>
+			</div>				
+			<div class="layui-form-item">
+				<label class="layui-form-label">状态</label>
+				<div class="layui-input-block">
+					<input type="radio" name="status" value="1" title="启用" {if $model['status'] == 1}checked{/if}>
+					<input type="radio" name="status" value="0" title="禁用" {if $model['status'] == 0}checked{/if}>
+				</div>
+			</div>	
+			<div class="layui-form-item">
+				<label class="layui-form-label">发票抬头</label>
+				<div class="layui-input-block">
+					<input type="text" maxlength="255" name="invoice_title" value="{$model['invoice_title']}"    placeholder="请输入" autocomplete="off" class="layui-input">
+				</div>
+			</div>				
+			<div class="layui-form-item">
+				<label class="layui-form-label">税号</label>
+				<div class="layui-input-block">
+					<input type="text" maxlength="255" name="invoice_code" value="{$model['invoice_code']}"   placeholder="请输入" autocomplete="off" class="layui-input">
+				</div>
+			</div>				
+		</div>
+	</div>       
+	<div class="bottom">
+		<div class="button-container">
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*"><i class="layui-icon layui-icon-ok"></i>提交</button>
+			<button type="reset" class="layui-btn layui-btn-primary layui-btn-sm"><i class="layui-icon layui-icon-refresh"></i>重置</button>
+		</div>
+    </div>
+</form>
+{/block}
+{block name="script"}
+<script>
+layui.use(['form','element','iconPicker','jquery','dtree'], function() {
+	var form = layui.form;
+	var element = layui.element;
+	var dtree = layui.dtree;
+	var $ = layui.jquery;
+	var demoTree = dtree.renderSelect({
+		elem: "#demoTree",
+		data:{:json_encode($tree)},
+		selectInitVal: "{:$model['region']?$model['region'][count($model['region'])-1]:100000}", 
+		//skin: "laySimple",  // layui主题风格
+		//icon: "-1",  // 隐藏二级图标
+		line: true,  // 显示树线
+		response:{
+            treeId: "id",			  //节点ID
+            parentId: "parent_id",	  //父节点ID
+            title: "name",			  //节点名称 
+            childName: "children",	  //子节点名称
+		}
+	});
+
+	dtree.on("node('demoTree')" ,function(param){
+		var arr = dtree.getAllParentParam(demoTree, param.param.nodeId);
+		var ids = [];
+		$.each(arr,function(idx,item){
+			ids.push(item.nodeId);
+		})
+		ids.push(param.param.nodeId);
+		$('#region').val(ids.join(','));
+	});
+
+});
+</script>
+{/block}

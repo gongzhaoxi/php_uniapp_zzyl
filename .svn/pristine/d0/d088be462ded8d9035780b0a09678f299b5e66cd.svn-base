@@ -1,0 +1,104 @@
+{extend name="base" /}
+{block name="body"}
+<form class="layui-form" action="" method="post">
+	<input type="hidden" name="id" value="{$model['id']}" >
+	<div class="mainBox">
+		<div style="text-align:center;">
+			<img id="poster"  alt="">
+		</div>
+	</div>
+	<div class="bottom">
+		<div class="button-container">
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="submit"><i class="layui-icon layui-icon-ok"></i>提交</button>
+		</div>
+	</div>
+</form>
+{/block}
+{block name="script"}
+<script>
+var final_pic = '';
+var canvas = document.createElement("canvas");
+var ctx = canvas.getContext('2d');
+let img = new Image()
+img.setAttribute('crossorigin', 'anonymous');
+img.crossOrigin = 'Anonymous';
+img.src = '{$model['pic']}';
+img.onload = function () {
+	if(img.width < 700){
+		canvas.width = 1000;
+	}else{
+		canvas.width = img.width;
+	}
+	
+	canvas.height = img.height + 50;
+	ctx.imageSmoothingEnabled = false;
+	ctx.fillStyle = 'white';
+	ctx.fillRect(0, 0, canvas.width, canvas.height);
+	ctx.drawImage(img, 0, 0);
+	
+	ctx.font = 'bold 40px Arial'; 
+	ctx.fillStyle = 'black'; 
+	var y = img.height+30;
+	
+	var x1 = 5;
+	ctx.fillText('设计师：{$model['designer']}{:date('Y/m/d',$model->getData('create_time'))}', x1, y);
+	
+	var _w = Math.round((canvas.width - 70 - x1)/3,2);
+	ctx.fillText('初审员：{$model['first_check_name']}{:$model['first_check_time']?date('Y/m/d',$model['first_check_time']):''}', _w+x1, y);
+	
+	ctx.fillText('终审员：{:session('admin.nickname')}{:date('Y/m/d')}', _w*2+x1, y);	
+	
+	setPassImage();
+}
+
+function setPassImage(){
+	let img2 = new Image()
+	img2.setAttribute('crossorigin', 'anonymous');
+	img2.crossOrigin = 'Anonymous';
+	img2.src = '/static/admin/images/pass.png';
+	img2.onload = function () {
+		ctx.drawImage(img2,  canvas.width - 550, canvas.height-200);	
+		var base64 = canvas.toDataURL("image/png",1);
+		final_pic = dataURLtoBlob(base64);
+		document.getElementById('poster').setAttribute('src' , base64);
+	}
+}
+
+function dataURLtoBlob (dataurl) {
+	let arr = dataurl.split(',')
+	let mime = arr[0].match(/:(.*?);/)[1]
+	let bstr = atob(arr[1])
+	let n = bstr.length
+	let u8arr = new Uint8Array(n)
+	while (n--) {
+		u8arr[n] = bstr.charCodeAt(n)
+	}
+	return new Blob([u8arr], {type: mime})
+}
+
+layui.use(['form'], function() {
+	var form = layui.form,$ = layui.jquery;
+	form.on('submit(submit)', function (data) {
+		const formData = new FormData();
+		formData.append('file', final_pic,'image.png');
+		$.ajax({
+			type: "post",
+			url: '{:url('index/upload')}',
+			data: formData,
+			cache: false,
+			processData: false,
+			contentType: false,
+			success: function (res) {
+				if(res.code == 200){
+					data.field.final_pic = res.data.src;
+					formSubmit(data);
+				}else{
+					alert(res.msg);
+				}
+			}
+		})		
+		return false;
+	});	
+});
+</script>
+{/block}

@@ -1,0 +1,39 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-input-block {margin-left: 150px;}
+.layui-form-label {width: 120px;}
+</style>
+<form class="layui-form" action="" method="post">
+	<input type="hidden" name="ids"  value="{$ids}">
+	<div class="mainBox">
+		<div class="main-container">
+			<div class="layui-form-item">
+				<label class="layui-form-label">本次收货地址/人</label>
+				<div class="layui-input-block">
+					<input type="text" maxlength="255" name="address" value="{$address}" lay-verify="required" placeholder="请输入客户编码,不可为空" autocomplete="off" class="layui-input">
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">本次发货日期</label>
+				<div class="layui-input-block">
+					<input type="text" maxlength="100" name="shipping_date" lay-verify="required" value="{:date('Y-m-d')}" autocomplete="off" class="layui-input date">
+				</div>
+			</div>				
+		</div>
+	</div>
+	<div class="bottom">
+		<div class="button-container">
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*"><i class="layui-icon layui-icon-ok"></i>提交</button>
+		</div>
+	</div>
+</form>
+{/block}
+{block name="script"}
+<script>
+layui.use(['form'], function() {
+
+
+});
+</script>
+{/block}

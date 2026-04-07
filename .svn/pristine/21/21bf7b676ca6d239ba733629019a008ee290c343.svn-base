@@ -1,0 +1,39 @@
+{extend name="base" /}
+{block name="body"}
+    <form class="layui-form" action="" method="post">
+        <div class="mainBox">
+            <div class="main-container">
+                <div class="layui-form-item">
+                    <label class="layui-form-label">用户名</label>
+                    <div class="layui-word-aux layui-form-mid">{$admin->username}</div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">昵称</label>
+                    <div class="layui-word-aux layui-form-mid">{$admin->nickname}</div>
+                </div>
+                <div class="layui-form-item">
+                    <label for="" class="layui-form-label">角色</label>
+                    <div class="layui-input-block" style="width: 400px">
+                        {foreach $roles as $role}
+                        <input type="checkbox" name="roles[]" value="{$role['id']}" title="{$role['name']}" {if isset($role['own']) && $role['own'] } checked {/if} >
+                        {/foreach}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="bottom">
+        <div class="button-container">
+            <button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*">
+                <i class="layui-icon layui-icon-ok"></i>
+                提交
+            </button>
+            <button type="reset" class="layui-btn layui-btn-primary layui-btn-sm">
+                <i class="layui-icon layui-icon-refresh"></i>
+                重置
+            </button>
+        </div>
+    </div>
+</form>
+{/block}
+{block name="script"}
+{/block}

@@ -1,0 +1,102 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-input-block {margin-left: 160px;}
+.layui-form-label {width: 130px;}
+</style>
+<form class="layui-form" action="" method="post" data-reload="3">
+	<div class="mainBox">
+		<div class="main-container">		
+			<div class="layui-form-item">
+				<label class="layui-form-label">仓库产品</label>
+				<div class="layui-input-block">
+					<input type="text" id="customer_name" readonly  ts-selected=""  placeholder="请选择,不可为空" autocomplete="off" class="layui-input">
+				</div>									
+			</div>
+			<table class="layui-table">
+				<colgroup>
+					<col>
+					<col width="100">
+					<col width="100">
+					<col width="100">
+					<col>
+					<col width="100">
+					<col width="300">
+				</colgroup>
+				<thead>
+					<tr>
+						<th>产品名称</th>
+						<th>型号</th>
+						<th>款式</th>
+						<th>颜色</th>
+						<th>产品编号</th>
+						<th>数据来源</th>
+						<th>具体配置</th>
+					</tr> 
+				</thead>
+				<tbody id="tbody">
+
+				</tbody>
+			</table>	
+		</div>
+	</div>
+	<div class="bottom">
+		<div class="button-container">
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*"><i class="layui-icon layui-icon-ok"></i>添加到销售单</button>
+		</div>
+	</div>
+</form>
+<script type="text/html" id="bom">
+	<button class="pear-btn pear-btn-primary pear-btn-xs showBom" >查看<div style="display:none;">{{d.project_html}}</div></button>
+</script>
+{/block}
+{block name="script"}
+<script>
+layui.use(['tableSelect'], function () {
+	var $ = layui.jquery;
+	var tableSelect = layui.tableSelect;
+	tableSelect.render({
+		elem: '#customer_name',
+		checkedKey: 'id',
+		searchKey: 'keyword',
+		searchPlaceholder: '产品编码/名称/型号',
+		table: {
+			url: '{:url('addFromReturned')}?is_out_warehouse=0&is_returned=0&type=11,12,30&is_re_produce=0&act=1',
+			//url: '{:url('addFromReturned')}?is_out_warehouse=0&type=12,30&act=1',	//改为调用所有成品库中未出库的数据记录
+			escape :false,	
+			lineStyle: 'height: 100px;',			
+			cols: [[
+				{type: 'checkbox' },
+				{field: 'product_name',title: '产品名称',align: 'center',unresize: false,width:200},
+				{field: 'product_model',title: '型号',align: 'center',unresize: false,width:120},
+				{field: 'product_specs',title: '款式',align: 'center',unresize: false,width:120},
+				{field: 'color',title: '颜色',align: 'center',unresize: false,width:100},
+				{field: 'produce_sn',title: '产品编号',align: 'center',unresize: false,width:200},
+				{field: 'type_desc',title: '数据来源',align: 'center',unresize: false,width:100},
+				{field: 'project_html',title: '具体配置',align: 'center',unresize: false,width:250},
+			]]
+		},
+		done: function (elem, data) {
+			var html = '';
+			$.each(data.data,function(idx,item){
+				html +='<tr>';
+				html +='	<td>'+item.product_name+'</td>';
+				html +='	<td>'+item.product_model+'</td>';
+				html +='	<td>'+item.product_specs+'</td>';
+				html +='	<td>'+item.color+'</td>';
+				html +='	<td><input type="hidden" name="ids[]" value="'+item.id+'" />'+item.produce_sn+'</td>';
+				html +='	<th>'+item.type_desc+'</th>';
+				html +='	<th>'+item.project_html+'</th>';
+				html +='</tr>';
+			})
+			$('#tbody').html(html)
+		}
+	})
+
+	window.submitCallBack = function (res){
+		parent.layui.table.reload('dataTable');
+		location.replace('{:url('view')}?id='+res.data.id);
+	}
+});
+</script>
+{/block}

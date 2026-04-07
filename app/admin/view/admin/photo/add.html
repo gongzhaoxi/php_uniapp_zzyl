@@ -1,0 +1,30 @@
+{extend name="base" /}
+{block name="body"}
+    <form class="layui-form" action="" method="post">
+        <div class="mainBox">
+            <div class="main-container">
+                <div class="layui-form-item">
+                    <label class="layui-form-label">输入目录</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="name"  placeholder="示例:img" class="layui-input" lay-verify="required">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="bottom">
+        <div class="button-container">
+            <button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*">
+                <i class="layui-icon layui-icon-ok"></i>
+                提交
+            </button>
+            <button type="reset" class="layui-btn layui-btn-primary layui-btn-sm">
+                <i class="layui-icon layui-icon-refresh"></i>
+                重置
+            </button>
+        </div>
+    </div>
+</form>
+{/block}
+{block name="script"}
+
+{/block}

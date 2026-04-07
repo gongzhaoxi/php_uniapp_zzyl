@@ -1,0 +1,267 @@
+{extend name="layout" /}
+{block name="body"}
+<style>
+.layui-table-cell{padding: 6px 0px;}
+.num{color:red;font-size:16px;}
+#searchForm .layui-inline{width:150px;}
+</style>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<div class="layui-row">
+			<div class="layui-col-md2">
+				<ul id="demoTree" class="dtree" ></ul>
+			</div>
+			<div class="layui-col-md10">
+				<form class="layui-form" action="" id="searchForm">
+					<div class="layui-form-item">
+						<div class="layui-form-item layui-inline">
+							<input type="text" name="keyword" placeholder="物料名称/编码/备注" class="layui-input">					
+						</div>		
+						<div class="layui-form-item layui-inline">
+							<select name="status" >
+								<option value="">状态</option>
+								<option value="1">启用</option>
+								<option value="0">禁用</option>	
+							</select>
+						</div>	
+						<div class="layui-form-item layui-inline">
+							<select name="stock_search" >
+								<option value="">筛选方案</option>
+								<option value="1">现有库存量 < 安全库存</option>
+								<option value="2">现有库存量 < 最低库存</option>	
+								<option value="3">现有库存量 <= 0</option>	
+							</select>
+						</div>
+						<div class="layui-form-item layui-inline">
+							<select name="supplier_id" lay-search>
+								<option value="" >供应商</option>
+								{foreach $supplier as $key=>$vo}
+								<option value="{$vo['id']}">{$vo['name']}</option>
+								{/foreach}
+							</select>
+						</div>
+						<div class="layui-form-item layui-inline">
+							<select name="material_category" lay-search >
+								<option value="" >物资类别</option>
+								<option value="重要物资" >重要物资</option>
+								<option value="一般物资" >一般物资</option>
+								<option value="辅助物资" >辅助物资</option>
+							</select>
+						</div>	
+						
+						<div class="layui-form-item layui-inline">
+							<button class="layui-btn layui-btn-md" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+							
+						</div>
+						<div class="layui-form-item layui-inline" style="float:right;width:auto;">低于安全库存：<span class="num">{$bellow_safety_stock}</span> 种；低于最低库存值：<span class="num">{$bellow_min_stock}</span> 种</div>
+					</div>
+				</form>
+				<table id="dataTable" lay-filter="dataTable"></table>
+			</div>
+		</div>
+	</div>
+</div>
+<script type="text/html" id="photo">
+{{#  if(d.final_pic && d.final_pic.length > 0){ }}
+<a onclick="layerPhotos('{{d.final_pic.join(',')}}','{{ d.id }}')" href="javascript:;"><img src="{{ d.final_pic[0] }}" /> </a>
+{{#  } }}
+</script>
+{/block}
+{block name="js"}
+
+{/block}
+{block name="script"}
+<script>
+	var selected_ids = [];
+	var selected_items = [];
+	layui.use(['table', 'form', 'jquery','common','dtree'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		var dtree = layui.dtree;
+		var tree_id = '';
+
+		var demoTree = dtree.render({
+			elem: "#demoTree",
+			data:{:json_encode($tree)},
+			menubar:true,
+			//skin: "laySimple",  // layui主题风格
+			//icon: "-1",  // 隐藏二级图标
+			line: true,  // 显示树线
+			response:{
+				treeId: "id",			  //节点ID
+				parentId: "pid",	  //父节点ID
+				title: "title",			  //节点名称 
+				childName: "children",	  //子节点名称
+			}
+		});
+
+		dtree.on("node('demoTree')" ,function(param){
+			tree_id = param.param.nodeId;
+			table.reload('dataTable', {
+				where: {tree_id:param.param.nodeId},
+				page:{curr: 1}
+			})
+		});
+
+		var h = 110 + $('#searchForm').height();
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('index')}?sort=supplier_id&order=asc',
+			page: true,
+			limit:90,
+			height:'full-'+h,
+			cols: [[
+				//{type: 'checkbox'},
+				//{field: 'id',title: 'ID', sort: true, align: 'center',unresize: false,width: {:get_col_width('id',100)}},
+				{field: 'sn',title: '物料编码',align: 'center',unresize: false,width: {:get_col_width('sn',200)}},
+				{field: 'name',title: '物料名称',align: 'left',unresize: false,width: {:get_col_width('name',250)}},
+				{field: 'supplier_id',title: '供应商',align: 'center',unresize: false,width: {:get_col_width('supplier_id',150)},templet: function(d){return d.supplier_name;}, sort: true},
+				{field: 'stock1',title: '仓库库存',align: 'center',unresize: false,width: {:get_col_width('stock1',120)},templet: function(d){return '<span style="'+(d.stock1<d.safety_stock?'color:red':(d.stock1>d.max_stock?'color:blue':'')) +'">'+d.stock1+'</span>';}},
+				{field: 'stock2',title: '车间库存', align: 'center',unresize: false,width: {:get_col_width('stock2',100)}},
+				{field: 'stock3',title: '质检中库存', align: 'center',unresize: false,width: {:get_col_width('stock3',100)}},
+				{field: 'stock4',title: '合计库存', align: 'center',unresize: false,width: {:get_col_width('stock4',100)}},
+				{field: 'warehouse_id',title: '仓位',align: 'center',unresize: false,width: {:get_col_width('warehouse_id',100)},templet: function(d){return d.warehouse?d.warehouse.name:'';}},
+				{field: 'safety_stock',title: '安全库存',align: 'center',unresize: false,width: {:get_col_width('safety_stock',120)}},
+				{field: 'min_stock',title: '最低库存',align: 'center',unresize: false,width: {:get_col_width('min_stock',100)}},
+				{field: 'max_stock',title: '最高库存',align: 'center',unresize: false,width: {:get_col_width('max_stock',100)}},
+				{field: 'category_name',title: '物料分类',align: 'center',unresize: false,width: {:get_col_width('category_name',120)}},
+				{field: 'unit',title: '单位',align: 'center',unresize: false,width: {:get_col_width('unit',100)}},
+				{field: 'material_category',title: '物资类别',align: 'center',unresize: false,width: {:get_col_width('material_category',120)}, sort: true},
+				{field: 'processing_type',title: '加工类型',align: 'center',unresize: false,width: {:get_col_width('processing_type',100)}},
+				{field: 'material',title: '材料',align: 'center',unresize: false,width: {:get_col_width('material',100)}},
+				{field: 'photo',title: '图片',align: 'center',unresize: false,width: {:get_col_width('photo',100)},templet: '#photo', hide: getTableFieldIsHide('dataTable','photo')},
+				{field: 'status_desc',title: '状态',align: 'center',unresize: false,width: {:get_col_width('status_desc',100)}},
+				{field: 'processing_way_desc',title: '采购方式',align: 'center',unresize: false,width: {:get_col_width('processing_way_desc',100)}},
+				{field: 'surface',title: '表面',align: 'center',unresize: false,width: {:get_col_width('surface',100)}},
+				{field: 'color',title: '颜色',align: 'center',unresize: false,width: {:get_col_width('color',100)}},
+				{field: 'remark',title: '备注',align: 'left',unresize: false,width: {:get_col_width('remark',100)}},
+			]],
+			cellMinWidth: 100,
+			//skin: 'line',
+			toolbar: false,
+			parseData: function(res){
+				for(var i in res.data) {
+					if(selected_ids.indexOf(res.data[i]['id']) == -1){
+						res.data[i]['LAY_CHECKED'] = false;
+					}else{
+						res.data[i]['LAY_CHECKED'] = true;
+					}
+				}
+				return res;
+			},
+			defaultToolbar: false
+		});
+
+		table.on('checkbox(dataTable)', function(obj){
+			var thisCache = table.cache['dataTable'] || {};
+			var data = table.getData('dataTable');
+			var delete_ids = [];
+			for(var i in thisCache) {
+				if(thisCache[i]['LAY_CHECKED'] == true){
+					if(selected_ids.indexOf(thisCache[i].id) == -1){
+						selected_ids.push(thisCache[i].id);
+						selected_items.push(data[i]);
+					}
+				}else{
+					delete_ids.push(thisCache[i].id);
+				}
+			}
+			var ids = [];
+			for(var i in selected_ids) {
+				if(delete_ids.indexOf(selected_ids[i]) == -1){
+					ids.push(selected_ids[i]);
+				}
+			}
+			selected_ids = ids;
+			$('#select_count').html(selected_ids.length);
+			
+			var items = [];
+			for(var i in selected_items) {
+				if(delete_ids.indexOf(selected_items[i]['id']) == -1){
+					items.push(selected_items[i]);
+				}
+			}
+			selected_items = items;
+			
+			console.log(selected_ids);
+			console.log(selected_items);
+		});
+
+
+		table.on('sort(dataTable)', function(obj){
+			table.reload('dataTable', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+
+		table.on('toolbar(dataTable)', function(obj) {
+			if (obj.event === 'export') {
+				window.open("{:url('partnExport')}?"+$('#searchForm').serialize()+'&tree_id='+tree_id);
+			}else if (obj.event === 'refresh') {
+				table.reload('dataTable');
+			}else if (obj.event === 'apply') {
+				var checkStatus = table.checkStatus('dataTable');
+				var ids = [];
+				var processing_way = [];
+				for(var i in selected_items) {
+					ids.push(selected_items[i].id);
+					if(processing_way.indexOf(selected_items[i].processing_way) == -1){
+						processing_way.push(selected_items[i].processing_way);
+					}
+					if(selected_items[i].processing_way == 0){
+						layui.layer.msg(selected_items[i].name+'未设置采购方式');return;
+					}
+				}
+				if(ids.length == 0){
+					layer.msg('请选择物料');
+					return ;
+				}
+				if(processing_way.length > 1){
+					layui.layer.msg('请选择采购方式一样的物料');return;
+				}	
+			
+				openLayer('申请采购','{:url('purchaseApply')}?ids='+ids.join(',')+'&processing_way='+processing_way[0],'80%','90%');
+			}
+		});
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+		
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+	})
+</script>
+<style>
+.dtree{
+    overflow-x:hidden;
+    overflow-y: auto;
+    width: 0px;
+    width: 90%;
+    height: 82vh;
+}
+.layui-col-md2{
+    overflow:hidden;
+}
+</style>
+{/block}
+
+

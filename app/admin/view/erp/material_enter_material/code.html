@@ -1,0 +1,40 @@
+{extend name="base" /}
+{block name="body"}
+<div class="layui-card">
+	<div class="layui-card-body">
+		<table class="layui-table">
+		<colgroup>
+			<col width="150">
+			<col>
+		</colgroup>
+		<thead>
+			<tr>
+				<th>序号</th>
+				<th>入库物料标签号</th>
+			</tr> 
+		</thead>
+		<tbody>
+			{volist name="model['code']" id="vo"}
+			<tr>
+				<td>{$i}</td>
+				<td>{$vo['code']}</td>
+			</tr>
+			{/volist}
+		</tbody>
+		</table>
+	</div>
+</div>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		
+		
+	})
+</script>
+{/block}
+
+

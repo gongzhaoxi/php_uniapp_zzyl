@@ -1,0 +1,155 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-table-cell { height:auto;}
+.layui-table .layui-table-cell img{ max-height: 30px;}
+</style>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<div class="layui-tab layui-tab-brief">
+			<ul class="layui-tab-title">
+				<a href="{:url('erp.MaterialScrap/list')}"><li>报废明细</li></a>
+				<li class="layui-this">报废已出库记录</li>
+			</ul>
+		</div>		
+		<form class="layui-form" action="" id="searchForm" lay-filter="searchForm">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline" >
+					<input type="text" name="order_sn" placeholder="退货单号" class="layui-input">	
+				</div>	
+				<div class="layui-form-item layui-inline" >
+					<input type="text" name="sn" placeholder="物料编码" class="layui-input">	
+				</div>	
+				<div class="layui-form-item layui-inline" >
+					<input type="text" name="name" placeholder="物料名称" class="layui-input">	
+				</div>					
+				<div class="layui-form-item layui-inline">
+					<select name="supplier_id" lay-search id="supplier_id" lay-filter="supplier_id">
+						<option value="">供应商</option>
+						{foreach $supplier as $key=>$vo}
+						<option value="{$vo['id']}">{$vo['name']}</option>
+						{/foreach}
+					</select>
+				</div>	
+				<div class="layui-form-item layui-inline" style="width:190px;">
+					<input type="text" name="stock_date" placeholder="退货日期" class="layui-input rangedate">					
+				</div>					
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+					<button type="reset" class="pear-btn pear-btn-md"><i class="layui-icon layui-icon-refresh"></i>重置</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	<button class="pear-btn pear-btn-sm" lay-event="export"><i class="layui-icon layui-icon-export"></i>导出</button>
+	<button class="pear-btn pear-btn-danger pear-btn-sm" lay-event="remove"><i class="layui-icon layui-icon-delete"></i>整单撤回出库</button>
+</script>
+<script type="text/html" id="photo">
+	{{#  if(d.photo_link){ }}<a onclick="layerPhotos('{{ d.photo_link }}','{{ d.id }}')" href="javascript:;"><img src="{{ d.photo_link }}"/> </a>  {{#  } }} 
+</script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('list')}',
+			page: true,
+			limit:90,
+			height:'full-210',			
+			cols: [[
+				{type: 'checkbox'},
+				{field: 'order_sn',title: '退货单号',align: 'center',unresize: false,width: {:get_col_width('order_sn',170)}, hide: getTableFieldIsHide('dataTable','order_sn')},
+				{field: 'stock_date',title: '退货日期',align: 'center',unresize: false,width: {:get_col_width('stock_date',120)}, hide: getTableFieldIsHide('dataTable','stock_date')},
+				{field: 'remark',title: '退货原因',align: 'center',unresize: false,width: {:get_col_width('remark')}, hide: getTableFieldIsHide('dataTable','remark')},
+				{field: 'supplier_name',title: '供应商',align: 'center',unresize: false,width: {:get_col_width('supplier_name')}, hide: getTableFieldIsHide('dataTable','supplier_name')},
+				{field: 'sn',title: '物料编码',align: 'center',unresize: false,width: {:get_col_width('sn')}, hide: getTableFieldIsHide('dataTable','sn')},
+				{field: 'name',title: '物料名称',align: 'center',unresize: false,width: {:get_col_width('name')}, hide: getTableFieldIsHide('dataTable','name')},
+				{field: 'stock_num',title: '出库数量',align: 'center',unresize: false,width: {:get_col_width('stock_num',120)}, hide: getTableFieldIsHide('dataTable','stock_num')},
+			]],
+			cellMinWidth: 80,
+			//skin: 'line',
+			toolbar: '#toolbar',
+			defaultToolbar: [{
+				title: '刷新',
+				layEvent: 'refresh',
+				icon: 'layui-icon-refresh',
+			}, 'filter']
+		});
+
+		table.on('sort(dataTable)', function(obj){
+			table.reload('dataTable', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+
+		table.on('toolbar(dataTable)', function(obj) {
+			if (obj.event === 'refresh') {
+				table.reload('dataTable');
+			}else if (obj.event === 'export') {
+				var data = form.val('searchForm');
+				exportData('{:url('export')}',data);
+			}else if (obj.event === 'remove') {
+				var checkStatus = table.checkStatus('dataTable');
+				if(checkStatus.data.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				
+				var id = [];
+				for(var i in checkStatus.data) {		
+					id.push(checkStatus.data[i].id);
+				}
+				if(id.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				
+				layerConfirm('确认删除？','{:url('remove')}',{id:id},function(){
+					table.reload('dataTable');
+				})
+			}
+		});
+
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+		table.on('colToggled(dataTable)', function(obj){
+			setTableFieldIsHide(obj.config.id,obj.col.field,obj.col.hide);
+		});
+		
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+		
+
+		
+	})
+</script>
+{/block}

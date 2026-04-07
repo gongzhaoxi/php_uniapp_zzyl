@@ -1,0 +1,46 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-input-block {margin-left: 150px;}
+.layui-form-label {width: 120px;}
+{if $model['check_status'] != 0}
+.opt_photo{display:none;}
+{/if}
+</style>
+<form class="layui-form" action="" method="post">
+	 <input type="hidden" name="id" value="{$model['id']}" >
+	 <div class="mainBox">
+		<div class="main-container">
+			<div class="layui-form-item">
+				<label class="layui-form-label">物料编码</label>
+				<div class="layui-input-block">
+					<input type="text" maxlength="255" name="sn" {if $model['check_status'] != 0}readonly{/if} value="{$model['sn']}"  lay-verify="required" placeholder="请输入物料编码,不可为空" autocomplete="off" class="layui-input">
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">初始设计图纸</label>
+				<div class="layui-input-block">
+					{:$form->optPhoto('pic',$model['pic'])}
+				</div>
+			</div>						
+			<div class="layui-form-item">
+				<label class="layui-form-label">状态</label>
+				<div class="layui-input-block">
+					<input type="radio" name="status" value="1" title="启用" {if $model['status'] == 1}checked{/if}>
+					<input type="radio" name="status" value="0" title="禁用" {if $model['status'] == 0}checked{/if}>
+				</div>
+			</div>				
+		</div>
+	</div>       
+	<div class="bottom">
+		<div class="button-container">
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*"><i class="layui-icon layui-icon-ok"></i>提交</button>
+		</div>
+    </div>
+</form>
+{/block}
+{block name="script"}
+<script>
+
+</script>
+{/block}

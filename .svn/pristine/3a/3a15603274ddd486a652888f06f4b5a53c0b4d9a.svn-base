@@ -1,0 +1,47 @@
+{extend name="base" /}
+{block name="body"}
+    <form class="layui-form" action="" method="post">
+        <div class="mainBox">
+            <div class="main-container">
+                <div class="layui-form-item">
+                    <label class="layui-form-label">分类名称</label>
+                    <div class="layui-input-block">
+                        <input type="text" maxlength="90" name="name" lay-verify="required" placeholder="请输入分类名称" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+				<div class="layui-form-item">
+					<label class="layui-form-label">分类图片</label>
+					<div class="layui-input-block">
+						{:$form->optPhoto('image')}
+					</div>
+				</div>				
+				<div class="layui-form-item">
+					<label class="layui-form-label">排序</label>
+					<div class="layui-input-inline">
+						<input type="number"  name="sort" value="0" lay-verify="required|number" min="0" placeholder="请输入排序" autocomplete="off" class="layui-input">
+					</div>
+					<div class="layui-form-mid layui-word-aux">数值越大越排前</div>
+				</div>				
+				<div class="layui-form-item">
+					<label class="layui-form-label">状态</label>
+					<div class="layui-input-block">
+						<input type="radio" name="status" value="0" title="禁用">
+						<input type="radio" name="status" value="1" title="启用" checked>
+					</div>
+				</div>
+            </div>
+        </div>
+        <div class="bottom">
+			<div class="button-container">
+				<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*">
+					<i class="layui-icon layui-icon-ok"></i>
+					提交
+				</button>
+				<button type="reset" class="layui-btn layui-btn-primary layui-btn-sm">
+					<i class="layui-icon layui-icon-refresh"></i>
+					重置
+				</button>
+			</div>
+		</div>
+	</form>
+{/block}

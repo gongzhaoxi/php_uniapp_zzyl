@@ -1,0 +1,196 @@
+{extend name="layout" /}
+{block name="body"}
+<style>
+.layui-inline{width:100px;}
+.layui-table-cell{padding: 6px 0px;}
+.layui-btn-xs{height: 30px;line-height: 30px;padding: 0px 15px;}
+</style>
+{include file="public/nav3" /}
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="customer_name" value="" placeholder="客户名称/订货单位" class="layui-input">						
+				</div>
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="order_sn" value="" placeholder="销售合同号" class="layui-input">	
+				</div>				
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="keyword" placeholder="物料编码/名称" class="layui-input">					
+				</div>	
+				<div class="layui-form-item layui-inline" style="width:190px;">
+					<input type="text" name="create_time" value="" placeholder="下单日期" class="layui-input rangedate">	
+				</div>	
+				<div class="layui-form-item layui-inline" style="width:190px;">
+					<input type="text" name="delivery_time" value="" placeholder="交货日期" class="layui-input rangedate">	
+				</div>
+				<div class="layui-form-item layui-inline" >
+					<select name="region_type">
+						<option value="">订单属性</option>
+						{foreach $region_type as $key=>$vo}
+						<option value="{$key}" >{$vo}</option>
+						{/foreach}
+					</select>			
+				</div>				
+				<div class="layui-form-item layui-inline">
+					<button class="layui-btn" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+				</div>
+			</div>
+		</form>
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+
+<script type="text/html" id="options">
+	{{#  if(d.show_follow == 1){ }}<button class="layui-btn layui-btn-normal layui-btn-xs " lay-event="follow">报工</button>{{#  } }}
+	{{#  if(d.show_follow == 0){ }}所属工艺已完成{{#  } }}
+</script>
+
+<script type="text/html" id="file">
+
+	<button class="layui-btn layui-btn-primary layui-btn-xs" lay-event="qc"><i class="layui-icon layui-icon-read"></i></button>
+</script>
+
+{/block}
+{block name="js"}
+<script src="/static/tool/jquery.min.js"></script>
+<script src="/static/tool/jQuery.print.min.js"></script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		table.render({
+			elem: '#dataTable',
+			url: "{:url('index')}",
+			page: true,
+			height: 'full-220',
+			limit:100,
+			size:'sm',
+			lineStyle: 'height: 140px;', // 定义表格的多行样式
+			limits:[100,200,300,400,500],
+			cols: [[
+				{field: 'produce_date',title: '排产日期',align: 'center',unresize: false,width: 90,fixed: 'left'},
+				{field: 'order_sn',title: '排产单号',align: 'center',unresize: false,width: 80,fixed: 'left'},
+				{field:'zizeng', width:80, title: '序号',type:'numbers',align: 'center',unresize: false,width: 50},
+				// {field: 'sale_order_sn',title: '销售合同号',align: 'center',unresize: false,width: 140},
+				{field: 'product_model',title: '型号',align: 'center',unresize: false,width: 120},
+				{field: 'product_specs',title: '款式',align: 'center',unresize: false,width: 80},
+				{field: 'num',title: '数量',align: 'center',unresize: false,width:40, templet: function(d){return '1台';}},
+				{field: 'produce_sn',title: '产品编码',align: 'center',unresize: false,width: 80, templet: function(d){return d.produce_sn + (d.is_pause==1?'(暂停)':'');}},
+				{field: 'produce_finish_sn',title: '产品序列号',align: 'center',unresize: false,width: 90},
+				{field: 'customer_name',title: '客户名称',align: 'center',unresize: false,width: 150},
+				// {field: 'address',title: '收货地址',align: 'center',unresize: false,width: 150},
+				{field: 'order_create_time',title: '下单日期',align: 'center',unresize: false,width: 90},
+				{field: 'order_type_desc',title: '订单状态',align: 'center',unresize: false,width:75,templet:function(d){if(d.order_type_desc == '加急订单'){return '<span style="color:red;">'+d.order_type_desc+'</span>';}else{return '<span>'+d.order_type_desc+'</span>';};}},
+				{field: 'project_html',title: '配置方案',align: 'left',unresize: false,minWidth:400, templet: function(d){return d.order_product.project_html;}},
+				{field: 'remark',title: '订单明细备注',align: 'center',unresize: false,width: 150},
+				{field: 'file',title: '指导书',align: 'center',unresize: false,width: {:get_col_width('file',80)}, templet:'#file',fixed: 'right'},
+				{title: '操作',toolbar: '#options',align: 'center',unresize: true,width: 80,fixed: 'right'}
+			]],
+			toolbar: false,
+			defaultToolbar: [{
+					title: '刷新',
+					layEvent: 'refresh',
+					icon: 'layui-icon-refresh',
+			}],
+			done:function(res, curr, count) {
+				mergeRows(res)
+
+			},
+		});
+		
+		function mergeRows(res) {
+			var data = res.data;
+			var mergeIndex = 0;//定位需要添加合并属性的行数
+			var mark = 1; //这里涉及到简单的运算，mark是计算每次需要合并的格子数
+			var columsName = ['produce_date','order_sn'];//需要合并的列名称
+			var columsIndex = [0,1];//需要合并的列索引值
+		 
+			for (var k = 0; k < columsName.length; k++) { 
+			//这里循环所有要合并的列
+				//var trArr22 = $('div[lay-id="dataTable"] .layui-table-body>.layui-table').find("tr");
+				var trArr = $('.layui-table-fixed .layui-table-body>.layui-table').find("tr");
+				
+				
+				//所有行，如果页面多个表格，这里一定要定位到你所要合并的表格
+				for (var i = 1; i < res.data.length; i++) { 
+				//这里循环表格当前的数据
+					var tdCurArr = trArr.eq(i).find("td").eq(columsIndex[k]);
+					//获取当前行的当前列
+					var tdPreArr = trArr.eq(mergeIndex).find("td").eq(columsIndex[k]);
+					//获取相同列的第一列
+		 
+					if (data[i][columsName[k]] === data[i-1][columsName[k]]) { 
+					//后一行的值与前一行的值做比较，相同就需要合并
+						mark += 1;
+						tdPreArr.each(function () {
+						//相同列的第一列增加rowspan属性
+							$(this).attr("rowspan", mark);
+						});
+						tdCurArr.each(function () {
+						//当前行隐藏
+							$(this).css("display", "none");
+						});
+					}else {
+						mergeIndex = i;
+						mark = 1;
+						//一旦前后两行的值不一样了，那么需要合并的格子数mark就需要重新计算
+					}
+					
+				}
+				mergeIndex = 0;
+				mark = 1;
+			}
+			
+			
+			var trArr = $('div[lay-id="dataTable"] .layui-table-body>.layui-table').find("tr");
+			
+			for (var i = 0; i < res.data.length; i++) { 
+				var l = trArr.find('.'+res.data[i]['produce_date']).length + 1;
+				trArr.eq(i).find('.laytable-cell-numbers').html('<span class="'+res.data[i]['produce_date']+'">'+l+'</span>');
+			}
+		}
+		
+		
+		table.on('tool(dataTable)', function(obj) {
+			if (obj.event === 'qc') {
+				openLayer('QC品检作业指导书','{:url('qcFile')}?id='+obj.data['id'],'100%','100%');
+			} else if (obj.event === 'produce') {
+				openLayer('生产作业指导书','{:url('produceFile')}?id='+obj.data['id'],'100%','100%');
+			}else if (obj.event === 'follow') {
+				
+				let tipsDate = localStorage.getItem('tipsDate');
+				var currentDate = new Date();
+				var today = currentDate.getFullYear()+'-'+(currentDate.getMonth() + 1)+'-'+currentDate.getDate()
+		
+				if(tipsDate != today){
+					layer.confirm('请每天在 组件生产 》零件领用 中进行零件领用操作!', {
+						btn: ['我已知晓']
+					  }, function(){
+						openLayer('','{:url('follow')}?id='+obj.data['id'],'100%','100%');
+					  }
+					);					
+					localStorage.setItem('tipsDate', today);
+				}else{
+					openLayer('报工','{:url('follow')}?id='+obj.data['id'],'100%','100%');
+				}
+			}
+		});		
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});	
+	
+	})
+</script>
+{/block}
+
+

@@ -1,0 +1,194 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+#searchForm .layui-inline{width:150px;}
+</style>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<div class="layui-tab layui-tab-brief">
+			<ul class="layui-tab-title">
+				<a href="{:url('stockStat')}?material_type=1"><li class="{if $material_type == 1}layui-this{/if}">零件进出帐</li></a>
+				<a href="{:url('stockStat')}?material_type=2"><li class="{if $material_type == 2}layui-this{/if}">组件进出帐</li></a>
+			</ul>
+		</div>	
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<div class="layui-row">
+			<div class="layui-col-md2">
+				<ul id="demoTree" class="dtree" ></ul>
+			</div>
+			<div class="layui-col-md10">
+				<form class="layui-form" action="" id="searchForm">
+					<div class="layui-form-item layui-inline" style="width: 200px;">
+						<select name="supplier_id"  lay-search>
+							<option value="" >供应商</option>
+							{foreach $supplier as $key=>$vo}
+							<option value="{$vo['id']}" >{$vo['name']}</option>
+							{/foreach}
+						</select>					
+					</div>						
+					<div class="layui-form-item layui-inline" style="width: 200px;">
+						<input type="text" name="keyword" placeholder="物料编码/名称" class="layui-input">					
+					</div>		
+					<div class="layui-form-item layui-inline" style="width:190px;">
+						<input type="text" name="create_time" placeholder="选择进/出日期"  lay-verify="required" value="{:date('Y-m-01')} 至 {:date('Y-m-d')}" class="layui-input rangedate">	
+					</div>			
+					<div class="layui-form-item layui-inline">
+						<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+						<button type="reset" class="pear-btn pear-btn-md"><i class="layui-icon layui-icon-refresh"></i>重置</button>
+					</div>
+				</form>		
+				<table id="dataTable" lay-filter="dataTable"></table>
+			</div>
+		</div>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	<button class="pear-btn pear-btn-primary pear-btn-sm" lay-event="export"><i class="layui-icon layui-icon-download-circle"></i>导出</button>
+</script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common','dtree'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		var dtree = layui.dtree;
+		var tree_id = '';
+
+		var demoTree = dtree.render({
+			elem: "#demoTree",
+			data:{:json_encode($tree)},
+			menubar:true,
+			//skin: "laySimple",  // layui主题风格
+			//icon: "-1",  // 隐藏二级图标
+			line: true,  // 显示树线
+			response:{
+				treeId: "id",			  //节点ID
+				parentId: "pid",	  //父节点ID
+				title: "title",			  //节点名称 
+				childName: "children",	  //子节点名称
+			}
+		});
+
+		dtree.on("node('demoTree')" ,function(param){
+			tree_id = param.param.nodeId;
+			table.reload('dataTable', {
+				where: {tree_id:param.param.nodeId},
+				page:{curr: 1}
+			})
+		});
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('stockStat')}?type={$material_type}&create_time={:date('Y-m-01')} 至 {:date('Y-m-d')}&status=1',
+			page: true,
+			cols: [
+				[
+					{field: 'sn', title: '物料编号',align: "center", rowspan: "2", width: {:get_col_width('sn',150)} }, 
+					{field: 'name', title: '物料名称',align: "center", rowspan: "2", width: {:get_col_width('name',250)} }, 
+					{field: 'supplier_name', title: '供应商',align: "center", rowspan: "2", width: {:get_col_width('supplier_name',150)} }, 
+					{field: 'unit', title: '单位',align: "center", rowspan: "2", width: {:get_col_width('unit',100)} }, 
+                    {colspan: "6",title: "当前库存",align: "center",}, 
+					{colspan: "5", title: "汇总期内收支",align: "center"}
+                ],
+                [
+					{field: 'num1', title: '仓库存数',align: "center", width: {:get_col_width('num1',90)},},
+					{field: 'num2', title: '生产存数',align: "center", width: {:get_col_width('num2',90)},},
+					{field: 'num3', title: '质检存数',align: "center", width: {:get_col_width('num3',90)},},
+					{field: 'num4', title: '采购申请数',align: "center", width: {:get_col_width('num4',100)},},
+					{field: 'num5', title: '采购待回厂数',align: "center", width: {:get_col_width('num5',120)},},
+					{field: 'num6', title: '小计',align: "center", width: {:get_col_width('num6',90)},},
+					{field: 'num7', title: '汇总期初数',align: "center", width: {:get_col_width('num7',100)},},
+					{field: 'num8', title: '收入数',align: "center", width: {:get_col_width('num8',90)},},
+					{field: 'num9', title: '出仓数',align: "center", width: {:get_col_width('num9',90)},},
+					{field: 'num10', title: '退货支出',align: "center", width: {:get_col_width('num10',90)},},
+					{field: 'num11', title: '期内剩余数',align: "center", width: {:get_col_width('num11',100)},},
+				]
+			
+			],
+			height: 'full-210',
+			cellMinWidth: 80,
+			limit:50,
+			limits:[50,100,150,200],
+			toolbar: false,
+			defaultToolbar: [{
+				title: '刷新',
+				layEvent: 'refresh',
+				icon: 'layui-icon-refresh',
+			}, 'filter']
+		});
+
+		table.on('sort(dataTable)', function(obj){
+			table.reload('dataTable', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+
+		table.on('tool(dataTable)', function(obj) {
+
+		});
+
+		table.on('toolbar(dataTable)', function(obj) {
+			if (obj.event === 'export') {
+				var index = layui.layer.load(1);
+				let column 	= [{text:'分类',key:'material_type_desc'},{text:'物料编码',key:'sn'},{text:'物料名称',key:'name'},{text:'类别',key:'data_type_desc'},{text:'进/出类型',key:'type_desc'},{text:'单据编号',key:'order_sn'},{text:'供应商',key:'supplier.name'},{text:'进/出前库存量',key:'before_num'},{text:'进/出后库存量',key:'after_num'},{text:'进/出量',key:'stock_num'},{text:'进/出日期',key:'stock_date'},{text:'单位',key:'unit'},{text:'备注',key:'remark'},{text:'需挂账销售合同',key:'sale_order_sn'}];
+				$.ajax({
+					type : "get",
+					url : "{:url('stockStat')}?limit=10000",
+					data: $('#searchForm').serialize(),
+					success : function(data) {
+						layui.layer.close(index);
+						if (data.count > 0) {
+							jsonToExcel(column, [column], data.data, '进出帐记录')
+						}else{
+							layui.layer.msg('暂无数据');
+						}
+					}
+				});
+			}else if (obj.event === 'refresh') {
+				table.reload('dataTable');
+			} 
+		});
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+		
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+	})
+</script>
+<style>
+.dtree{
+    overflow-x:hidden;
+    overflow-y: auto;
+    width: 0px;
+    width: 90%;
+    height: 80vh;
+}
+.layui-col-md2{
+    overflow:hidden;
+}
+</style>
+{/block}
+
+

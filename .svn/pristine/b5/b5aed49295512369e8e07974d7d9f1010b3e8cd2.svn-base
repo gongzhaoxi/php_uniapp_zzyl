@@ -1,0 +1,140 @@
+{extend name="base" /}
+{block name="body"}
+<div class="layui-card">
+	<div class="layui-card-body">
+		<div class="layui-tab layui-tab-brief" >
+			<ul class="layui-tab-title">
+				<a href="{:url('erp.MaterialWarehouse/list')}"><li >车间库存</li></a>
+				<a href="{:url('erp.MaterialAllocate/list')}" ><li >物料调拨</li></a>
+				<a href="{:url('erp.MaterialAllocate/material')}"><li >调拨明细</li></a>
+				<li class="layui-this">工位用量统计</li>
+			</ul>
+		</div>
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="keyword" placeholder="物料编码/名称" class="layui-input">					
+				</div>	
+				<div class="layui-form-item layui-inline" style="width:190px;">
+					<input type="text" name="stock_date" placeholder="日期" class="layui-input rangedate">	
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<select name="warehouse_id" >
+						<option value="">仓位</option>
+						{foreach $warehouse as $vo}
+						<option value="{$vo['id']}">{$vo['name']}</option>
+						{/foreach}
+					</select>
+				</div>					
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+					<button type="reset" class="pear-btn pear-btn-md"><i class="layui-icon layui-icon-refresh"></i>重置</button>
+					<button class="pear-btn pear-btn-success pear-btn-md" lay-submit  lay-filter="export"><i class="layui-icon layui-icon-download-circle"></i>导出</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	
+</script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('useMaterial')}',
+			page: true,
+			totalRow:true,
+			limit:90,
+			height:'full-250',
+			cols: [[
+				{field: 'stock_date',title: '领用日期',align: 'center',width: {:get_col_width('stock_date',120)}, hide: getTableFieldIsHide('dataTable','stock_date')},
+				{field: 'warehouse_name',title: '工位仓位',align: 'center',width: {:get_col_width('warehouse_name',120)}, hide: getTableFieldIsHide('dataTable','warehouse_name')},
+				{field: 'type_desc',title: '类型',align: 'center',width: {:get_col_width('type_desc',120)}, hide: getTableFieldIsHide('dataTable','type_desc')},
+				{field: 'material_type_desc',title: '物料类型',align: 'center',width: {:get_col_width('material_type_desc',120)}, hide: getTableFieldIsHide('dataTable','material_type_desc')},
+				{field: 'sn',title: '物料编码',align: 'center',width: {:get_col_width('sn')}, hide: getTableFieldIsHide('dataTable','sn')},
+				{field: 'name',title: '物料名称',align: 'center',width: {:get_col_width('name')}, hide: getTableFieldIsHide('dataTable','name')},
+				{field: 'count',title: '汇总数量',align: 'center',width: {:get_col_width('count',100)},totalRow: true, hide: getTableFieldIsHide('dataTable','count')},
+				{field: 'unit',title: '单位',align: 'center',width: {:get_col_width('unit',100)}, hide: getTableFieldIsHide('dataTable','unit')},
+			]],
+			cellMinWidth: 100,
+			//skin: 'line',
+			toolbar: '#dataTable',
+			defaultToolbar: [{
+				title: '刷新',
+				layEvent: 'refresh',
+				icon: 'layui-icon-refresh',
+			}, 'filter'],
+		});
+
+		table.on('sort(dataTable)', function(obj){
+			table.reload('dataTable', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+		
+		form.on('submit(export)', function(data) {
+			var index = layui.layer.load(1);
+			let column 	= [{text:'工位仓位',key:'warehouse_name'},{text:'类型',key:'type_desc'},{text:'物料类型',key:'material_type_desc'},{text:'物料编码',key:'sn'},{text:'物料名称',key:'name'},{text:'汇总数量',key:'count'},{text:'单位',key:'unit'}];
+			$.ajax({
+				type : "get",
+				url : "{:url('useMaterial')}?limit=10000",
+				data: data.field,
+				success : function(data) {
+					layui.layer.close(index);
+					if (data.count > 0) {
+						jsonToExcel(column, [column], data.data, '工位用量统计')
+					}else{
+						layui.layer.msg('暂无数据');
+					}
+				}
+			});
+			return false;
+		});		
+		
+		
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+		table.on('colToggled(dataTable)', function(obj){
+			setTableFieldIsHide(obj.config.id,obj.col.field,obj.col.hide);
+		});
+	})
+</script>
+{/block}
+
+

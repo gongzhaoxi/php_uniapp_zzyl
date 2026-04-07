@@ -1,0 +1,110 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-input-block {margin-left: 150px;}
+.layui-form-label {width: 120px;}
+</style>
+<form class="layui-form" action="" method="post">
+	<input type="hidden" name="id" value="{$model['id']}" >
+	<div class="mainBox">
+		<div class="main-container">
+			<div class="layui-form-item">
+				<label class="layui-form-label">安全库存</label>
+				<div class="layui-input-block">
+					<input type="number" maxlength="11" name="safety_stock" lay-verify="number" value="{$model['safety_stock']}"  placeholder="请输入" autocomplete="off" class="layui-input">
+				</div>
+			</div>		
+			<div class="layui-form-item">
+				<label class="layui-form-label">最低库存</label>
+				<div class="layui-input-block">
+					<input type="number" maxlength="11" name="min_stock" lay-verify="number" value="{$model['min_stock']}"  placeholder="请输入" autocomplete="off" class="layui-input">
+				</div>	
+			</div>	
+			<div class="layui-form-item">
+				<label class="layui-form-label">最高库存</label>
+				<div class="layui-input-block">
+					<input type="number" maxlength="11" name="max_stock" lay-verify="number" value="{$model['max_stock']}"  placeholder="请输入" autocomplete="off" class="layui-input">
+				</div>	
+			</div>
+			<div class="layui-form-item">				
+				<label class="layui-form-label">仓位</label>
+				<div class="layui-input-block">
+					<select name="warehouse_id" lay-search>
+						<option value="" >请选择</option>
+						{foreach $warehouse as $key=>$vo}
+						<option value="{$vo['id']}" {if $model['warehouse_id'] == $vo['id']}selected{/if}>{$vo['name']}</option>
+						{/foreach}
+					</select>
+				</div>				
+			</div>
+			<div class="layui-form-item">				
+				<label class="layui-form-label">供应商</label>
+				<div class="layui-input-block">
+					<select name="supplier_id"  xm-select="supplier_id" xm-select-search="" xm-select-height="36px" xm-select-search-type="dl">
+						<option value="" >请选择</option>
+						{foreach $supplier as $key=>$vo}
+						<option value="{$vo['id']}" {if in_array($vo['id'],$model['supplier_id']) }selected{/if}>{$vo['name']}</option>
+						{/foreach}
+					</select>
+				</div>				
+			</div>	
+			<div class="layui-form-item">	
+				<label class="layui-form-label">质检区域</label>
+				<div class="layui-input-block">
+					<select name="quality_testing_area" lay-search >
+						<option value="" >请选择</option>
+						{foreach $quality_testing_area as $key=>$vo}
+						<option value="{$vo['id']}" {if $model['quality_testing_area'] == $vo['id']}selected{/if}>{$vo['name']}</option>
+						{/foreach}
+					</select>
+				</div>				
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">物资类别</label>
+				<div class="layui-input-block">
+					<select name="material_category" lay-search >
+						
+						<option value="重要物资" {if $model['material_category'] == '重要物资'}selected{/if} >重要物资</option>
+						<option value="一般物资" {if $model['material_category'] == '一般物资'}selected{/if} >一般物资</option>
+						<option value="辅助物资" {if $model['material_category'] == '辅助物资'}selected{/if} >辅助物资</option>
+					</select>
+				</div>	
+			</div>			
+			<div class="layui-form-item">
+				<label class="layui-form-label">工位仓位</label>
+				<div class="layui-input-block">
+					<select name="workstation_id" lay-search>
+						<option value="" ></option>
+						{foreach $workstation as $key=>$vo}
+						<option value="{$vo['id']}" {if $model['workstation_id'] == $vo['id']}selected{/if}>{$vo['name']}</option>
+						{/foreach}
+					</select>
+				</div>
+			</div>	
+			<div class="layui-form-item">
+				<label class="layui-form-label">供应商物料型号</label>
+				<div class="layui-input-block">
+					<input type="text" maxlength="255" name="supplier_code"  placeholder="请输入" value="{$model['supplier_code']}" autocomplete="off" class="layui-input">
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">标签识别码</label>
+				<div class="layui-input-block">
+					<input type="text" maxlength="255" name="tag"  placeholder="请输入" value="{$model['tag']}" autocomplete="off" class="layui-input">
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="bottom">
+		<div class="button-container">
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*"><i class="layui-icon layui-icon-ok"></i>提交</button>
+			<button type="reset" class="layui-btn layui-btn-primary layui-btn-sm"><i class="layui-icon layui-icon-refresh"></i>重置</button>
+		</div>
+	</div>
+</form>
+{/block}
+{block name="script"}
+<script>
+
+</script>
+{/block}

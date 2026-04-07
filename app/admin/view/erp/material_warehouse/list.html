@@ -1,0 +1,215 @@
+{extend name="base" /}
+{block name="body"}
+<div class="layui-card">
+	<div class="layui-card-body">
+		<div class="layui-tab layui-tab-brief" >
+			<ul class="layui-tab-title">
+				<li class="layui-this">车间库存</li>
+				<a href="{:url('erp.MaterialAllocate/list')}"><li>物料调拨</li></a>
+				<a href="{:url('erp.MaterialAllocate/material')}"><li >调拨明细</li></a>
+				<a href="{:url('erp.stat/useMaterial')}"><li>工位用量统计</li></a>
+			</ul>
+		</div>
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="" lay-filter="searchForm" >		
+			<input type="hidden" name="warehouse_type" value="{$warehouse_type}" >							
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="keyword" placeholder="物料编码/名称" class="layui-input">					
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<select name="warehouse_id" lay-search>
+						<option value="">仓位</option>
+						{foreach $warehouse as $key=>$vo}
+						<option value="{$vo['id']}">{$vo['name']}</option>
+						{/foreach}
+					</select>
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<select name="type" >
+						<option value="">类型</option>
+						{foreach $type as $key=>$vo}
+						<option value="{$key}">{$vo}</option>
+						{/foreach}
+					</select>
+				</div>				
+				<div class="layui-form-item layui-inline">
+					<select name="stock_search" >
+						<option value="">筛选方案</option>
+						<option value="1">现有库存量 < 安全库存</option>
+						<option value="2">现有库存量 < 最低库存</option>	
+						<option value="3">现有库存量 <= 0</option>	
+					</select>
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<select name="is_show" >
+						<option value="">状态</option>
+						<option value="1" selected>启用</option>
+						<option value="0">停用</option>	
+					</select>
+				</div>				
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+					<button type="reset" class="pear-btn pear-btn-md"><i class="layui-icon layui-icon-refresh"></i>重置</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	<button class="pear-btn pear-btn-primary pear-btn-sm" lay-event="allocate"><i class="layui-icon layui-icon-slider"></i>调拨</button>
+	<button class="pear-btn pear-btn-sm" lay-event="export"><i class="layui-icon layui-icon-export"></i>导出</button>
+	<button class="pear-btn pear-btn-danger pear-btn-sm" lay-event="disable"><i class="layui-icon layui-icon-disabled"></i>停用</button>
+	<button class="pear-btn pear-btn-success pear-btn-sm" lay-event="enable"><i class="layui-icon layui-icon-ok"></i>启用</button>
+</script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('list')}?warehouse_type={$warehouse_type}&material_status=1&is_show=1',
+			page: true,
+			limit:90,
+			height:'full-250',			
+			cols: [[
+				{type: 'checkbox'},
+				//{field: 'id',title: 'ID', sort: true, align: 'center',width: {:get_col_width('id',100)}, hide: getTableFieldIsHide('dataTable','ID')},
+				{field: 'sn',title: '物料编码',align: 'center',unresize: false,width: {:get_col_width('sn',180)}, hide: getTableFieldIsHide('dataTable','sn')},
+				{field: 'name',title: '物料名称',align: 'left',unresize: false,width: {:get_col_width('name',250)}, hide: getTableFieldIsHide('dataTable','name')},
+				{field: 'type',title: '物料类型',align: 'center',unresize: false,width: {:get_col_width('type_desc',120)}, hide: getTableFieldIsHide('dataTable','type')},
+				{field: 'warehouse_name',title: '仓位',align: 'center',unresize: false,width: {:get_col_width('stock',120)}, hide: getTableFieldIsHide('dataTable','warehouse_name')},
+				{field: 'stock',title: '现有库存量',align: 'center',unresize: false,width: {:get_col_width('stock',100)}, hide: getTableFieldIsHide('dataTable','stock')},
+				{field: 'safety_stock',edit:true,title: '安全库存',align: 'center',unresize: false,width: {:get_col_width('safety_stock',100)}, hide: getTableFieldIsHide('dataTable','safety_stock')},
+				{field: 'min_stock',edit:true,title: '最低库存',align: 'center',unresize: false,width: {:get_col_width('min_stock',100)}, hide: getTableFieldIsHide('dataTable','min_stock')},
+				{field: 'max_stock',edit:true,title: '最高库存',align: 'center',unresize: false,width: {:get_col_width('max_stock',100)}, hide: getTableFieldIsHide('dataTable','max_stock')},
+				{field: 'unit',title: '单位',align: 'center',unresize: false,width: {:get_col_width('unit',100)}, hide: getTableFieldIsHide('dataTable','unit')},
+				{field: 'processing_type',title: '加工类型',align: 'center',unresize: false,width: {:get_col_width('processing_type',100)}, hide: getTableFieldIsHide('dataTable','processing_type')},
+				{field: 'material',title: '材料',align: 'center',unresize: false,width: {:get_col_width('material',100)}, hide: getTableFieldIsHide('dataTable','material')},
+				{field: 'surface',title: '表面',align: 'center',unresize: false,width: {:get_col_width('surface',100)}, hide: getTableFieldIsHide('dataTable','surface')},
+				{field: 'color',title: '颜色',align: 'center',unresize: false,width: {:get_col_width('color',100)}, hide: getTableFieldIsHide('dataTable','color')},
+				{field: 'remark',title: '备注',align: 'center',unresize: false,width: {:get_col_width('remark',100)}, hide: getTableFieldIsHide('dataTable','remark')},
+			]],
+			cellMinWidth: 100,
+			//skin: 'line',
+			toolbar: '#toolbar',
+			defaultToolbar: [{
+				title: '刷新',
+				layEvent: 'refresh',
+				icon: 'layui-icon-refresh',
+			}, 'filter']
+		});
+
+		table.on('sort(dataTable)', function(obj){
+			table.reload('dataTable', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+
+		table.on('tool(dataTable)', function(obj) {
+			if (obj.event === 'remove') {
+				layerConfirm('确定要删除该客户?','{:url('remove')}',{ids:[obj.data['id']]},function(res){
+					obj.del();
+				})
+			} else if (obj.event === 'edit') {
+				openLayer('修改客户','{:url('edit')}?id='+obj.data['id'],'80%','90%');
+			}
+		});
+
+		table.on('toolbar(dataTable)', function(obj) {
+			if (obj.event === 'allocate') {
+			
+				var checkStatus = table.checkStatus('dataTable');
+				var material_id = [];
+				var material_warehouse_id = [];
+				for(var i in checkStatus.data) {
+					if(material_id.indexOf(checkStatus.data[i].material_id) == -1){
+						material_id.push(checkStatus.data[i].material_id);
+					}
+					material_warehouse_id.push(checkStatus.data[i].id);
+				}
+			
+				openLayer('调拨','{:url('erp.MaterialAllocate/add')}?material_id='+material_id.join(',')+'&material_warehouse_id='+material_warehouse_id.join(','),'100%','100%');
+			}else if (obj.event === 'refresh') {
+				table.reload('dataTable');
+			} else if (obj.event === 'enable') {
+				tableAction(obj.config.id,'确定启用？','{:url('show')}?is_show=1');
+			}  else if (obj.event === 'disable') {
+				tableAction(obj.config.id,'确定禁用？','{:url('show')}?is_show=0');
+			}else if (obj.event === 'export') {
+				var data = form.val('searchForm');
+				exportData('{:url('export')}',data);
+			}
+		});
+
+		table.on('edit(dataTable)', function(obj){
+			var field = obj.field; // 得到修改的字段
+			var value = obj.value // 得到修改后的值
+			var oldValue = obj.oldValue // 得到修改前的值 -- v2.8.0 新增
+			if(value.replace(/\s/g, '') === ''){
+				layer.tips('值不能为空', this, {tips: 1});
+				return obj.reedit();
+			}
+			var data = {};
+			data['id'] = obj.data.id;
+			data[field] = value;
+			
+			var res = $.ajax({
+				url: '{:url('editSafetyStock')}',
+				type: 'POST',
+				data: data,
+				dataType: 'json',
+				async: false
+			});
+
+			layer.msg(res.responseJSON.msg);
+			
+			if(res.responseJSON.code != 200){
+				return obj.reedit();
+			}
+		});	
+
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+		
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+		table.on('colToggled(dataTable)', function(obj){
+			setTableFieldIsHide(obj.config.id,obj.col.field,obj.col.hide);
+		});
+		
+	})
+</script>
+{/block}
+
+

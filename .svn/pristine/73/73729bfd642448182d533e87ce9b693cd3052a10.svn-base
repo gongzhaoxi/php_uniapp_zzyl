@@ -1,0 +1,179 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.bom{margin:10px;font-size:12px;line-height:30px;}
+.bom .title{font-weight:600;font-size:13px;}
+
+#production-timeline{display:none;}
+.production-timeline .count{color: rgb(51, 51, 51);margin-right:20px;}
+.production-timeline ul li{color: rgb(153, 153, 153);}
+.production-timeline .layui-text p{margin-top:0px;font-size:13px;}
+</style>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="" id="searchForm">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="customer_name" value="" placeholder="客户名称/订货单位" class="layui-input">						
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="order_sn" value="" placeholder="销售合同号" class="layui-input">	
+				</div>	
+				<div class="layui-form-item layui-inline" >
+					<input type="text" name="produce_sn" value="" placeholder="产品编号" class="layui-input">	
+				</div>	
+				<div class="layui-form-item layui-inline short">
+					<input type="text" name="produce_finish_sn" placeholder="产品序列号" class="layui-input">	
+				</div>				
+				<div class="layui-form-item layui-inline" >
+					<input type="text" name="product_name" value="" placeholder="产品名称" class="layui-input">	
+				</div>	
+				<div class="layui-form-item layui-inline" >
+					<input type="text" name="product_model" value="" placeholder="产品型号" class="layui-input">	
+				</div>				
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+					<button type="reset" class="pear-btn pear-btn-md"><i class="layui-icon layui-icon-refresh"></i>重置</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+
+</script>
+<script type="text/html" id="options">
+	<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="view">查看</button>
+</script>
+<script type="text/html" id="udi">
+	{{#  if(d.udi){ }}<a onclick="layerPhotos('{{ d.udi }}','{{ d.id }}')" href="javascript:;"><img src="{{ d.udi }}" /></a>{{#  } }}
+</script>
+
+<script type="text/html" id="process">
+	<div class="layui-btn-group">
+	{{# d.process.forEach(function(item) { }}
+		{{# if (item.produce_follow_id) { }}
+			<button type="button" class="layui-btn layui-btn-xs follow"  data-id="{{= item.produce_follow_id }}" data-pid="{{= d.id }}">{{= item.process_name }}</button>
+		{{# }else if(item.process_id==3){ }}
+			<button type="button" class="layui-btn layui-btn-xs produce_report" data-id="{{= item.process_id }}" data-pid="{{= d.id }}">{{= item.process_name }}</button>
+		{{# }else{ }}
+			<button type="button" class="layui-btn layui-btn-xs">{{= item.process_name }}</button>
+		{{# } }}
+	{{# }); }}
+	</div>
+</script>
+
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('statement')}',
+			page: true,
+			limit:90,
+			height:'full-170',	
+			lineStyle: 'height: 140px;',	
+			cols: [[
+				{field: 'region_type_desc',title: '订单性质',align: 'center',unresize: false,width: {:get_col_width('region_type_desc',100)}, hide: getTableFieldIsHide('dataTable','region_type_desc')},
+				{field: 'customer_name',title: '客户名称/订货单位',align: 'center',unresize: false,width: {:get_col_width('customer_name',150)}, hide: getTableFieldIsHide('dataTable','customer_name')},
+				{field: 'order_sn',title: '销售合同号',align: 'center',unresize: false,width: {:get_col_width('order_sn',140)}, hide: getTableFieldIsHide('dataTable','order_sn')},
+				{field: 'produce_sn',title: '产品编码',align: 'center',unresize: false,width:{:get_col_width('produce_sn',200)}, hide: getTableFieldIsHide('dataTable','produce_sn')},
+				//{field: 'produce_finish_sn',title: '产品序列号',align: 'center',unresize: false,width: {:get_col_width('produce_finish_sn',120)}, hide: getTableFieldIsHide('dataTable','produce_finish_sn')},
+				//{field: 'udi',title: 'UDI标签',align: 'center',unresize: false,width: {:get_col_width('udi',120)}, templet:'#udi', hide: getTableFieldIsHide('dataTable','udi')},
+				{field: 'product_name',title: '产品名称',align: 'center',unresize: false,width: {:get_col_width('product_name',150)}, templet: function(d){return d.order_product?d.order_product.product_name:'';}, hide: getTableFieldIsHide('dataTable','product_name')},
+				{field: 'product_model',title: '型号',align: 'center',unresize: false,width: {:get_col_width('product_model',120)}, templet: function(d){return d.order_product?d.order_product.product_model:'';}, hide: getTableFieldIsHide('dataTable','product_model')},
+				{field: 'color',title: '颜色',align: 'center',unresize: false,width: {:get_col_width('color',100)}, templet: function(d){return d.order_product?d.order_product.color:'';}, hide: getTableFieldIsHide('dataTable','color')},
+				{field: 'salesman',title: '业务员',align: 'center',unresize: false,width: {:get_col_width('salesman',100)}, hide: getTableFieldIsHide('dataTable','salesman')},
+				{field: 'order_date',title: '下单日期',align: 'center',unresize: false,width: {:get_col_width('order_date',120)}, hide: getTableFieldIsHide('dataTable','order_date')},
+				{field: 'delivery_date',title: '交货日期',align: 'center',unresize: false,width: {:get_col_width('delivery_date',120)}, hide: getTableFieldIsHide('dataTable','delivery_date')},
+				{field: 'process',title: '工序',align: 'center',unresize: false, templet:'#process', hide: getTableFieldIsHide('dataTable','process')},
+				//{field: 'produce_status_desc',title: '生产状态',align: 'center',unresize: false,width: {:get_col_width('produce_status_desc',120)}, hide: getTableFieldIsHide('dataTable','produce_status_desc')},
+				//{field: 'shipping_status_desc',title: '发货状态',align: 'center',unresize: false,width: {:get_col_width('shipping_status_desc',120)}, templet: function(d){return d.shipping?d.shipping.shipping_status_desc:'';}, hide: getTableFieldIsHide('dataTable','XXXXXXXX')},
+				//{title: '操作',toolbar: '#options',align: 'center',unresize: true,width: 100,fixed:'right'}
+			]],
+			cellMinWidth: 100,
+			toolbar: '#toolbar',
+			defaultToolbar: [{
+				title: '刷新',
+				layEvent: 'refresh',
+				icon: 'layui-icon-refresh',
+			}, 'filter', 'print', 'exports'],
+			done: function(res, curr, count, origin){
+				var uploadInst = layui.upload.render({
+					elem: '.uploadudi',
+					url: '{:url('index/upload')}', 
+					done: function(res){
+						if(res.code == 200) {
+							var item = this.item;
+							$(item).parent().find('a').remove(); 
+							$(item).before('<a onclick="layerPhotos(\''+res.data.thumb+'\',\'\')" href="javascript:;"><img src="'+res.data.thumb+'" /></a>' ); 
+							ajaxActionCall('{:url('erp.OrderProduce/editUdi')}',{id:$(item).data('id'),udi:res.data.src})
+						}
+					},
+				});
+			},
+		});
+
+		table.on('sort(dataTable)', function(obj){
+			table.reload('dataTable', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+
+		table.on('tool(dataTable)', function(obj) {
+			if (obj.event === 'view') {
+				openLayer('查看详细','{:url('scheduleDetail')}?id='+obj.data['id'],'90%','90%');
+			}	
+		});
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+		
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+		table.on('colToggled(dataTable)', function(obj){
+			setTableFieldIsHide(obj.config.id,obj.col.field,obj.col.hide);
+		});
+		
+		$("body").on("click",".follow",function(){
+			openLayer('随工单查阅','{:url('follow')}?follow_id='+$(this).data('id')+'&id='+$(this).data('pid'),'90%','90%',function(){
+						
+			});	
+		});	
+		$("body").on("click",".produce_report",function(){
+			openLayer('产品档案生产过程及检验记录','{:url('report')}?process_id='+$(this).data('id')+'&id='+$(this).data('pid'),'90%','90%',function(){
+						
+			});	
+		})	
+	})
+</script>
+{/block}
+
+

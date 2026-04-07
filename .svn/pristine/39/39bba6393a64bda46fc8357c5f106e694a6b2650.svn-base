@@ -1,0 +1,202 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-input-block {margin-left: 160px;}
+.layui-form-label {width: 130px;}
+.cabinet_num{display:none;}
+</style>
+<form class="layui-form" action="" method="post" data-reload="7" data-callback="submitCallBack">
+	<div class="mainBox">
+		<div class="main-container">
+			<div class="layui-form-item">
+				<label class="layui-form-label"><span class="asterisk">*</span>客户名称/订货单位</label>
+				<div class="layui-input-inline">
+					<input type="hidden" name="customer_id" id="customer_id">
+					<input type="text" name="customer_name" id="customer_name" readonly lay-verify="required" ts-selected=""  placeholder="请选择,不可为空" autocomplete="off" class="layui-input">
+				</div>	
+				<label class="layui-form-label"><span class="asterisk">*</span>下单日期</label>
+				<div class="layui-input-inline">
+					<input type="text" name="create_time" readonly lay-verify="required" value="{:date('Y-m-d H:i:s')}"  placeholder="请选择,不可为空" autocomplete="off" class="layui-input datetime">
+				</div>					
+				<label class="layui-form-label"><span class="asterisk">*</span>交货日期</label>
+				<div class="layui-input-inline">
+					<input type="text" name="delivery_time" readonly lay-verify="required" value="{:date('Y-m-d',strtotime('+7 days'))}"  placeholder="请选择,不可为空" autocomplete="off" class="layui-input date">
+				</div>	
+				<div class="layui-input-inline">
+					<input type="text" name="delivery_remark"  placeholder="补充要求,可为空" autocomplete="off" class="layui-input">
+				</div>					
+			</div>
+			<div class="layui-form-item">
+				<input type="hidden" name="region" id="region" value="">
+				<input type="hidden" name="region_name" id="region_name" value="">
+				<label class="layui-form-label"><span class="asterisk">*</span>区域</label>
+				<div class="layui-input-inline">
+					<ul id="demoTree" class="dtree" ></ul>
+				</div>
+				<label class="layui-form-label"><span class="asterisk">*</span>收货地址/国家</label>
+				<div class="layui-input-inline">
+					<input type="text" maxlength="255" name="address" id="address" lay-verify="required" placeholder="请输入,不可为空" autocomplete="off" class="layui-input">
+				</div>
+				<label class="layui-form-label"><span class="asterisk">*</span>订单类型</label>
+				<div class="layui-input-inline">
+					<select name="order_type" lay-verify="required">
+						{foreach $order_type as $key=>$vo}
+						<option value="{$key}">{$vo}</option>
+						{/foreach}
+					</select>
+				</div>	
+				<label class="layui-form-label"><span class="asterisk">*</span>域属</label>
+				<div class="layui-input-inline">
+					{foreach $region_type as $key=>$vo}
+					<input type="radio" name="region_type" value="{$key}" title="{$vo}" {if $key == 1}checked{/if} lay-filter="region_type" >
+					{/foreach}
+				</div>				
+			</div>				
+			<div class="layui-form-item">
+				<label class="layui-form-label"><span class="asterisk">*</span>联系人</label>
+				<div class="layui-input-inline">
+					<input type="text" maxlength="100" name="contacts" id="contacts" lay-verify="required"  placeholder="请输入,不可为空" autocomplete="off" class="layui-input">
+				</div>
+				<label class="layui-form-label"><span class="asterisk">*</span>联系电话</label>
+				<div class="layui-input-inline">
+					<input type="text" maxlength="100" name="phone" id="phone" lay-verify="required" placeholder="请输入,不可为空" autocomplete="off" class="layui-input">
+				</div>
+				<label class="layui-form-label cabinet_num">装柜号</label>
+				<div class="layui-input-inline cabinet_num">
+					<input type="text" maxlength="255" name="cabinet_num"  placeholder="请输入,可为空" autocomplete="off" class="layui-input">
+				</div>
+				<label class="layui-form-label"><span class="asterisk">*</span>销售</label>
+				<input type="hidden" name="salesman_name" id="salesman_name" value="{$_admin['nickname']}" >
+				<div class="layui-input-inline">
+					<select name="salesman_id"  lay-verify="required" lay-filter="salesman_id">
+						{foreach $admins as $key=>$vo}
+						<option value="{$vo['id']}" {if $vo['id'] == $_admin['id']}selected{/if}>{$vo['nickname']}</option>
+						{/foreach}
+					</select>
+				</div>
+			</div>				
+			<div class="layui-form-item">
+				<label class="layui-form-label">技术参数</label>
+				<div class="layui-input-inline">
+					<input type="text" maxlength="255" name="technical_parameter"  placeholder="请输入,可为空" autocomplete="off" class="layui-input">
+				</div>
+				<label class="layui-form-label">要求</label>
+				<div class="layui-input-inline">
+					<input type="text" maxlength="255" name="customer_remark"  placeholder="请输入,可为空" autocomplete="off" class="layui-input">
+				</div>		
+				<label class="layui-form-label"><span class="asterisk">*</span>发货类型</label>
+				<div class="layui-input-inline">
+					<select name="shipping_type" lay-verify="required">
+						{foreach $shipping_type as $key=>$vo}
+						<option value="{$key}">{$vo}</option>
+						{/foreach}
+					</select>
+				</div>				
+			</div>				
+			<div class="layui-form-item">
+				<label class="layui-form-label">电机编码</label>
+				<div class="layui-input-inline">
+					<input type="text" maxlength="255" name="motor_code"  placeholder="请输入,可为空" autocomplete="off" class="layui-input">
+				</div>
+				<label class="layui-form-label"><span class="asterisk">*</span>特殊订单</label>
+				<div class="layui-input-inline">
+					<input type="radio" name="is_special" value="0" title="否" checked>
+					<input type="radio" name="is_special" value="1" title="是" >
+				</div>
+				<label class="layui-form-label">备注</label>
+				<div class="layui-input-inline">
+					<input type="text" maxlength="255" name="order_remark"  placeholder="请输入,可为空" autocomplete="off" class="layui-input">
+				</div>
+			</div>				
+		</div>
+	</div>
+	<div class="bottom">
+		<div class="button-container">
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*"><i class="layui-icon layui-icon-ok"></i>提交</button>
+			<button type="reset" class="layui-btn layui-btn-primary layui-btn-sm"><i class="layui-icon layui-icon-refresh"></i>重置</button>
+		</div>
+	</div>
+</form>
+{/block}
+{block name="script"}
+<script>
+layui.use(['tableSelect','dtree'], function () {
+	var $ = layui.jquery;
+	var tableSelect = layui.tableSelect;
+	var dtree = layui.dtree;
+	var form = layui.form;
+	
+	form.on('radio(region_type)', function(data){
+		if(data.elem.value == 1){
+			$('.cabinet_num').hide();
+		}else{
+			$('.cabinet_num').show();
+		}
+	});	
+	
+	tableSelect.render({
+		elem: '#customer_name',
+		checkedKey: 'id',
+		searchKey: 'keyword',
+		searchPlaceholder: '客户名称/编码/联系人/联系电话',
+		table: {
+			url: '{:url('erp.customer/list')}',		
+			cols: [[
+				{type: 'radio' },
+				{field: 'id', title: 'id' },
+				{field: 'sn',title: '客户编码',align: 'center',unresize: false,},
+				{field: 'name',title: '客户名称',align: 'center',unresize: false,},
+				{field: 'contacts',title: '联系人',align: 'center',unresize: false},
+			]]
+		},
+		done: function (elem, data) {
+			elem.val(data.data[0]['name']);
+			$('#customer_id').val(data.data[0]['id']);
+			$('#contacts').val(data.data[0]['contacts']);
+			$('#phone').val(data.data[0]['phone']);
+			$('#address').val(data.data[0]['region_name']+data.data[0]['address']);
+			$('#region').val(data.data[0]['region'].join(','));
+			
+			demoTree.reload({
+				selectInitVal: data.data[0]['region'].length>0?data.data[0]['region'][data.data[0]['region'].length-1]:'100000', 
+			})
+		}
+	})
+	
+	window.submitCallBack = function (res){
+		parent.layui.table.reload('dataTable');
+		location.replace('{:url('view')}?id='+res.data.id);
+	}
+	
+	var demoTree = dtree.renderSelect({
+		elem: "#demoTree",
+		data:{:json_encode($tree)},
+		selectInitVal: "100000", 
+		//skin: "laySimple",  // layui主题风格
+		//icon: "-1",  // 隐藏二级图标
+		line: true,  // 显示树线
+		response:{
+            treeId: "id",			  //节点ID
+            parentId: "parent_id",	  //父节点ID
+            title: "name",			  //节点名称 
+            childName: "children",	  //子节点名称
+		}
+	});
+
+	dtree.on("node('demoTree')" ,function(param){
+		var arr = dtree.getAllParentParam(demoTree, param.param.nodeId);
+		var ids = [];
+		$.each(arr,function(idx,item){
+			ids.push(item.nodeId);
+		})
+		ids.push(param.param.nodeId);
+		$('#region').val(ids.join(','));
+	});
+	
+	form.on('select(salesman_id)', function(data){
+		$('#salesman_name').val($(data.elem).find('option:selected').text());
+	});	
+	
+});
+</script>
+{/block}

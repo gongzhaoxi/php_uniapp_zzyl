@@ -1,0 +1,27 @@
+<?php
+declare (strict_types = 1);
+namespace app\index\controller;
+use app\index\logic\BoardLogic;
+
+class Board extends Base
+{
+	
+    public function produce()
+    {
+		if ($this->request->isAjax()) {
+			return $this->getJson(BoardLogic::getList($this->request->param()));
+		}
+        return  view('produce',['title'=>'生产管理看板','process_id'=>$this->request->param('process_id/d',''),'count'=>BoardLogic::getBoardCount(),'month'=>BoardLogic::getBoardMonthStat(),'pass_produce'=>BoardLogic::getBoardPass(),'wait_produce'=>BoardLogic::getBoardWait()]);
+    }
+	
+    public function errors()
+    {
+        return  view('errors',['title'=>'物料&制程看板','list1'=>BoardLogic::getBoardError1(),'list2'=>BoardLogic::getBoardError2()]);
+    }
+	
+	public function summary($act=2)
+    {
+        return  view('summary',['title'=>'汇总分析总看板','act'=>$act,'list1'=>BoardLogic::getProduct($act),'list2'=>BoardLogic::getShipping($act),'count'=>BoardLogic::getSummaryCount($act),'count2'=>BoardLogic::getBoardCount()]);
+    }
+	
+}

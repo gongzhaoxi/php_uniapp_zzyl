@@ -1,0 +1,205 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-table-cell { height:auto;}
+.bom{margin:10px;font-size:12px;line-height:30px;}
+.bom .title{font-weight:600;font-size:13px;}
+.more{color: rgb(24, 144, 255);font-size:12px;}
+.error-img{max-width:100px;max-height:100px;margin-right:10px;}
+.confirm-time{color: rgb(24, 144, 255);}
+</style>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="customer_name" placeholder="客户名称/订货单位" class="layui-input">					
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="order_sn" placeholder="销售合同" class="layui-input">	
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="produce_sn" placeholder="产品编码" class="layui-input">	
+				</div>	
+				<div class="layui-form-item layui-inline" style="width:190px;">
+					<input type="text" name="produce_date" placeholder="上线日期" class="layui-input rangedate">	
+				</div>				
+				<div class="layui-form-item layui-inline" style="width:190px;">
+					<input type="text" name="delivery_time" placeholder="交货日期" class="layui-input rangedate">	
+				</div>				
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+					<button class="pear-btn pear-btn-md" lay-submit lay-filter="export"><i class="layui-icon layui-icon-export"></i>导出</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+
+<div class="layui-card">
+	<div class="layui-card-body">		
+		<div class=" order_status">
+			<a href="{:url('errorList')}" class="layui-btn  layui-btn-primary {if $status === ''}layui-btn-warm{/if}">全部记录</a>
+			<a href="{:url('errorList')}?status=0" class="layui-btn  layui-btn-primary {if $status === '0'}layui-btn-warm{/if}">待处理记录（{$count}）</a>
+		</div>
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+
+<div class="layui-card">
+	<div class="layui-card-body">
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+<script type="text/html" id="bom">
+	<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="bom">查看</button>
+</script>
+<script type="text/html" id="error">
+	{{d.error}} {{#  if(d.process.length>0&&d.process[0].photo.length > 0){ }}<a onclick="layerPhotos('{{ d.process[0].photo.join(',') }}','{{ d.id }}')" href="javascript:;"><i class="layui-icon layui-icon-picture"></i> </a> {{#  } }}
+	{{#  if(d.process.length>0){ }}<div class="more" lay-event="more">【查看更多记录】</div>{{#  } }}
+</script>
+<script type="text/html" id="status">
+	{{#  if(d.process.length>0&&d.process[0].status == 0){ }}<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="confirm">确认已处理</button>{{#  } }}
+	{{#  if(d.process.length>0&&d.process[0].status == 1){ }}<button class="pear-btn pear-btn-xs" disabled >已处理</button>{{#  } }}
+</script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('errorList')}?status={$status}',
+			page: true,
+			cols: [[
+				{field: 'produce_date',title: '上线日期',align: 'center',unresize: false,width: {:get_col_width('produce_date',120)}, hide: getTableFieldIsHide('dataTable','produce_date')},
+				{field: 'produce_sn',title: '产品编码',align: 'center',unresize: false,width: {:get_col_width('produce_sn',170)}, hide: getTableFieldIsHide('dataTable','produce_sn')},
+				{field: 'model',title: '型号',align: 'center',unresize: false,width: {:get_col_width('model',100)}, templet: function(d){return d.order_product?d.order_product.product_model:'';}, hide: getTableFieldIsHide('dataTable','model')},
+				{field: 'specs',title: '款式',align: 'center',unresize: false,width: {:get_col_width('specs',100)}, templet: function(d){return d.order_product?d.order_product.product_specs:'';}, hide: getTableFieldIsHide('dataTable','specs')},
+				{field: 'order_sn',title: '销售合同号',align: 'center',unresize: false,width: {:get_col_width('order_sn',150)}, hide: getTableFieldIsHide('dataTable','order_sn')},
+				{field: 'address_short',title: '收货地址',align: 'center',unresize: false,width: {:get_col_width('address_short',150)}, hide: getTableFieldIsHide('dataTable','address_short')},
+				{field: 'bom',title: '具体配置',align: 'center',unresize: false,width: {:get_col_width('bom',100)}, templet:'#bom', hide: getTableFieldIsHide('dataTable','bom')},
+				{field: 'salesman',title: '业务员',align: 'center',unresize: false,width: {:get_col_width('salesman',100)}, hide: getTableFieldIsHide('dataTable','salesman')},
+				{field: 'delivery_time',title: '交货日期',align: 'center',unresize: false,width: {:get_col_width('delivery_time',120)}, hide: getTableFieldIsHide('dataTable','delivery_time')},
+				{field: 'error',title: '异常说明',align: 'left',unresize: false, templet:'#error',width: {:get_col_width('error')}, hide: getTableFieldIsHide('dataTable','error')},
+				{field: 'status',title: '是否已处理',align: 'center',unresize: false,width: {:get_col_width('status',130)},templet: '#status', hide: getTableFieldIsHide('dataTable','status')}
+			]],
+			cellMinWidth: 100,
+			toolbar: '#toolbar',
+				defaultToolbar: [{
+				title: '刷新',
+				layEvent: 'refresh',
+				icon: 'layui-icon-refresh',
+			}, 'filter', 'print', 'exports']
+			done: function(res, curr, count){
+                    // 解决操作栏因为内容过多换行问题
+                    $(".layui-table-main tr").each(function (index, val) {
+                        $($(".layui-table-fixed-l .layui-table-body tbody tr")[index]).height($(val).height());
+                        $($(".layui-table-fixed-r .layui-table-body tbody tr")[index]).height($(val).height());
+                    });
+			},
+			
+		});
+
+		table.on('sort(dataTable)', function(obj){
+			table.reload('dataTable', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+
+		table.on('tool(dataTable)', function(obj) {
+			if (obj.event === 'confirm') {
+				layerConfirm('确认已处理?','{:url('confirm')}',{ids:[obj.data['id']]},function(res){
+					table.reload('dataTable');
+				})
+			}else if (obj.event === 'bom') {
+				layer.open({
+					type: 1, 
+					area: ['500px', '300px'],
+					content: '<div class="bom">'+obj.data.order_product.bom_html+'</div>'
+				});
+			}else if (obj.event === 'more') {
+				var html = '<ul class="layui-timeline">';
+				
+				layui.each(obj.data.process, function (index, item) {
+					html += '<li class="layui-timeline-item"><i class="layui-icon layui-timeline-axis">&#xe63f;</i><div class="layui-timeline-content layui-text">';
+					html += '<p class="">上报日期：'+item.create_time+'</p>';
+					html += '<ul>';
+					html += '<li>'+item.error+'</li>';
+					if(item.photo.length>0){
+						html += '<li>';
+						layui.each(item.photo, function (index2, item2) {
+							html += '<img onclick="layerPhotos(\''+item2+'\')" class="error-img" src="'+item2+'" />';
+						})
+						html += '</li>';
+					}
+					if(item.confirm_date){
+						html += '<li class="confirm-time">已处理，处理完日期：'+item.confirm_date+'</li>';
+					}
+					html += '</ul></div></li>';	
+				})
+				html += '</ul>';
+			
+				layer.open({
+					type: 1, 
+					title:'所有异常说明记录',
+					area: ['80%', '80%'],
+					content: '<div class="bom">'+html+'</div>'
+				});
+			}
+		});
+
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+		
+	
+		form.on('submit(export)', function(data) {
+			var index = layui.layer.load(1);
+			let column 	= [{text:'上线日期',key:'produce_date'},{text:'产品编码',key:'produce_sn'},{text:'型号',key:'order_product.product_model'},{text:'款式',key:'order_product.product_specs'},{text:'销售合同号',key:'order_sn'},{text:'收货地址',key:'address_short'},{text:'具体配置',key:'order_product.bom_html'},{text:'业务员',key:'salesman'},{text:'交货日期',key:'delivery_time'},{text:'异常说明',key:'error'}];
+			$.ajax({
+				type : "get",
+				url : "{:url('errorList')}?status={$status}&limit=100000",
+				data: data.field,
+				success : function(data) {
+					layui.layer.close(index);
+					if (data.count > 0) {
+						jsonToExcel(column, [column], data.data, '车间异常')
+					}else{
+						layui.layer.msg('暂无数据');
+					}
+				}
+			});
+			return false;
+		});		
+		
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+		table.on('colToggled(dataTable)', function(obj){
+			setTableFieldIsHide(obj.config.id,obj.col.field,obj.col.hide);
+		});
+	})
+</script>
+{/block}
+
+

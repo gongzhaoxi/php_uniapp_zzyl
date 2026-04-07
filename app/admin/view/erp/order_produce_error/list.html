@@ -1,0 +1,159 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-table-cell { height:auto;}
+.spl{padding: 0 10px;}
+.layui-table .error-img{max-width:70px;max-height:70px;margin-left:5px;}
+.confirm-time{color: rgb(24, 144, 255);}
+</style>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="" id="searchForm">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline" style="width:190px;">
+					<input type="text" name="create_time" placeholder="上报日期" class="layui-input rangedate">	
+				</div>					
+				<div class="layui-form-item layui-inline">
+					<select name="status">
+						<option value="">处理状态</option>
+						<option value="0">待处理</option>
+						<option value="1">未处理</option>
+					</select>
+				</div>					
+				<div class="layui-form-item layui-inline">
+					<select name="type">
+						<option value="">类型</option>
+						<option value="缺料中">缺料中</option>
+						<option value="检验不良">检验不良</option>
+					</select>
+				</div>			
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+					<button class="pear-btn pear-btn-md" lay-submit lay-filter="export"><i class="layui-icon layui-icon-export"></i>导出</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">		
+		<div class=" order_status">
+			<a href="{:url('list')}" class="layui-btn  layui-btn-primary {if $status === ''}layui-btn-warm{/if}">全部记录</a>
+			<a href="{:url('list')}?status=0" class="layui-btn  layui-btn-primary {if $status === '0'}layui-btn-warm{/if}">待处理记录（{$count}）</a>
+		</div>
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+
+<script type="text/html" id="content">
+	<div style="display:inline-block;"> 
+		{{#  if(d.type == '缺料中'){ }}
+		<div>物料编码：{{d.material_sn}}<span class="spl">|</span>物料名称：{{d.material_name}}<span class="spl">|</span>报缺数量：{{d.lack_num}}</div>
+		<div>报缺原因：{{d.error}}</div>
+		{{#  } }}
+		{{#  if(d.type == '检验不良'){ }}
+		<div>检验类型：{{d.check_type}}</div>
+		<div>不良说明：{{d.error}}</div>
+		{{#  } }}		
+		
+	</div>
+	<div style="display:inline-block;float:right;"> 
+		<a onclick="layerPhotos('{{ d.photo.join(',') }}','{{ d.id }}')" href="javascript:;">
+		{{#  for(var i in d.photo){ }}
+		<img class="error-img" src="{{d.photo[i]}}"/>
+		{{#  } }}	
+		</a>		
+	</div>	
+	
+</script>
+<script type="text/html" id="status">
+	{{#  if(d.status == 0){ }}<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="confirm">确认已处理</button>{{#  } }}
+	{{#  if(d.status == 1){ }}<button class="pear-btn pear-btn-xs" disabled >已处理</button>{{#  } }}
+</script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('list')}?status={$status}',
+			page: true,
+			limit:90,
+			height:'full-210',
+			cols: [[
+				{field: 'create_time',title: '上报日期',align: 'center',unresize: false,width: {:get_col_width('create_time',170)}, hide: getTableFieldIsHide('dataTable','create_time')},
+				{field: 'type',title: '类型',align: 'center',unresize: false,width: {:get_col_width('type',120)}, hide: getTableFieldIsHide('dataTable','type')},
+				{field: 'username',title: '联系人(上报人)',align: 'center',unresize: false,width: {:get_col_width('username',150)}, hide: getTableFieldIsHide('dataTable','username')},
+				{field: 'produce_sn',title: '产品编码',align: 'center',unresize: false,width: {:get_col_width('produce_sn',170)}, hide: getTableFieldIsHide('dataTable','produce_sn')},
+				{field: 'order_sn',title: '销售合同号',align: 'center',unresize: false,width: {:get_col_width('order_sn',150)}, hide: getTableFieldIsHide('dataTable','order_sn')},
+				{field: 'error',title: '内容',align: 'left',unresize: false,width: {:get_col_width('error')}, hide: getTableFieldIsHide('dataTable','error')},
+				{field: 'status',title: '操作',align: 'center',unresize: false,width: {:get_col_width('status',110)},templet: '#status'}
+			]],
+			toolbar: '#toolbar',
+			defaultToolbar: [{
+				title: '刷新',
+				layEvent: 'refresh',
+				icon: 'layui-icon-refresh',
+			}, 'filter'],
+			done: function(res, curr, count){
+				// 解决操作栏因为内容过多换行问题
+				$(".layui-table-main tr").each(function (index, val) {
+					$($(".layui-table-fixed-l .layui-table-body tbody tr")[index]).height($(val).height());
+					$($(".layui-table-fixed-r .layui-table-body tbody tr")[index]).height($(val).height());
+				});
+			},
+		});
+
+		table.on('sort(dataTable)', function(obj){
+			table.reload('dataTable', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+
+		table.on('tool(dataTable)', function(obj) {
+			if (obj.event === 'confirm') {
+				layerConfirm('确认已处理?','{:url('confirm')}',{id:obj.data['id']},function(res){
+					location.reload();
+				})
+			}
+		});
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+		
+		form.on('submit(export)', function(data) {
+			location.href = "{:url('export')}?limit=100000&"+$('#searchForm').serialize()+'&status={$status}'
+			return false;
+		});		
+		
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+		table.on('colToggled(dataTable)', function(obj){
+			setTableFieldIsHide(obj.config.id,obj.col.field,obj.col.hide);
+		});
+	})
+</script>
+{/block}
+
+

@@ -1,0 +1,41 @@
+{extend name="base" /}
+{block name="body"}
+<div class="mainBox">
+	<div class="main-container">
+		{if !$list->isEmpty()}
+		<ul class="layui-timeline">
+			{volist name="list" id="vo"}
+			<li class="layui-timeline-item">
+				<i class="layui-icon layui-timeline-axis">&#xe63f;</i>
+				<div class="layui-timeline-content layui-text">
+					<h3 class="layui-timeline-title">{:$vo['create_time']} <span style="padding-left:50px;">操作人：{:$vo['operator']}</span></h3>
+					<p>{$vo['content']|str_xhtml|raw}</p>
+				</div>
+			</li>
+			{/volist}
+			<li class="layui-timeline-item"><i class="layui-icon layui-timeline-axis">&#xe63f;</i><div class="layui-timeline-content layui-text"><div class="layui-timeline-title"></div></div></li>
+		</ul>
+		{/if}
+		<form class="layui-form" action="" data-reload="8" method="post">
+			<input type="hidden"  name="order_id"  value="{$id}" >
+			<div class="layui-form-item">
+				<label class="layui-form-label">反馈内容</label>
+				<div class="layui-input-block">
+					<input type="text" maxlength="255" name="content" lay-verify="required" placeholder="请输入反馈内容" autocomplete="off" class="layui-input">
+				</div>
+			</div>			
+			<div class="layui-form-item">
+				<label class="layui-form-label"></label>
+				<div class="layui-input-block">
+					<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*"><i class="layui-icon layui-icon-ok"></i>提交</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+
+
+{/block}
+{block name="script"}
+
+{/block}

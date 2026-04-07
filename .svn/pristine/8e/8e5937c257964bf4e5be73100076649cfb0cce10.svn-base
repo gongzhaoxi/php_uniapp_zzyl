@@ -1,0 +1,250 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-input-block {margin-left: 150px;}
+.layui-form-label {width: 120px;}
+#tbody {margin:10px 0;}
+#tbody .layui-col-md3 .item{background: rgb(210, 227, 243);padding:10px 5px 10px 5px;}
+#tbody .layui-col-md3 .input{width:50px;border: none;padding: 2px 0 2px 5px;}
+#tbody .layui-col-md3 .right{float:right;}
+#tbody .layui-col-md3 .layui-icon-delete{float:right;font-size: 19px;color: red;}
+
+.layui-tab-title .btn{float:right;position: relative;
+line-height: 40px;min-width: 65px;padding: 0 15px;text-align: center;cursor: pointer;display: inline-block;vertical-align: middle;font-size: 14px;}
+
+</style>
+<form class="layui-form" action="" method="post" data-reload="2" id="dataForm">
+	<div class="mainBox">
+		<div class="main-container">
+			<blockquote class="layui-elem-quote">月度需求信息</blockquote>
+			<input type="text" value="" ts-selected="" value=""  id="material_codes" autocomplete="off" class="layui-input" placeholder="选择需求产品">			
+			<div class="layui-row layui-col-space20" id="tbody"></div>
+			<blockquote class="layui-elem-quote">物料需求分析细明<button type="button" style="float:right;" class="layui-btn layui-btn-normal layui-btn-sm check"<i class="layui-icon layui-icon-ok"></i>物料需求分析</button></blockquote>
+			<div class="layui-tab  layui-tab-card" lay-filter="bom">
+				<ul class="layui-tab-title">
+					<li class="layui-this" data-table="component-table">部件</li>
+					<li data-table="partn-table">零件</li>
+					<div class="btn">		
+						<button type="button" class="layui-btn layui-btn-success layui-btn-xs add">下发库存计划</button>
+						<button type="button" class="layui-btn layui-btn-warm layui-btn-xs export" >导出数据</button>									
+					</div>
+				</ul>
+				<div class="layui-tab-content">
+					<div class="layui-tab-item layui-show">
+						<table class="layui-table component-table" id="component-table">
+							<thead>
+								<tr>
+									<th>序号</th>
+									<th>物料编号</th>
+									<th>物料名称</th>
+									<th>现有库存量</th>
+									<th>安全库存</th>
+									<th>最低库存</th>
+									<th>最高库存</th>
+									<th>计划需求量</th>
+									<th>单位</th>
+									<th>类别</th>											
+									<th>颜色</th>
+									<th>备注</th>
+								</tr> 
+							</thead>
+							<tbody>
+								
+							</tbody>
+						</table>
+					</div>
+					<div class="layui-tab-item">
+						<table class="layui-table partn-table" id="partn-table">
+							<thead>
+								<tr>
+									<th>序号</th>
+									<th>物料编号</th>
+									<th>物料名称</th>
+									<th>现有库存量</th>
+									<th>安全库存</th>
+									<th>最低库存</th>
+									<th>最高库存</th>
+									<th>计划需求量</th>
+									<th>单位</th>
+									<th>类别</th>											
+									<th>颜色</th>
+									<th>材料</th>
+									<th>表面</th>
+									<th>备注</th>
+								</tr> 
+							</thead>
+							<tbody>
+								
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+</form>
+{/block}
+{block name="js"}
+<script type="text/javascript" src="/static/tool/jquery.min.js"></script>
+<script type="text/javascript" src="/static/tool/jquery.table2excel.js"></script>
+{/block}
+{block name="script"}
+<script>
+var material_ids = [];
+layui.use(['tableSelect'], function () {
+	var $ = layui.jquery;
+	var tableSelect = layui.tableSelect;
+
+	let element = layui.element;
+	
+	element.on('tab(bom)', function(data){
+		if(data.index == 0){
+			$('.start').show();
+		}else{
+			$('.start').hide();
+		}
+	});
+
+
+	window.deleteMaterial = function(_id){
+		var ids = [];
+		layui.each(material_ids, function (ind, id) {
+			if(_id == id){
+				$('#material_'+id).remove();	
+			}else{
+				ids.push(id);
+			}
+		})
+		material_ids = ids;
+		$('#material_codes').attr('ts-selected',material_ids.join(','));
+	}
+	
+	
+	$('.add').click(function(){
+		if($('#tbody .item').length == 0){
+			layui.layer.msg('请选择产品');return false;
+		}
+		ajaxActionCall('{:url('productAnalyse')}',$('#dataForm').serialize(),function(res){
+			location.reload();
+		})	
+	})
+	
+	
+	$('.check').click(function(){
+		if($('#tbody .item').length == 0){
+			layui.layer.msg('请选择产品');return false;
+		}
+		ajaxActionCall('{:url('productBom')}',$('#dataForm').serialize(),function(res){
+			var html1 = '';
+			var i1 = 1;
+			layui.each(res.data[2], function (index, item) {
+				html1 += '<tr >';
+				html1 += '	<td>'+i1+'</td>';
+				html1 += '	<td>'+item.sn+'</td>';
+				html1 += '	<td>'+item.name+'</td>';
+				html1 += '	<td>'+item.stock+'</td>';
+				html1 += '	<td>'+item.safety_stock+'</td>';
+				html1 += '	<td>'+item.min_stock+'</td>';
+				html1 += '	<td>'+item.max_stock+'</td>';
+				html1 += '	<td>'+item.num+'</td>';
+				html1 += '	<td>'+item.unit+'</td>';
+				html1 += '	<td>'+item.category_name+'</td>';
+				html1 += '	<td>'+item.color+'</td>';
+				html1 += '	<td>'+item.remark+'</td>';
+				html1 += '</tr>';
+				i1++;
+			})
+			$('.component-table tbody').html(html1);
+		
+			var html2 = '';
+			var i2 = 1;
+			layui.each(res.data[1], function (index, item) {
+				html2 += '<tr >';
+				html2 += '	<td>'+i2+'</td>';
+				html2 += '	<td>'+item.sn+'</td>';
+				html2 += '	<td>'+item.name+'</td>';
+				html2 += '	<td>'+item.stock+'</td>';
+				html2 += '	<td>'+item.safety_stock+'</td>';
+				html2 += '	<td>'+item.min_stock+'</td>';
+				html2 += '	<td>'+item.max_stock+'</td>';
+				html2 += '	<td>'+item.num+'</td>';
+				html2 += '	<td>'+item.unit+'</td>';
+				html2 += '	<td>'+item.category_name+'</td>';
+				html2 += '	<td>'+item.color+'</td>';
+				html2 += '	<td>'+item.material+'</td>';
+				html2 += '	<td>'+item.surface+'</td>';
+				html2 += '	<td>'+item.remark+'</td>';
+				html2 += '</tr>';
+				i2++;
+			})
+			$('.partn-table tbody').html(html2);	
+
+		})	
+	})
+	
+	
+	$("body").on("click",".export",function(){
+		var table_name = $('.main-container .layui-tab-card .layui-this').data('table');
+	
+		$("#"+table_name).table2excel({
+			exclude: ".excludeThisClass",
+			name: "Worksheet Name",
+			filename: $('.main-container .layui-tab-card .layui-this').text()+".xls", // do include extension
+			preserveColors: false // set to true if you want background colors and font colors preserved
+		});
+	});	
+	
+	tableSelect.render({
+		elem: '#material_codes',
+		checkedKey: 'id',
+		searchKey: 'keyword',
+		searchPlaceholder: '编号/名称/型号/款式',
+		table: {
+			url: '{:url('product')}',
+			cols: [[
+				{ type: 'checkbox' },
+				{field: 'sn',title: '产品编码',align: 'center',unresize: false,width: 200},
+				{field: 'name',title: '产品名称',align: 'left',unresize: false,width: 200},
+				{field: 'model',title: '型号',align: 'center',unresize: false,width: 100},
+				{field: 'specs',title: '款式',align: 'center',unresize: false,width: 100},
+			]]
+		},
+		done: function (elem, data) {
+			var html = '';
+			
+			var ids  = [];
+			layui.each(data.data, function (index, item) {
+				if(material_ids.indexOf(item.id) == -1){
+					material_ids.push(item.id)
+					var num = 1;
+					if($('#material_'+item.id).length){
+						num = $('#material_'+item.id+' .num').val();
+					}
+					html += '<div class="layui-col-md3" id="material_'+item.id+'"><div class="item">';
+					html += '	产品型号：'+item.model+'('+item.specs+')';
+					html += '	<div class="right">数量：<input type="text" name="product['+item.id+']" value="'+num+'" class="input num" required  lay-verify="required|number" placeholder="请输入" autocomplete="off" >台<i onclick="deleteMaterial('+item.id+')" class="layui-icon layui-icon-delete"></i></div>';
+					html += '</div></div>';
+				}
+				
+				ids.push(item.id);
+			})
+			
+			var _material_ids = [];
+			
+			layui.each(material_ids, function (ind, id) {
+				if(ids.indexOf(id) == -1){
+					$('#material_'+id).remove();	
+				}else{
+					_material_ids.push(id);
+				}
+			})
+			material_ids = _material_ids;
+			
+			$('#tbody').append(html);	
+			
+		}
+	})
+});
+</script>
+{/block}

@@ -1,0 +1,87 @@
+{extend name="base" /}
+{block name="body"}
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="customer_name" placeholder="客户名称/订货单位" class="layui-input">					
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="order_sn" placeholder="销售合同号" class="layui-input">	
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+					<button type="reset" class="pear-btn pear-btn-md"><i class="layui-icon layui-icon-refresh"></i>重置</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	<button class="pear-btn pear-btn-primary pear-btn-md" lay-event="batchRecovery"><i class="layui-icon layui-icon-refresh"></i>恢复数据</button>
+	<button class="pear-btn pear-btn-danger pear-btn-md" lay-event="batchRemove"><i class="layui-icon layui-icon-delete"></i>彻底删除</button>
+</script>
+{/block}
+{block name="script"}
+<script>
+layui.use(['table', 'form', 'jquery','common'], function() {
+	let table = layui.table;
+	let form = layui.form;
+	let $ = layui.jquery;
+
+	table.render({
+		elem: '#dataTable',
+		url: '{:url('recycle')}',
+		page: true,
+		cols: [[
+			{type: 'checkbox'},
+			{field: 'region_type_desc',title: '订单性质',align: 'center',unresize: true,width: 100},
+			{field: 'customer_name',title: '客户名称/订货单位',align: 'center',unresize: true},
+			{field: 'order_sn',title: '销售合同号',align: 'center',unresize: true,width: 140},
+			{field: 'address',title: '收货地址/国家',align: 'center',unresize: true,width: 200},
+			{field: 'order_product_num',title: '订购总数量',align: 'center',unresize: true,width: 120},
+			{field: 'order_amount',title: '合计金额',align: 'center',unresize: true,width: 100},
+			{field: 'salesman_id',title: '销售员',align: 'center',unresize: true,width: 100, templet: function(d){return d.salesman&&d.salesman_id>0?d.salesman.username:'';}},
+			{field: 'create_date',title: '下单日期',align: 'center',unresize: true,width: 120},
+			{field: 'delivery_time',title: '交货日期',align: 'center',unresize: true,width: 120},
+			{field: 'order_status_desc',title: '订单状态',align: 'center',unresize: true,width: 100},
+			{field: 'shipping_status_desc',title: '发货状态',align: 'center',unresize: true,width: 100},
+			{field: 'produce_status_desc',title: '生产状态',align: 'center',unresize: true,width: 100},
+			{field: 'delete_time',title: '删除时间',unresize: true,align: 'center',width: 170}
+		]],			
+		cellMinWidth: 100,
+		skin: 'line',
+		toolbar: '#toolbar',
+		defaultToolbar: [{
+			title: '刷新',
+			layEvent: 'refresh',
+			icon: 'layui-icon-refresh',
+		}, 'filter']
+	});
+
+	table.on('toolbar(dataTable)', function(obj) {
+		if (obj.event === 'batchRemove') {
+			tableAction(obj.config.id,'确定要删除这些订单?','{:url('batchRecycle')}');
+		}else if (obj.event === 'batchRecovery') {
+			tableAction(obj.config.id,'确定要恢复这些订单?','{:url('batchRecycle')}?type=1');
+		}else if (obj.event === 'refresh') {
+			table.reload('dataTable');
+		} 
+	});
+
+	form.on('submit(query)', function(data) {
+		table.reload('dataTable', {
+			where: data.field,
+			page:{curr: 1}
+		})
+		return false;
+	});
+})
+</script>
+{/block}

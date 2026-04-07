@@ -1,0 +1,67 @@
+{
+	"pages": [ //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationStyle":"custom",
+				"navigationBarTitleText": "车间报工"
+			}
+		},
+		{
+			"path": "pages/index/process",
+			"style": {
+				
+				"navigationBarTitleText": "流程报工"
+			}
+		},		
+		{
+			"path": "pages/scan/scan",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "扫码"
+			}
+		},	
+		{
+			"path": "pages/index/shipping",
+			"style": {
+				"navigationStyle":"custom",
+				"navigationBarTitleText": "成品/物流管理"
+			}
+		},		
+		{
+			"path": "pages/index/login",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "登录"
+			}
+		}
+	],
+	"subPackages": [],
+	"globalStyle": {
+		
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "中创医疗管理平台",
+        "navigationBarBackgroundColor": "#F8F8F8",
+        "backgroundColor": "#f8f8f8"
+	},
+	"tabBar": {
+		"color": "#8a8a8a",
+		"selectedColor": "#007AFF",
+		"borderStyle": "black",
+		//"backgroundColor": "#ffffff",
+
+		"list": [{
+				"pagePath": "pages/index/index",
+				"iconPath": "static/tabbar/index.png",
+				"selectedIconPath": "static/tabbar/indexA.png",
+				"text": "车间报工"
+			},
+			{
+				"pagePath": "pages/index/shipping",
+				"iconPath": "static/tabbar/backlog.png",
+				"selectedIconPath": "static/tabbar/backlogA.png",
+				"text": "成品/物流管理"
+			}
+		]
+	}
+}

@@ -1,0 +1,105 @@
+{extend name="layout" /}
+{block name="body"}
+<style>
+.layui-inline{width:120px;}
+.layui-table-cell{padding: 6px 0px;}
+</style>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="plan_sn" value="" placeholder="排产批次号" class="layui-input">	
+				</div>				
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="keyword" placeholder="物料编码/名称" class="layui-input">					
+				</div>	
+				<div class="layui-form-item layui-inline" style="width:190px;">
+					<input type="text" name="start_date" value="" placeholder="下达日期" class="layui-input rangedate">	
+				</div>
+				<div class="layui-form-item layui-inline">
+					<button class="layui-btn" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+				</div>
+				<div class="layui-form-item layui-inline">
+					<button class="layui-btn layui-btn-normal" lay-submit lay-filter="add"><i class="layui-icon layui-icon-add-circle"></i>增加组件</button>
+				</div>
+			</div>
+		</form>
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+
+<script type="text/html" id="options">
+	<button class="layui-btn layui-btn-normal layui-btn-sm " lay-event="report">报工</button>
+</script>
+
+<script type="text/html" id="file">
+	
+	<button class="layui-btn layui-btn-primary layui-btn-xs" lay-event="qc"><i class="layui-icon layui-icon-read"></i></button>
+</script>
+
+{/block}
+{block name="js"}
+<script src="/static/tool/jquery.min.js"></script>
+<script src="/static/tool/jQuery.print.min.js"></script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		table.render({
+			elem: '#dataTable',
+			url: "{:url('index')}",
+			page: true,
+			height: 'full-180',
+			limit:100,
+			size:'sm',
+			limits:[100,200,300,400,500],
+			cols: [[
+				{field: 'plan_sn',title: '排产批次号',align: 'center',unresize: false,width: 120},
+				{field: 'start_date',title: '下达日期',align: 'center',unresize: false,width: 120},
+				{field: 'sn',title: '物料编码',align: 'center',unresize: false,width: 140},
+				{field: 'name',title: '物料名称',align: 'center',unresize: false,minWidth: 200},
+				{field: 'num',title: '排产量',align: 'center',unresize: false,width: 100},
+				{field: 'assembled_num',title: '装配完成',align: 'center',unresize: false,width:100},
+				{field: 'inspect_num',title: '检验完成',align: 'center',unresize: false,width:100},
+				{field: 'finish_num',title: '入库完成',align: 'center',unresize: false,width: 100},
+				{field: 'file',title: '指导书',align: 'center',unresize: false,width: {:get_col_width('bom',100)}, templet:'#file'},
+				{title: '操作',toolbar: '#options',align: 'center',unresize: true,width: 100,fixed: 'right'}
+			]],
+			toolbar: false,
+			defaultToolbar: [{
+					title: '刷新',
+					layEvent: 'refresh',
+					icon: 'layui-icon-refresh',
+			}],
+		});
+		
+		table.on('tool(dataTable)', function(obj) {
+			if (obj.event === 'qc') {
+				openLayer('QC品检作业指导书','{:url('qcFile')}?id='+obj.data['plan_id'],'80%','90%');
+			} else if (obj.event === 'produce') {
+				openLayer('生产作业指导书','{:url('produceFile')}?id='+obj.data['plan_id'],'80%','90%');
+			}else if (obj.event === 'report') {
+				openLayer('报工','{:url('report')}?id='+obj.data['plan_id'],'80%','90%');
+			}
+		});		
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});	
+		form.on('submit(add)', function(data) {
+			openLayer('增加组件','{:url('add')}','80%','90%');
+			return false;
+		});	
+	})
+</script>
+{/block}
+
+

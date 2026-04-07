@@ -1,0 +1,298 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+body{background: rgb(242, 242, 242);}
+.bg-white{background: #fff;;}
+.section3 .title{padding:10px;}
+.section3 .title .time{float:right;}
+.layui-form-item .layui-input-inline{width:auto;}
+.section3 .title .time .layui-input-inline{width:190px;}
+.pear-container{width:auto;}
+.echart{width:99%;clear:both;}
+</style>
+<form id="myForm">
+	<div class="layui-row layui-col-space10">
+		<div class="layui-col-md4 ">
+			<div class="bg-white section3">
+				<div class="layui-form-item title">
+					<div class="layui-form-mid layui-word-aux">销售合同占比</div>
+					<div class="time">
+						<div class="layui-input-inline"><input type="text" readonly name="create_time1" value="{$create_time1}" id="create_time1" placeholder="请选择" autocomplete="off" class="layui-input create_time"></div>
+					</div>
+				</div>
+				<div class="echart" id="echart1"></div>
+			</div>
+		</div>
+		<div class="layui-col-md8 ">
+			<div class="bg-white section3">
+				<div class="layui-form-item title">
+					<div class="layui-form-mid layui-word-aux">产品型号占比</div>
+					<div class="time">
+						<div class="layui-input-inline"><input type="text" readonly name="create_time2" value="{$create_time2}" id="create_time2" placeholder="请选择" autocomplete="off" class="layui-input create_time"></div>
+					</div>
+				</div>
+				<div class="echart" id="echart2"></div>
+			</div>
+		</div>	
+	</div>
+	<div class="layui-row layui-col-space10">
+		<div class="layui-col-md6 ">
+			<div class="bg-white section3">
+				<div class="layui-form-item title">
+					<div class="layui-form-mid layui-word-aux">同比全年销量折线分析</div>
+					<div class="time"><input type="text" readonly name="year" value="{$year}" id="year" placeholder="请选择" autocomplete="off" class="layui-input"></div>
+				</div>
+				<div class="echart" id="echart3"></div>
+			</div>
+		</div>
+		<div class="layui-col-md6 ">
+			<div class="bg-white section3">
+				<div class=" title">
+					<div class="layui-form-mid layui-word-aux">客户订购数量排名（TOP.10）</div>
+					<div class="time">
+						<div class="layui-input-inline"><input type="text" readonly name="create_time4" value="{$create_time4}" id="create_time4" placeholder="请选择" autocomplete="off" class="layui-input create_time"></div>
+					</div>
+				</div>
+				<div style="padding: 0 10px 10px 10px;">
+					<div class="layui-row layui-col-space10">
+						<div class="layui-col-md6 ">
+							<table class="layui-table" lay-skin="nob">
+								<thead>
+									<tr>
+										<th>国内排名  TOP.10</th>
+										<th>单位：台</th>
+									</tr> 
+								</thead>
+								<tbody>
+									{volist name="list1" id="vo"}
+									<tr>
+										<td>{$i}.{$vo['name']}</td>
+										<td>{$vo['num']|default='0'}</td>
+									</tr>
+									{/volist}
+								</tbody>
+							</table>
+						</div>
+						<div class="layui-col-md6 ">
+							<table class="layui-table" lay-skin="nob">
+								<thead>
+									<tr>
+										<th>国外排名  TOP.10</th>
+										<th>单位：台</th>
+									</tr> 
+								</thead>
+								<tbody>
+									{volist name="list2" id="vo"}
+									<tr>
+										<td>{$i}.{$vo['name']}</td>
+										<td>{$vo['num']|default='0'}</td>
+									</tr>
+									{/volist}
+								</tbody>
+							</table>
+						</div>						
+					</div>
+				</div>
+			</div>
+		</div>	
+	</div>
+</form>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['echarts', 'form', 'jquery','common','laydate'], function() {
+		let echarts = layui.echarts;
+		let form = layui.form;
+		let $ = layui.jquery;
+		let laydate = layui.laydate;
+	
+		
+		laydate.render({
+			type:'year',
+			elem: "#year",
+			done: function(value, date, endDate){
+				location.replace('{:url('sale')}?'+$('#myForm').serialize())
+			},
+		});
+	
+		laydate.render({
+			elem: ".create_time",
+			range: '至',
+			//max: '{:date('Y-m')}',
+			done: function(value, date, endDate){
+				location.replace('{:url('sale')}?'+$('#myForm').serialize())
+			},
+			shortcuts: [
+			{
+				text: "上月",
+				value: function(){
+					var value = [];
+					var date1 = new Date();
+					date1.setMonth(date1.getMonth() - 1);
+					date1.setDate(1);
+					date1.setHours(0, 0, 0, 0);
+					value.push(date1);
+					var date2 = new Date();
+					date2.setDate(1);
+					date2.setHours(0, 0, 0, 0);
+					date2 = date2.getTime() - 1;
+					value.push(new Date(date2));
+					return value;
+				}()
+			},
+			{
+				text: "本月",
+				value: function(){
+					var value = [];
+					var date1 = new Date();
+					// date1.setMonth(date1.getMonth() - 1);
+					date1.setDate(1);
+					date1.setHours(0, 0, 0, 0);
+					value.push(date1);
+					var date2 = new Date();
+					date2.setMonth(date2.getMonth() + 1);
+					date2.setDate(1);
+					date2.setHours(0, 0, 0, 0);
+					date2 = date2.getTime() - 1;
+					value.push(new Date(date2));
+					return value;
+				}()
+			},			
+			{
+				text: "本年",
+				value: function(){
+					var value = [];
+					var date1 = new Date();
+					date1.setMonth(0);
+					date1.setDate(1);
+					date1.setHours(0, 0, 0, 0);
+					value.push(date1);
+					var date2 = new Date();
+					date2.setMonth(11);
+					date2.setDate(31);
+					date2.setHours(23, 59, 59, 59);					
+					value.push(new Date(date2));
+					return value;
+				}()
+			},
+			{
+				text: "近90天",
+				value: function(){
+					var value = [];		
+					value.push(new Date(new Date().setDate(new Date().getDate() - 90)));					
+					value.push(new Date(new Date().setDate(new Date().getDate() )));
+					console.log(value);					
+					return value;
+				}()
+			},
+		]});		
+
+		
+		var echart1 = echarts.init(document.getElementById('echart1'),null, {height: 350});
+		var	option1 = {
+				tooltip: {
+					trigger: 'item'
+				},
+				toolbox: {
+					feature: {
+						saveAsImage: {title:'下载',name:'销售合同占比'}
+					}
+				},
+				legend: {
+					y: 'bottom',
+					padding:[0,0,20,0],
+				},
+				series: [
+				{
+					name: '',
+					type: 'pie',
+					radius: ['40%', '70%'],
+					label: {
+						show: true,
+						formatter: "{c} {d}%",
+					},
+					data: {:json_encode($series1)}
+				}
+				]
+			};
+
+		echart1.setOption(option1);
+		
+		
+		var option2 =  {
+				title: {
+					text: ''
+				},
+				tooltip: {
+					trigger: 'axis'
+				},
+				legend: {
+					y: 'bottom',
+					padding:[0,0,20,0],
+					data: {:json_encode(array_column($series2,'name'))}
+				},
+
+				toolbox: {
+					feature: {
+						saveAsImage: {title:'下载',name:'产品型号占比'}
+					}
+				},
+				xAxis: {
+					type: 'category',
+					boundaryGap: false,
+					data: {:json_encode($x2)}
+				},
+				yAxis: {
+					type: 'value'
+				},
+				series: {:json_encode($series2)}
+			};
+
+		var echart2 = echarts.init(document.getElementById('echart2'),null, {height: 350});
+
+		echart2.setOption(option2);		
+		
+		
+		
+
+		var echart3 = echarts.init(document.getElementById('echart3'),null, {height: 300});
+
+		var	option3 = {
+				title: {
+					text: ''
+				},
+				tooltip: {
+					trigger: 'axis'
+				},
+				legend: {
+					y: 'bottom',
+					padding:[0,0,20,0],
+					data: {:json_encode(array_column($series3,'name'))}
+				},
+
+				toolbox: {
+					feature: {
+						saveAsImage: {title:'下载',name:'近12个月异常出现趋势'}
+					}
+				},
+				xAxis: {
+					type: 'category',
+					boundaryGap: false,
+					data: {:json_encode($x3)}
+				},
+				yAxis: {
+					type: 'value'
+				},
+				series: {:json_encode($series3)}
+			};
+
+		echart3.setOption(option3);
+		
+		
+
+
+	})
+</script>
+{/block}
+
+

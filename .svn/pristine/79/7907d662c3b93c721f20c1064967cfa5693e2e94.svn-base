@@ -1,0 +1,144 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.bom{margin:10px;font-size:12px;line-height:30px;}
+.bom .title{font-weight:600;font-size:13px;}
+
+#production-timeline{display:none;}
+.production-timeline .count{color: rgb(51, 51, 51);margin-right:20px;}
+.production-timeline ul li{color: rgb(153, 153, 153);}
+.production-timeline .layui-text p{margin-top:0px;font-size:13px;}
+</style>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="" id="searchForm">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline" style="width:190px;">
+					<input type="text" name="orer_time" placeholder="下单日期" class="layui-input rangedate">	
+				</div>				
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="customer_name" value="" placeholder="客户名称/订货单位" class="layui-input">						
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="order_sn" value="" placeholder="销售合同号" class="layui-input">	
+				</div>	
+				<div class="layui-form-item layui-inline" >
+					<select name="salesman_id" lay-search>
+						<option value="">业务员</option>
+						{foreach $admins as $vo}
+						<option value="{$vo['id']}">{$vo['username']}</option>
+						{/foreach}
+					</select>
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+					<button type="reset" class="pear-btn pear-btn-md"><i class="layui-icon layui-icon-refresh"></i>重置</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+
+</script>
+<script type="text/html" id="options">
+	<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="view">查看</button>
+</script>
+<script type="text/html" id="bom">
+	<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="bom">查看</button>
+</script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('schedule')}',
+			page: true,
+			limit:90,
+			height:'full-170',
+			cols: [[
+				{field: 'region_type_desc',title: '订单性质',align: 'center',unresize: false,width: {:get_col_width('region_type_desc',100)}, hide: getTableFieldIsHide('dataTable','region_type_desc')},
+				{field: 'customer_name',title: '客户名称/订货单位',align: 'center',unresize: false,width: {:get_col_width('customer_name',150)}, hide: getTableFieldIsHide('dataTable','customer_name')},
+				{field: 'order_sn',title: '销售合同号',align: 'center',unresize: false,width: {:get_col_width('order_sn',140)}, hide: getTableFieldIsHide('dataTable','order_sn')},
+				{field: 'produce_sn',title: '产品编码',align: 'center',unresize: false,width:{:get_col_width('produce_sn',200)}, hide: getTableFieldIsHide('dataTable','produce_sn')},
+				{field: 'produce_finish_sn',title: '产品序列号',align: 'center',unresize: false,width: {:get_col_width('produce_finish_sn',120)}, hide: getTableFieldIsHide('dataTable','produce_finish_sn')},
+				{field: 'product_name',title: '产品名称',align: 'center',unresize: false,width: {:get_col_width('product_name',150)}, templet: function(d){return d.order_product?d.order_product.product_name:'';}, hide: getTableFieldIsHide('dataTable','product_name')},
+				{field: 'product_model',title: '型号',align: 'center',unresize: false,width: {:get_col_width('product_model',120)}, templet: function(d){return d.order_product?d.order_product.product_model:'';}, hide: getTableFieldIsHide('dataTable','product_model')},
+				{field: 'color',title: '颜色',align: 'center',unresize: false,width: {:get_col_width('color',100)}, templet: function(d){return d.order_product?d.order_product.color:'';}, hide: getTableFieldIsHide('dataTable','color')},
+				{field: 'salesman',title: '业务员',align: 'center',unresize: false,width: {:get_col_width('salesman',100)}, hide: getTableFieldIsHide('dataTable','salesman')},
+				{field: 'order_date',title: '下单日期',align: 'center',unresize: false,width: {:get_col_width('order_date',120)}, hide: getTableFieldIsHide('dataTable','order_date')},
+				{field: 'delivery_date',title: '交货日期',align: 'center',unresize: false,width: {:get_col_width('delivery_date',120)}, hide: getTableFieldIsHide('dataTable','delivery_date')},
+				{field: 'produce_date',title: '排产日期',align: 'center',unresize: false,width: {:get_col_width('produce_date',120)}, hide: getTableFieldIsHide('dataTable','produce_date')},
+				{field: 'produce_status_desc',title: '生产状态',align: 'center',unresize: false,width: {:get_col_width('produce_status_desc',120)}, hide: getTableFieldIsHide('dataTable','produce_status_desc')},
+				{field: 'finish_date',title: '完工日期',align: 'center',unresize: false,width: {:get_col_width('finish_date',120)}, hide: getTableFieldIsHide('dataTable','finish_date')},
+				{field: 'shipping_status_desc',title: '发货状态',align: 'center',unresize: false,width: {:get_col_width('shipping_status_desc',120)}, templet: function(d){return d.shipping?d.shipping.shipping_status_desc:'';}, hide: getTableFieldIsHide('dataTable','shipping_status_desc')},
+				{field: 'out_warehouse_time',title: '出库日期',align: 'center',unresize: false,width: {:get_col_width('out_warehouse_time',120)}, templet: function(d){return d.shipping?d.shipping.out_warehouse_time:'';}, hide: getTableFieldIsHide('dataTable','out_warehouse_time')},
+				{field: 'bom',title: '具体配置',align: 'center',unresize: false,width: {:get_col_width('bom',100)}, templet:'#bom', hide: getTableFieldIsHide('dataTable','bom')},
+			]],
+			cellMinWidth: 100,
+			toolbar: '#toolbar',
+			defaultToolbar: [{
+				title: '刷新',
+				layEvent: 'refresh',
+				icon: 'layui-icon-refresh',
+			}, 'filter']
+		});
+
+		table.on('sort(dataTable)', function(obj){
+			table.reload('dataTable', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+
+		table.on('tool(dataTable)', function(obj) {
+			if (obj.event === 'view') {
+				openLayer('查看详细','{:url('scheduleDetail')}?id='+obj.data['id'],'90%','90%');
+			}else if (obj.event === 'bom') {
+				layer.open({
+					type: 1, 
+					area: ['500px', '300px'],
+					content: '<div class="bom">'+obj.data.order_product.project_html+'</div>'
+				});
+			}	
+		});
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+		
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+		table.on('colToggled(dataTable)', function(obj){
+			setTableFieldIsHide(obj.config.id,obj.col.field,obj.col.hide);
+		});
+	})
+</script>
+{/block}
+
+

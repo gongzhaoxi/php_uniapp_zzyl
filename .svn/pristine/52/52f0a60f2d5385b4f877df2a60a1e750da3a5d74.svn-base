@@ -1,0 +1,110 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-input-block {margin-left: 150px;}
+.layui-form-label {width: 120px;}
+</style>
+    <form class="layui-form" action="" method="post">
+        <div class="mainBox">
+            <div class="main-container">
+				<div class="layui-form-item">
+                    <label class="layui-form-label">供应链组织码</label>
+                    <div class="layui-input-block">
+                        <input type="text" maxlength="50" name="code"  placeholder="不可为空" lay-verify="required" autocomplete="off" class="layui-input">
+                    </div>
+                </div>				
+				<div class="layui-form-item">
+                    <label class="layui-form-label">名称</label>
+                    <div class="layui-input-block">
+                        <input type="text"  maxlength="255" name="name" placeholder="请输入,不可为空"  lay-verify="required" autocomplete="off"  class="layui-input">
+                    </div>
+                </div>               
+				<div class="layui-form-item">
+                    <label class="layui-form-label">联系电话</label>
+                    <div class="layui-input-block">
+                        <input type="text" maxlength="255" name="tel"  placeholder="可为空" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+				<div class="layui-form-item">
+                    <label class="layui-form-label">联系人</label>
+                    <div class="layui-input-block">
+                        <input type="text" maxlength="255" name="contact"  placeholder="可为空" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+				<div class="layui-form-item">
+                    <label class="layui-form-label">地址</label>
+                    <div class="layui-input-block">
+                        <input type="text" maxlength="255" name="address"  placeholder="可为空" autocomplete="off" class="layui-input">
+                    </div>
+                </div>		
+				<div class="layui-form-item">
+                    <label class="layui-form-label">备注</label>
+                    <div class="layui-input-block">
+                        <input type="text" maxlength="255" name="remark"  placeholder="可为空" autocomplete="off" class="layui-input">
+                    </div>
+                </div>	
+				<div class="layui-form-item">
+                    <label class="layui-form-label">资质证明</label>
+                    <div class="layui-input-block">
+                      {:$form->files('file')}
+                    </div>
+                </div>		
+				<div class="layui-form-item">
+					<label class="layui-form-label">供应商调查表</label>
+					<div class="layui-input-block">
+						<input type="radio" name="is_survey" value="有" title="有" checked>
+						<input type="radio" name="is_survey" value="无" title="无" >
+					</div>
+				</div>
+				<div class="layui-form-item">
+                    <label class="layui-form-label">质量协议到期日</label>
+                    <div class="layui-input-block">
+                        <input type="text" maxlength="255" name="quality_date"  placeholder="可为空" autocomplete="off" class="layui-input date">
+                    </div>
+                </div>
+				<div class="layui-form-item">
+                    <label class="layui-form-label">供货合同到到期日</label>
+                    <div class="layui-input-block">
+                        <input type="text" maxlength="255" name="contract_date"  placeholder="可为空" autocomplete="off" class="layui-input date">
+                    </div>
+                </div>
+				<div class="layui-form-item">
+                    <label class="layui-form-label">相关证书</label>
+                    <div class="layui-input-block">
+                        <input type="text" maxlength="255" name="certificate"  placeholder="可为空" autocomplete="off" class="layui-input">
+                    </div>
+                </div>				
+				<div class="layui-form-item">
+                    <label class="layui-form-label">年度评分</label>
+                    <div class="layui-input-block">
+                        <input type="text" maxlength="255" name="score"  placeholder="可为空" autocomplete="off" class="layui-input">
+                    </div>
+                </div>				
+				<div class="layui-form-item">
+					<label class="layui-form-label">状态</label>
+					<div class="layui-input-block">
+						<input type="radio" name="status" value="1" title="启用" checked>
+						<input type="radio" name="status" value="0" title="禁用" >
+					</div>
+				</div>
+            </div>
+        </div>
+        <div class="bottom">
+			<div class="button-container">
+				<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*">
+					<i class="layui-icon layui-icon-ok"></i>
+					提交
+				</button>
+				<button type="reset" class="layui-btn layui-btn-primary layui-btn-sm">
+					<i class="layui-icon layui-icon-refresh"></i>
+					重置
+				</button>
+			</div>
+		</div>
+	</form>
+{/block}
+{block name="script"}
+<script>
+	
+</script>
+{/block}

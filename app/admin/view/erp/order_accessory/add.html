@@ -1,0 +1,88 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-input-block {margin-left: 150px;}
+.layui-form-label {width: 120px;}
+</style>
+<form class="layui-form" action="" method="post" data-reload="3">
+	<input type="hidden" name="order_id" value="{$order_id}" />
+	<div class="mainBox">
+		<div class="main-container">
+			<table class="layui-table">
+				<thead>
+					<tr>
+						<th>产品名称</th>
+						<th>型号</th>
+						<th>数量</th>
+						<th>单价</th>
+						<th>金额</th>
+						<th>发运时间</th>
+						<th>备注</th>
+						<th>递属产品</th>
+						<th>操作</th>
+					</tr> 
+				</thead>
+				<tbody id="tobody">
+					
+				</tbody>
+			</table>
+			<button type="button" class="layui-btn layui-btn-primary layui-border-blue add">增加一行数据</button>
+		</div>
+	</div>
+	<div class="bottom">
+		<div class="button-container">
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*"><i class="layui-icon layui-icon-ok"></i>提交</button>
+			<button type="reset" class="layui-btn layui-btn-primary layui-btn-sm"><i class="layui-icon layui-icon-refresh"></i>重置</button>
+		</div>
+	</div>
+</form>
+{/block}
+{block name="script"}
+<script>
+	var orderProduct = {:json_encode($model['orderProduct'])} ;
+	var index = 0;
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		setHtml();
+		$('.add').click(function(){
+			setHtml();
+		})
+
+		function setHtml(){
+			var html = '<tr>';
+			html += '		<td><input type="hidden"  name="data['+index+'][order_id]" value="{$order_id}"><input type="text" maxlength="100" name="data['+index+'][product_name]" lay-verify="required" placeholder="不可为空" autocomplete="off" class="layui-input"></td>';
+			html += '		<td><input type="text" maxlength="100" name="data['+index+'][product_model]" placeholder="可为空" autocomplete="off" class="layui-input  "></td>';
+			html += '		<td><input type="text" maxlength="100" name="data['+index+'][product_num]" lay-verify="required|number" placeholder="不可为空" autocomplete="off" class="layui-input product_num cal_price"></td>';
+			html += '		<td><input type="text" maxlength="100" name="data['+index+'][product_price]" lay-verify="required|number" placeholder="不可为空" autocomplete="off" class="layui-input product_price cal_price"></td>';
+			html += '		<td><input type="text" maxlength="100" name="data['+index+'][total_price]" lay-verify="required|number" placeholder="不可为空" autocomplete="off" class="layui-input total_price"></td>';
+			html += '		<td><input type="text" maxlength="100" name="data['+index+'][shipping_time]"  placeholder="可为空" autocomplete="off" class="layui-input"></td>';
+			html += '		<td><input type="text" maxlength="100" name="data['+index+'][remark]" placeholder="可为空" autocomplete="off" class="layui-input"></td>';
+			html += '		<td><select lay-verify="required" name="data['+index+'][order_product_id]" class="project_id"><option value="0">请选择</option>';		
+			layui.each(orderProduct, function (index, item) {
+				html += 		'<option value="'+item.id+'">序号'+(index+1)+'：'+item.product_model+item.product_specs+'</option>';
+			})
+			html += '		</select></td>';
+			html += '		<td><button type="button" class="layui-btn layui-btn layui-btn-danger  layui-btn-xs">删除</button></td>';
+			html += '	</tr>';
+			index++;
+			$('#tobody').append(html);
+			form.render();
+		}
+		
+		$("body").on("change",".cal_price",function(){
+			var tr 				= $(this).closest('tr');
+			var product_num 	= tr.find('.product_num').val();
+			var product_price 	= tr.find('.product_price').val();
+			if(product_num && product_price && !isNaN(parseFloat(product_num)) && product_num > 0 && !isNaN(parseFloat(product_price)) && product_price > 0){ 
+				var total_price = parseFloat(product_num)*parseFloat(product_price);
+				tr.find('.total_price').val(total_price);
+			}
+		});
+		$("body").on("click",".layui-btn-danger",function(){
+			$(this).closest('tr').remove();
+		});
+	})
+</script>
+{/block}

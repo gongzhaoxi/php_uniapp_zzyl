@@ -1,0 +1,214 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-table-cell { height:auto;}
+.bom{margin:10px;font-size:12px;line-height:30px;}
+.bom .title{font-weight:600;font-size:13px;}
+</style>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="" id="searchForm" lay-filter="searchForm">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline" style="width:190px;">
+					<input type="text" name="finish_date" placeholder="入库日期" class="layui-input rangedate">					
+				</div>	
+				<div class="layui-form-item layui-inline" style="width:190px;">
+					<input type="text" name="create_time" placeholder="报工日期" class="layui-input rangedate">	
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<select name="process_id" >
+						<option value="">工艺组</option>
+						{foreach $process as $key=>$vo}
+						<option value="{$vo['id']}">{$vo['name']}</option>
+						{/foreach}
+					</select>
+				</div>	
+				<div class="layui-form-item layui-inline layui-hide">
+					<select name="user_id" >
+						<option value="">员工</option>
+						{foreach $users as $key=>$vo}
+						<option value="{$vo['id']}">{$vo['name']}</option>
+						{/foreach}
+					</select>
+				</div>	
+				<div class="layui-form-item layui-inline" >
+					<input type="text" name="follow_name" placeholder="所属随工单" class="layui-input">					
+				</div>				
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+					<button type="reset" class="pear-btn pear-btn-md"><i class="layui-icon layui-icon-refresh"></i>重置</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<div class="layui-tab layui-tab-brief">
+			<ul class="layui-tab-title">
+				<li class="layui-this">报工明细</li>
+				<li>员工汇总</li>
+			</ul>
+			<div class="layui-tab-content">
+				<div class="layui-tab-item layui-show">
+					<table id="dataTable" lay-filter="dataTable"></table>
+				</div>
+				<div class="layui-tab-item">
+					<table id="dataTable2" lay-filter="dataTable2"></table>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	<button class="pear-btn pear-btn-primary pear-btn-sm" lay-event="export"><i class="layui-icon layui-icon-export"></i>导出</button>
+</script>
+<script type="text/html" id="bom">
+	<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="bom">查看</button>
+</script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('list')}',
+			page: true,
+			limit:90,
+			height:'full-250',			
+			cols: [[
+				{field: 'produce_sn',title: '产品编码',align: 'center',unresize: false,minWidth: {:get_col_width('produce_sn',150)}, hide: getTableFieldIsHide('dataTable','produce_sn')},
+				{field: 'product_model',title: '型号',align: 'center',unresize: false,width: {:get_col_width('produce_sn',100)}, hide: getTableFieldIsHide('dataTable','product_model')},
+				{field: 'product_specs',title: '款式',align: 'center',unresize: false,width: {:get_col_width('product_specs',80)}, hide: getTableFieldIsHide('dataTable','product_specs')},
+				{field: 'order_sn',title: '销售合同号',align: 'center',unresize: false,width: {:get_col_width('order_sn',140)}, hide: getTableFieldIsHide('dataTable','order_sn')},
+				{field: 'delivery_time',title: '交货日期',align: 'center',unresize: false,width: {:get_col_width('delivery_time',120)}, hide: getTableFieldIsHide('dataTable','delivery_time')},
+				{field: 'finish_date',title: '入库日期',align: 'center',unresize: false,width: {:get_col_width('finish_date',120)}, hide: getTableFieldIsHide('dataTable','finish_date')},
+				{field: 'salesman',title: '业务员',align: 'center',unresize: false,width: {:get_col_width('salesman',100)}, hide: getTableFieldIsHide('dataTable','salesman')},
+				{field: 'process_name',title: '报工工序',align: 'center',unresize: false,width: {:get_col_width('process_name',120)}, hide: getTableFieldIsHide('dataTable','process_name')},
+				{field: 'follow_name',title: '所属随工单',align: 'center',unresize: false,width: {:get_col_width('follow_name',120)}, hide: getTableFieldIsHide('dataTable','follow_name')},
+				{field: 'confirm_date',title: '完成时间',align: 'center',unresize: false,width: {:get_col_width('confirm_date',120)}, hide: getTableFieldIsHide('dataTable','confirm_date')},
+				{field: 'username',title: '完成人',align: 'center',unresize: false,width: {:get_col_width('username',100)}, hide: getTableFieldIsHide('dataTable','username')},
+				{field: 'price',title: '报工单价',align: 'center',unresize: false,width: {:get_col_width('price',120)}, hide: getTableFieldIsHide('dataTable','price')},
+				{field: 'approve_status_desc',title: '状态',align: 'center',unresize: false,width: {:get_col_width('approve_status_desc',100)}, hide: getTableFieldIsHide('dataTable','approve_status_desc')},
+			]],
+			cellMinWidth: 80,
+			//skin: 'line',
+			toolbar: '#toolbar',
+			defaultToolbar: [{
+				title: '刷新',
+				layEvent: 'refresh',
+				icon: 'layui-icon-refresh',
+			}, 'filter']
+		});
+
+		table.on('sort(dataTable)', function(obj){
+			table.reload('dataTable', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+
+		table.on('toolbar(dataTable)', function(obj) {
+			if (obj.event === 'refresh') {
+				table.reload('dataTable');
+			}else if (obj.event === 'export') {
+				var data = form.val('searchForm');
+				exportData('{:url('export')}',data);
+			}
+		});
+
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+		
+		
+		
+		table.render({
+			elem: '#dataTable2',
+			url: '{:url('list')}?type=2',
+			page: true,
+			limit:90,
+			height:'full-250',	
+			totalRow:true,	
+			cols: [[
+				{field: 'username',title: '完成人',align: 'center',unresize: false,width: {:get_col_width('username')}},
+				{field: 'process_name',title: '报工工序',align: 'center',unresize: false,width: {:get_col_width('process_name')}},
+				{field: 'follow_name',title: '所属随工单',align: 'center',unresize: false,width: {:get_col_width('follow_name')}},
+				{field: 'price',title: '工序单价',align: 'center',unresize: false,width: {:get_col_width('price',120)}},
+				{field: 'count',title: '报工次数',align: 'center',unresize: false,totalRow:true,width: {:get_col_width('count')}},
+				{field: 'amount',title: '报工金额',align: 'center',unresize: false,totalRow:true,width: {:get_col_width('amount')}},
+			]],
+			cellMinWidth: 80,
+			//skin: 'line',
+			toolbar: '#toolbar',
+			defaultToolbar: [{
+				title: '刷新',
+				layEvent: 'refresh',
+				icon: 'layui-icon-refresh',
+			}, 'filter']
+		});
+
+		table.on('sort(dataTable2)', function(obj){
+			table.reload('dataTable2', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+
+		table.on('toolbar(dataTable2)', function(obj) {
+			if (obj.event === 'refresh') {
+				table.reload('dataTable2');
+			}else if (obj.event === 'export') {
+				var data = form.val('searchForm');
+				exportData('{:url('export')}?type=2',data);
+			}
+		});
+
+		table.on('colResized(dataTable2)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});	
+		table.on('colToggled(dataTable)', function(obj){
+			setTableFieldIsHide(obj.config.id,obj.col.field,obj.col.hide);
+		});
+		
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			
+			table.reload('dataTable2', {
+				where: data.field,
+				page:{curr: 1}
+			})			
+			
+			return false;
+		});
+		
+	})
+</script>
+{/block}

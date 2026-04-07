@@ -1,0 +1,110 @@
+{extend name="h5base" /}
+{block name="body"}
+<style>
+.am-table tbody tr td {vertical-align: top;border: none;font-size: 1.25rem;}
+</style>
+<form class="am-form-inline" role="form" id="ue-form">
+	<div class="am-g" style="padding: 0 10px;margin-top:10px;">
+		<div class="am-u-sm-5">
+			<div class="am-form-group">
+				<input type="text" name="address" required  value="{$model['address']}"  class="am-form-field" placeholder="电子邮件">
+			</div>
+		</div>
+		<div class="am-u-sm-5">
+			<div class="am-form-group">
+				<input type="text" name="shipping_date" value="{:date('Y-m-d')}" required data-am-datepicker readonly class="am-form-field" placeholder="密码">
+			</div>
+		</div>
+		<div class="am-u-sm-2">
+			<button type="submit" class="am-btn  am-btn-primary am-btn-sm">提交</button>	
+		</div>
+	</div>
+	
+	{foreach $model->orderProduct as $k1=>$v1}
+	<div style="padding: 0 10px;margin-top:10px;">
+		<table class="am-table am-table-bordered am-table-radius" >
+			<colgroup>
+				<col width="80">
+				<col>
+				<col width="80">
+				<col>
+			</colgroup>
+			<tbody>
+				<tr>
+					<td align="right">产品名称：</td>
+					<td>{$v1['product_name']}</td>
+					<td align="right">型号：</td>
+					<td>{$v1['product_model']}</td>
+				</tr>
+				<tr>
+					<td align="right">颜色：</td>
+					<td>{$v1['color']}</td>
+					<td align="right">数量：</td>
+					<td>{$v1['product_num']}</td>
+				</tr>
+				<tr>	
+					<td align="right" style="vertical-align: top">方案配置：
+					<td colspan="3" >{$v1['project_html']|raw}</td>
+				</tr>
+				<tr>
+					<td colspan="4"><h3>排产信息：</h3></td>
+				</tr>
+				<tr>
+					<td colspan="4">
+						{foreach $v1['produce'] as $v2}
+						<table class="am-table am-table-bordered am-table-radius" style="background-color: rgb(247, 246, 246);">
+							<tbody>						
+								<tr>
+									<td>
+										<label class="am-checkbox">
+											{if $v2['can_notice_shipping']}
+												<input type="checkbox" name="produce_id[{$v1['id']}][]" value="{$v2['id']}"  checked> 
+											{/if}
+											{$v2['produce_sn']}({$v2['produce_status_desc']}) {if $v2['order_shipping_id']}{$v2['shipping']['shipping_status_desc']}{/if}
+										</label>
+									</td>
+								</tr>						
+							</tbody>
+						</table>
+						{/foreach}
+					</td>
+				</tr>		
+			</tbody>
+		</table>
+	</div>
+	{/foreach}
+</form>
+<script>
+$(function() {
+	var $form = $('#ue-form');
+	$form.validator({
+		validateOnSubmit: true,
+		submit: function() {
+			if(this.isFormValid()) {
+				$.post(
+					"{:url('shipping')}",
+					$("#ue-form").serialize(),
+					function(res){
+						console.log(res);
+						//判断有没有权限
+						if (res && res.code == 999) {
+							layui.layer.msg(res.msg, {
+								icon: 5,
+								time: 2000,
+							})
+							return false;
+						} else if (res.code == 200) {
+							layui.layer.msg(res.msg,{icon:1,time:1000}, function () {
+								parent.location.reload();
+							});
+						} else {
+							layui.layer.msg(res.msg,{icon:2,time:1000});
+						}
+					}, "json");
+			}
+			return false;
+		}
+	});
+})
+</script>
+{/block}

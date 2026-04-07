@@ -1,0 +1,84 @@
+<?php
+declare (strict_types = 1);
+namespace app\admin\logic;
+use app\admin\logic\BaseLogic;
+use app\common\model\{ErpMaterialEnterMaterial,ErpMaterialEnterMaterialReport};
+
+class MaterialEnterMaterialReportlLogic extends BaseLogic{
+
+	// 获取列表
+    public static function getList($query=[],$limit=10)
+    {
+		$map 		= self::getWhere($query);
+		$field 		= 'a.id,a.status,a.material_code,a.material_enter_material_id,a.code,a.pass_num,a.pass_rate,a.unqualified_description,b.stock_num,c.order_sn,c.order_date,c.delivery_date,d.apply_num,e.sn,e.name,f.order_sn as enter_order_sn,f.stock_date,g.name as supplier_name';	
+		$list 		= ErpMaterialEnterMaterialReport::alias('a')
+		->join('erp_material_enter_material b','a.material_enter_material_id = b.id','LEFT')
+		->join('erp_purchase_order c','b.purchase_order_id = c.id','LEFT')
+		->join('erp_purchase_order_data d','b.purchase_order_data_id = d.id','LEFT')
+		->join('erp_material e','a.material_id = e.id','LEFT')
+		->join('erp_material_stock f','b.material_stock_id = f.id','LEFT')
+		->join('erp_supplier g','c.supplier_id = g.id','LEFT')
+		->field($field)->where($map)->order('f.stock_date','desc')->paginate($limit);
+		return ['code'=>0,'data'=>$list->items(),'extend'=>['count' => $list->total(), 'limit' => $limit]];
+    }
+	
+	
+	public static function getWhere($query=[])
+    {
+		$map	 			= [];
+		$map[]				= ['a.status', '=', 2];
+		if(!empty($query['supplier_id'])) {
+			$map[]			= ['c.supplier_id', '=', $query['supplier_id']];
+        }			
+		if(!empty($query['code'])) {
+			$map[]			= ['a.code', 'like', '%' . $query['code'] . '%'];
+        }
+		if(!empty($query['stock_date'])) {
+			$time 			= is_array($query['stock_date'])?$query['stock_date']:explode('至',$query['stock_date']);
+			if(!empty($time[0])){
+				$map[]		= ['f.stock_date', '>=', (trim($time[0]))];
+			}
+			if(!empty($time[1])){
+				$map[]		= ['f.stock_date', '<=', (trim($time[1]))];
+			}
+        }
+		if(!empty($query['sn'])) {
+			$map[]			= ['e.sn', 'like', '%' . $query['sn'] . '%'];
+        }	
+		if(!empty($query['enter_order_sn'])) {
+			$map[]			= ['f.order_sn', 'like', '%' . $query['enter_order_sn'] . '%'];
+        }
+		if(!empty($query['material_code'])) {
+			$map[]			= ['a.material_code', 'like', '%' . $query['material_code'] . '%'];
+        }		
+		return $map;
+	}
+	
+	
+	public static function getCount($query=[]){
+        $count 	= ErpMaterialEnterMaterialReport::alias('a')
+		->join('erp_material_enter_material b','a.material_enter_material_id = b.id','LEFT')
+		->join('erp_purchase_order c','b.purchase_order_id = c.id','LEFT')
+		->join('erp_purchase_order_data d','b.purchase_order_data_id = d.id','LEFT')
+		->join('erp_material e','a.material_id = e.id','LEFT')
+		->join('erp_material_stock f','b.material_stock_id = f.id','LEFT')
+		->join('erp_supplier g','c.supplier_id = g.id','LEFT')
+		->field('a.id')->where(self::getWhere($query))->count();
+		return ['data'=>['count'=>$count,'key'=>rand_string()]];
+	}
+	
+	public static function getExport($query=[],$limit=10000){
+		$limit				= $limit>10000?10000:$limit;
+		$data				= self::getList($query,$limit)['data'];
+		$return				= ['column'=>[],'setWidh'=>[],'keys'=>[],'list'=>$data,'image_fields'=>[]];
+		$field 				= ['supplier_name'=>'供应商名称','sn'=>'物料编号','name'=>'物料名称','order_date'=>'下单日期','order_sn'=>'采购单据编号','apply_num'=>'订购数量','delivery_date'=>'预计到货日期','stock_date'=>'实际到货日期','code'=>'进货检验报告编号','enter_order_sn'=>'物料批号','material_code'=>'物料编号(序列号)','stock_num'=>'实际数量','pass_num'=>'合格数量','pass_rate'=>'合格率','unqualified_description'=>'主要不良原因'];
+		foreach($field as $key=>$vo){
+			$return['column'][] 	= $vo;
+			$return['setWidh'][] 	= 10;
+			$return['keys'][] 		= $key;				
+		}
+        return $return;	
+	}
+
+
+}

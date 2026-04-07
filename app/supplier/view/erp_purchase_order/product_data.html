@@ -1,0 +1,113 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.left .layui-inline{width:100px;}
+.layui-table-cell {padding: 6px 5px;}
+.pear-container {margin: 0; background-color: #fff;}
+</style>
+{if $data}
+<table class="layui-table" id="materialTable" lay-filter="materialTable">
+	<thead>
+		<tr>
+			<th lay-data="{field:'id', width:50,type: 'checkbox'}" class="excludeThisClass"></th>
+			<th lay-data="{field:'id', width:50,hide:true}" class="excludeThisClass"></th>
+			<th lay-data="{field:'delivery_date', width:{:get_col_width('delivery_date',110)}}">要求交货日期</th>
+			<th lay-data="{field:'produce_sn', width:{:get_col_width('produce_sn',150)}}">产品编码</th>
+			<th lay-data="{field:'product_model', width:{:get_col_width('product_model',120)}}">型号</th>
+			<th lay-data="{field:'product_specs', width:{:get_col_width('product_specs',100)}}">款式</th>
+			<th lay-data="{field:'queue_num', width:{:get_col_width('queue_num',80)}}">数量</th>
+			<th lay-data="{field:'order_sn', width:{:get_col_width('order_sn',140)}}">销售合同号</th>
+			<th lay-data="{field:'address', width:{:get_col_width('address',150)}}">收货地址/国家</th>
+			<th lay-data="{field:'username', width:{:get_col_width('username',80)}}">销售员</th>
+			<th lay-data="{field:'order_type_desc', width:{:get_col_width('order_type_desc',120)}}">订单类型</th>
+			<th lay-data="{field:'order_product_remark', width:{:get_col_width('order_product_remark',120)}}">备注</th>
+		</tr> 
+	</thead>
+	<tbody>
+		{volist name="data['data']" id="vo"}
+		<tr id="td{$vo['id']}" data-check="">
+			<td class="excludeThisClass"></td>
+			<td>{$vo['id']}</td>
+			<td>{$vo['delivery_date']}</td>
+			<td>{$vo['produce_sn']}</td>
+			<td>{$vo['product_model']}</td>
+			<td>{$vo['product_specs']}</td>
+			<td>{$vo['apply_num']}</td>
+			<td>{$vo['order_sn']}</td>
+			<td>{$vo['address']}</td>
+			<td>{$vo['username']}</td>
+			<td>{$vo['order_type_desc']}</td>
+			<td>{$vo['order_product_remark']}</td>
+		</tr>
+		<tr>
+			<td class="excludeThisClass"></td>
+			<td colspan="11">
+				{$vo['order_product']['project_html']|raw}
+			</td>
+		</tr>
+		{/volist}
+	</tbody>
+</table>
+{else/}
+<div class="empty" style="margin-top: 50px;margin-left: 220px;margin-bottom: 80px;" width="184" height="152">
+	请点击左边“行”，选择入库单编号，查看明细！
+</div>
+{/if}
+<script type="text/html" id="toolbar">
+	<button class="pear-btn pear-btn-warming pear-btn-sm  pear-btn-sm"  lay-event="print"><i class="layui-icon layui-icon-print"></i>打印物料标签</button>
+</script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		table.init('materialTable', {
+			escape :false,
+			height: 'full-40',
+			toolbar: '#toolbar',
+			defaultToolbar: [],
+			done: function(res, curr, count){
+				$(".layui-table-main tr").each(function (index, val) {
+					$($(".layui-table-fixed-l .layui-table-body tbody tr")[index]).height($(val).height());
+					$($(".layui-table-fixed-r .layui-table-body tbody tr")[index]).height($(val).height());
+					if(parseInt($(this).data('index'))%2 == 1){
+						$(this).html('<td colspan="11"><div class="layui-table-cell">'+$(this).find('td').eq(1).find('.layui-table-cell').html()+'</div></td>');
+					}
+				});
+			}
+		});
+
+		table.on('toolbar(materialTable)', function(obj) {
+			if (obj.event === 'print') {
+				var checkStatus = table.checkStatus('materialTable');
+				if(checkStatus.data.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				var id = [];			
+				for(var i in checkStatus.data) {
+					if(checkStatus.data[i].id && checkStatus.data[i].produce_sn){
+						id.push(checkStatus.data[i].id);
+					}
+				}
+				toPrintPage(74,{id:ids.join(',')});
+			}
+		});
+
+		table.on('colResized(materialTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+	})
+</script>
+{/block}
+
+

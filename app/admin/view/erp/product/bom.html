@@ -1,0 +1,114 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-tab-title .btn{float:right;position: relative;line-height: 40px;min-width: 65px;padding: 0 15px;text-align: center;cursor: pointer;display: inline-block;vertical-align: middle;font-size: 14px;}
+td img{max-width:80px;max-height:80px;}
+</style>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<div class="layui-tab  layui-tab-brief" lay-filter="tab" id="tab">
+			<ul class="layui-tab-title">
+				<li class="layui-this" data-type="1">组件</li>
+				<li data-type="2">零件</li>
+				<div class="btn" >
+					<button type="button" class="pear-btn pear-btn-md pear-btn-success export" ><i class="layui-icon layui-icon-export"></i>导出</button>
+				</div>
+			</ul>	
+			<div class="layui-tab-content">
+				<div class="layui-tab-item layui-show">
+					<table class="layui-table">
+						<thead>
+							<tr>
+								<th>序号</th>
+								<th>物料编号</th>
+								<th>物料名称</th>	
+								<th>当前库存</th>
+								<th>数量</th>								
+								<th>单位</th>
+								<th>颜色</th>
+								<th>备注</th>
+								<th>图片</th>
+							</tr> 
+						</thead>
+						<tbody>
+							{volist name="data1" id="vo"}
+							<tr >
+								<td>{$i}</td>
+								<td>{$vo['sn']}</td>
+								<td>{$vo['name']}</td>
+								<td>{$vo['stock']}</td>
+								<td>{$vo['num']}</td>
+								<td>{$vo['unit']}</td>
+								<td>{$vo['color']}</td>
+								<td>{$vo['remark']}</td>
+								<td>
+									{if $vo['drawing']}
+									{foreach $vo['drawing'] as $item}
+									<a onclick="layerPhotos('{$item['final_pic']}','{$vo['id']}')" href="javascript:;"><img src="{$item['final_pic']}" /> </a>
+									{/foreach}
+									{/if}
+								</td>
+							</tr>
+							{/volist}
+						</tbody>
+					</table>
+				</div>
+				<div class="layui-tab-item">
+					<table class="layui-table">
+						<thead>
+							<tr>
+								<th>序号</th>
+								<th>物料编号</th>
+								<th>物料名称</th>
+								<th>当前库存</th>
+								<th>数量</th>		
+								<th>单位</th>
+								<th>材料</th>
+								<th>表面</th>
+								<th>颜色</th>
+								<th>备注</th>
+								<th>图片</th>
+							</tr> 
+						</thead>
+						<tbody>
+							{volist name="data2" id="vo"}
+							<tr >
+								<td>{$i}</td>
+								<td>{$vo['sn']}</td>
+								<td>{$vo['name']}</td>
+								<td>{$vo['stock']}</td>
+								<td>{$vo['num']}</td>
+								<td>{$vo['unit']}</td>
+								<td>{$vo['material']}</td>
+								<td>{$vo['surface']}</td>
+								<td>{$vo['color']}</td>
+								<td>{$vo['remark']}</td>
+								<td>
+									{if $vo['drawing']}
+									{foreach $vo['drawing'] as $item}
+									<a onclick="layerPhotos('{$item['final_pic']}','{$vo['id']}')" href="javascript:;"><img src="{$item['final_pic']}" /> </a>
+									{/foreach}
+									{/if}
+								</td>
+							</tr>
+							{/volist}
+						</tbody>
+					</table>
+				</div>				
+			</div>
+		</div>
+	</div>
+</div>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['jquery'], function() {
+		let $ = layui.jquery;
+		$('.export').click(function(){
+			location.href = '{:url('bomExport')}?product_id={$product_id}&type='+$('.layui-this').data('type');
+		})
+	})
+</script>
+{/block}
+
+

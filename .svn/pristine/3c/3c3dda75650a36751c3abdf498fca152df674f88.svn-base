@@ -1,0 +1,45 @@
+{extend name="base" /}
+{block name="body"}
+<div class="layui-card">
+	<div class="layui-card-body">
+		<table class="layui-table data-table">
+			<thead>
+				<tr>
+					<th>序号</th>
+					<th>产品编号</th>
+					<th>销售编号</th>
+					<th>销售客户</th>								
+					<th>销售日期</th>
+					<th>销售员</th>											
+					<th>入库日期</th>
+				</tr> 
+			</thead>
+			<tbody>
+				{volist name="data" id="vo"}
+				<tr >
+					<td>{$i}</td>
+					<td>{$vo['produce_sn']}</td>
+					<td>{$vo['order_sn']}</td>
+					<td>{$vo['customer_name']}</td>						
+					<td>{$vo['create_time']}</td>
+					<td>{$vo['salesman_name']}</td>
+					<td>{$vo['finish_date']}</td>												
+				</tr>							
+				{/volist}
+			</tbody>
+		</table>
+	</div>
+</div>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+	})
+</script>
+{/block}
+
+

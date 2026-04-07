@@ -1,0 +1,63 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.pear-container{background-color:white;}
+</style>
+<form class="layui-form" action="" data-reload="3">
+	<input type="hidden" name="parent_id" id="parent_id"  value="{$parent_id}" >
+	<div class="layui-form-item">
+		<label for="" class="layui-form-label">父级</label>
+		<div class="layui-input-block">
+			<ul id="demoTree" class="dtree" ></ul>
+		</div>
+	</div>
+	<div class="layui-form-item">
+		<label for="" class="layui-form-label">id</label>
+		<div class="layui-input-block">
+			<input type="text" maxlength="50" name="id"  lay-verify="required|number" placeholder="请输入地区id" class="layui-input" >
+		</div>
+	</div>	
+	<div class="layui-form-item">
+		<label for="" class="layui-form-label">名称</label>
+		<div class="layui-input-block">
+			<input type="text" maxlength="50" name="name"  lay-verify="required" placeholder="请输入名称" class="layui-input" >
+		</div>
+	</div>
+	<div class="bottom">
+		<div class="button-container">
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*">
+				<i class="layui-icon layui-icon-ok"></i>
+				提交
+			</button>
+		</div>
+	</div>
+</form>
+{/block}
+{block name="script"}
+<script>
+layui.use(['form','element','iconPicker','jquery','dtree'], function() {
+	var form = layui.form;
+	var element = layui.element;
+	var dtree = layui.dtree;
+	var $ = layui.jquery;
+	var demoTree = dtree.renderSelect({
+		elem: "#demoTree",
+		data:{:json_encode($tree)},
+		selectInitVal: "{$parent_id}", 
+		//skin: "laySimple",  // layui主题风格
+		//icon: "-1",  // 隐藏二级图标
+		line: true,  // 显示树线
+		response:{
+            treeId: "id",			  //节点ID
+            parentId: "parent_id",	  //父节点ID
+            title: "name",			  //节点名称 
+            childName: "children",	  //子节点名称
+		}
+	});
+
+	dtree.on("node('demoTree')" ,function(param){
+		$('#parent_id').val(param.param.nodeId);
+	});
+});
+</script>
+{/block}

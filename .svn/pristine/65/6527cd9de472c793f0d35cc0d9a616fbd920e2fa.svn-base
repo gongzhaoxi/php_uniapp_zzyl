@@ -1,0 +1,193 @@
+<?php
+declare (strict_types = 1);
+namespace app\admin\controller\erp;
+use app\admin\logic\{ErpMaterialLogic,ErpSupplierLogic,ErpPurchaseApplyLogic,ErpSupplierProcessLogic};
+use app\common\enum\ErpWarehouseEnum;
+use app\common\enum\{ErpMaterialEnum,ErpPurchaseApplyEnum};
+use app\common\util\Excel;
+use app\admin\logic\ErpMaterialTreeLogic;
+
+class Material extends \app\admin\controller\Base
+{
+
+    // 零件列表
+    public function partn(){
+        if ($this->request->isAjax()) {
+			return $this->getJson(ErpMaterialLogic::getList(array_merge($this->request->param(),['type'=>ErpMaterialEnum::PARTN]),$this->request->param('limit')));
+        }
+		return $this->fetch('',['tree' => ErpMaterialTreeLogic::tree(ErpMaterialEnum::PARTN,false),'type'=>ErpMaterialEnum::PARTN,'category'=>ErpMaterialLogic::getCategory('material_partn')]);
+    }
+
+    // 添加零件
+    public function partnAdd(){
+        if ($this->request->isAjax()) {
+            return $this->getJson(ErpMaterialLogic::goAdd($this->request->only(['tag','workstation_id','material_category','num_version','supplier_code','qc_code','quality_testing_area','processing_way','supplier_id','generality','tree_id','qc_file','produce_file','produce_type','sn','name','cid','safety_stock','min_stock','max_stock','warehouse_id','unit','processing_type','material','surface','remark','status','color','photo','type'])));
+        }
+        return $this->fetch('',['processing_way'=>ErpMaterialEnum::getProcessingWayDesc(),'supplier' => ErpSupplierLogic::getAll(),'tree' => ErpMaterialTreeLogic::tree(ErpMaterialEnum::PARTN,false),'material_produce_type'=>get_dict_data('material_produce_type'),'type'=>ErpMaterialEnum::PARTN,'warehouse'=>ErpMaterialLogic::getWarehouse(ErpWarehouseEnum::PARTN),'workstation'=>ErpMaterialLogic::getWarehouse(ErpWarehouseEnum::PRODUCE),'category'=>ErpMaterialLogic::getCategory('material_partn'),'quality_testing_area'=>get_dict_data('quality_testing_area')]);
+    }
+
+    // 编辑零件
+    public function partnEdit(){
+        if ($this->request->isAjax()) {
+            return $this->getJson(ErpMaterialLogic::goEdit($this->request->only(['tag','workstation_id','material_category','num_version','supplier_code','qc_code','quality_testing_area','processing_way','supplier_id','generality','tree_id','qc_file','produce_file','produce_type','sn','name','cid','safety_stock','min_stock','max_stock','warehouse_id','unit','processing_type','material','surface','remark','status','color','photo','id']))); 
+        }
+        return $this->fetch('',['processing_way'=>ErpMaterialEnum::getProcessingWayDesc(),'supplier' => ErpSupplierLogic::getAll(),'tree' => ErpMaterialTreeLogic::tree(ErpMaterialEnum::PARTN,false),'material_produce_type'=>get_dict_data('material_produce_type'),'type'=>ErpMaterialEnum::PARTN,'warehouse'=>ErpMaterialLogic::getWarehouse(ErpWarehouseEnum::PARTN),'workstation'=>ErpMaterialLogic::getWarehouse(ErpWarehouseEnum::PRODUCE),'category'=>ErpMaterialLogic::getCategory('material_partn'),'quality_testing_area'=>get_dict_data('quality_testing_area'),'model' => ErpMaterialLogic::getOne($this->request->param('id/d'))]);
+    }
+	
+	// 导入零件
+    public function partnImport(){
+        if($this->request->isPost()){
+			return $this->getJson(ErpMaterialLogic::goImport(ErpMaterialEnum::PARTN,$this->request->param('excel')));
+        }else{
+			return $this->fetch('');
+		}
+    }
+
+    // 零件库存列表
+    public function partnStock(){
+        if ($this->request->isAjax()) {
+			return $this->getJson(ErpMaterialLogic::getStockList(array_merge($this->request->param(),['type'=>ErpMaterialEnum::PARTN,'status'=>1]),$this->request->param('limit')));
+        }
+		return $this->fetch('',['supplier' => ErpSupplierLogic::getAll(),'tree' => ErpMaterialTreeLogic::tree(ErpMaterialEnum::PARTN,false),'material_type'=>ErpMaterialEnum::PARTN,'category'=>ErpMaterialLogic::getCategory('material_partn'),'bellow_safety_stock'=>ErpMaterialLogic::getStockCount(['stock_search'=>1,'type'=>ErpMaterialEnum::PARTN]),'bellow_min_stock'=>ErpMaterialLogic::getStockCount(['stock_search'=>2,'type'=>ErpMaterialEnum::PARTN])]);
+    }
+	
+	// 导出零件
+    public function partnExport(){
+		ini_set("memory_limit","-1");
+		ini_set('max_execution_time', '30');
+		$data = ErpMaterialLogic::getStockExport(array_merge($this->request->param(),['type'=>ErpMaterialEnum::PARTN,'status'=>1]),10000);
+		Excel::go('零件表', $data['column'], $data['setWidh'], $data['list'], $data['keys'],"零件表", $data['image_fields']);
+		exit;	
+    }
+
+    // 部件列表
+    public function component(){
+        if ($this->request->isAjax()) {
+			return $this->getJson(ErpMaterialLogic::getList(array_merge($this->request->param(),['type'=>ErpMaterialEnum::COMPONENT]),$this->request->param('limit')));
+        }
+		return $this->fetch('',['type'=>ErpMaterialEnum::COMPONENT,'category'=>ErpMaterialLogic::getCategory('material_component')]);
+    }
+
+    // 添加部件
+    public function componentAdd(){
+        if ($this->request->isAjax()) {
+            return $this->getJson(ErpMaterialLogic::goAdd($this->request->only(['material_category','num_version','tree_id','produce_file','produce_type','sn','name','cid','safety_stock','min_stock','max_stock','warehouse_id','unit','remark','status','photo','type'])));
+        }
+        return $this->fetch('',['tree' => ErpMaterialTreeLogic::tree(ErpMaterialEnum::COMPONENT,false),'type'=>ErpMaterialEnum::COMPONENT,'warehouse'=>ErpMaterialLogic::getWarehouse(ErpWarehouseEnum::COMPONENT),'category'=>ErpMaterialLogic::getCategory('material_component')]);
+    }
+
+    // 编辑部件
+    public function componentEdit(){
+        if ($this->request->isAjax()) {
+            return $this->getJson(ErpMaterialLogic::goEdit($this->request->only(['material_category','num_version','tree_id','produce_file','produce_type','sn','name','cid','safety_stock','min_stock','max_stock','warehouse_id','unit','processing_type','material','surface','remark','status','color','photo','id']))); 
+        }
+        return $this->fetch('',['tree' => ErpMaterialTreeLogic::tree(ErpMaterialEnum::COMPONENT,false),'type'=>ErpMaterialEnum::COMPONENT,'warehouse'=>ErpMaterialLogic::getWarehouse(ErpWarehouseEnum::COMPONENT),'category'=>ErpMaterialLogic::getCategory('material_component'),'model' => ErpMaterialLogic::getOne($this->request->param('id/d'))]);
+    }
+	
+	// 导入部件
+    public function componentImport(){
+        if($this->request->isPost()){		
+			return $this->getJson(ErpMaterialLogic::goImport(ErpMaterialEnum::COMPONENT,$this->request->param('excel')));			
+        }else{
+			return $this->fetch('');
+		}
+    }
+
+
+    // 部件库存列表
+    public function componentStock(){
+        if ($this->request->isAjax()) {
+			return $this->getJson(ErpMaterialLogic::getStockList(array_merge($this->request->param(),['type'=>ErpMaterialEnum::COMPONENT,'status'=>1]),$this->request->param('limit')));
+        }
+		return $this->fetch('',['tree' => ErpMaterialTreeLogic::tree(ErpMaterialEnum::COMPONENT,false),'material_type'=>ErpMaterialEnum::COMPONENT,'category'=>ErpMaterialLogic::getCategory('material_partn'),'bellow_safety_stock'=>ErpMaterialLogic::getStockCount(['stock_search'=>1,'type'=>ErpMaterialEnum::COMPONENT]),'bellow_min_stock'=>ErpMaterialLogic::getStockCount(['stock_search'=>2,'type'=>ErpMaterialEnum::COMPONENT])]);
+    }
+	
+	// 导出部件
+    public function componentExport(){
+		ini_set("memory_limit","-1");
+		ini_set('max_execution_time', '30');
+		$data = ErpMaterialLogic::getStockExport(array_merge($this->request->param(),['type'=>ErpMaterialEnum::COMPONENT,'status'=>1]),10000);
+		Excel::go('部件表', $data['column'], $data['setWidh'], $data['list'], $data['keys'],"部件表", $data['image_fields']);
+		exit;
+		
+    }
+
+
+    // 删除物料
+    public function remove(){
+        return $this->getJson(ErpMaterialLogic::goRemove($this->request->only(['ids'])));
+    }	
+
+    // 物料回收站
+    public function recycle($type){
+        if ($this->request->isAjax()) {
+            return $this->getJson(ErpMaterialLogic::getRecycle($this->request->param(),$this->request->param('limit')));
+        }
+        return $this->fetch('',['type'=>$type]);
+    }
+	
+	// 恢复/删除物料回收站
+	public function batchRecycle(){
+		return $this->getJson(ErpMaterialLogic::goRecycle($this->request->param('ids'),$this->request->param('type')));
+    }
+	
+	
+    public function errorStock(){
+		if ($this->request->isAjax()) {
+
+			return $this->getJson(ErpMaterialLogic::resetMaterialStock($this->request->param('type'),$this->request->param('ids')));
+		}else{
+			$type 	= $this->request->param('type');
+			$data 	= ErpMaterialLogic::getErrorStock($type);
+			return $this->fetch('',['material_type'=>$type,'data'=>$data]);
+		}
+    }
+	
+	// 调拨
+    public function transfer($type=1){
+        if ($this->request->isAjax()) {
+            return $this->getJson(ErpMaterialLogic::goTransfer($this->request->param('from_id'),$this->request->param('to_id')));
+        }
+        return $this->fetch('',['tree' => ErpMaterialTreeLogic::tree($type,false)]);
+    }
+	
+	// 申请采购
+    public function purchaseApply(){
+        $processing_way = $this->request->param('processing_way');
+		if ($this->request->isAjax()) {
+			if($processing_way == 1){
+				return $this->getJson(ErpPurchaseApplyLogic::goMaterialAdd($this->request->only(['type'=>1,'supplier_id','apply_date','remark','material','username'=>session('admin.username'),'data_type'=>ErpPurchaseApplyEnum::DATA_TYPE_WAREHOUSE])));
+			}else{
+				return $this->getJson(ErpPurchaseApplyLogic::goMaterialAdd($this->request->only(['type'=>3,'process_id','supplier_id','apply_date','remark','material','username'=>session('admin.username'),'data_type'=>ErpPurchaseApplyEnum::DATA_TYPE_WAREHOUSE])));
+			} 
+		}
+		if($processing_way == 1){
+			return $this->fetch('erp/purchase_apply/material_add',['list'=>ErpMaterialLogic::getSelect($this->request->param(),10000)['data'],'supplier' => ErpSupplierLogic::getAll()]);
+		}else{
+			return $this->fetch('erp/purchase_apply/outsourcing_add',['list'=>ErpMaterialLogic::getSelect($this->request->param(),10000)['data'],'supplier' => ErpSupplierLogic::getAll(),'process' => ErpSupplierProcessLogic::getAll()]);
+		}
+    }	
+	
+	// 月度库存汇总
+    public function stockStat(){
+        if ($this->request->isAjax()) {
+			return $this->getJson(ErpMaterialLogic::getStockStat($this->request->param(),$this->request->param('limit'),$this->request->param('sort'),$this->request->param('order')));
+        }
+        return $this->fetch('',['supplier' => ErpSupplierLogic::getAll(),'tree' => ErpMaterialTreeLogic::tree($this->request->param('material_type/d',1),false),'material_type'=>$this->request->param('material_type/d',1)]);
+    }
+	
+	// 安全库存修改
+    public function safetyStock(){
+        if($this->request->isPost()){
+			return $this->getJson(ErpMaterialLogic::goSafetyStock($this->request->only(['id','safety_stock','min_stock','max_stock','warehouse_id','supplier_id','quality_testing_area','material_category','workstation_id','supplier_code','tag'])));
+        }else{
+			return $this->fetch('',['supplier' => ErpSupplierLogic::getAll(),'quality_testing_area'=>get_dict_data('quality_testing_area'),'warehouse'=>ErpMaterialLogic::getWarehouse(ErpWarehouseEnum::PARTN),'workstation'=>ErpMaterialLogic::getWarehouse(ErpWarehouseEnum::PRODUCE),'model' => ErpMaterialLogic::getOne($this->request->param('id/d'))]);
+		}
+    }
+	
+	
+	public function stockDetail(){
+        return $this->fetch('',['data' => ErpMaterialLogic::getStockDetail($this->request->param('id/d'))]);
+    }
+	
+}

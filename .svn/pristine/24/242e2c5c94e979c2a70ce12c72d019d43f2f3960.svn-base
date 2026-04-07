@@ -1,0 +1,38 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.file_a{display:none;}
+</style>
+<form class="layui-form" action="" method="post" data-table="dataTable" enctype="multipart/form-data">
+	<div class="mainBox">
+		<div class="main-container">
+			<div class="layui-form-item ">
+				<label class="layui-form-label">excel文件</label>
+				<div class="layui-input-block" >
+					{:$form->file('excel','','xlsx|xls',['lay-verify'=>"required",'readonly'=>"true"])}
+				</div>
+			</div>	
+			<div class="layui-form-item ">
+				<label class="layui-form-label"></label>
+				<div class="layui-form-mid layui-word-aux"><a href="/批量导入配置方案.xlsx">点击下载模板</a></div>
+			</div>										
+		</div>
+	</div>
+	<div class="bottom">
+		<div class="button-container">
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*"><i class="layui-icon layui-icon-ok"></i>提交</button>
+		</div>
+	</div>
+</form>
+{/block}
+{block name="js"}
+
+{/block}
+{block name="script"}
+<script>
+layui.use(['form'], function () {
+	var form = layui.form,$ = layui.$;
+
+});
+</script>
+{/block}

@@ -1,0 +1,196 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-input-block {margin-left: 150px;}
+.layui-form-label {width: 120px;}
+</style>
+<form class="layui-form" action="" method="post" data-reload="7" data-callback="submitCallBack">
+	<input type="hidden"  name="type" value="{$processing_way}" >
+	<div class="mainBox">
+		<div class="main-container">
+			<blockquote class="layui-elem-quote">单据单头信息</blockquote>
+			<div class="layui-form-item">	
+				<label class="layui-form-label">供应商</label>
+				<div class="layui-input-inline">
+					<select name="supplier_id" lay-search  lay-verify="required">
+						<option value="">供应商</option>
+						{foreach $supplier as $key=>$vo}
+						<option value="{$vo['id']}" {if $supplier_id == $vo['id']}selected{/if}>{$vo['name']}</option>
+						{/foreach}
+					</select>
+				</div>				
+				<label class="layui-form-label">申请日期</label>
+				<div class="layui-input-inline">
+					<input type="text"  readonly name="apply_date" value="{:date('Y-m-d')}" lay-verify="required" placeholder="请选择,不可为空" autocomplete="off" class="layui-input date">
+				</div>
+				<label class="layui-form-label">要求交货日期</label>
+				<div class="layui-input-inline">
+					<input type="text"  readonly  id="delivery_date" value="{:date('Y-m-d',strtotime('+7 day'))}" placeholder="请选择,不可为空" autocomplete="off" class="layui-input">
+				</div>	
+				{if $processing_way == 2}
+				<label class="layui-form-label">委外工艺</label>
+				<div class="layui-input-inline">
+					<select name="process_id" lay-search  lay-verify="required">
+						<option value="">请选择</option>
+						{foreach $process as $key=>$vo}
+						<option value="{$vo['id']}" {if $process_id == $vo['id']}selected{/if}>{$vo['name']}</option>
+						{/foreach}
+					</select>
+				</div>	
+				{/if}				
+			</div>	
+			<div class="layui-form-item">	
+				<label class="layui-form-label">备注</label>
+				<div class="layui-input-block">
+					<input type="text" maxlength="255" name="remark"  placeholder="请输入" autocomplete="off" class="layui-input">
+				</div>	
+			</div>
+			<blockquote class="layui-elem-quote">相关物料信息</blockquote>
+
+			<table class="layui-table">
+				<thead>
+					<tr>
+						<th>物料编码</th>
+						<th>物料名称</th>
+						<th>材料</th>							
+						<th>颜色</th>
+						<th style="width:150px">要求交货日期</th>
+						<th style="width:150px">再次委外数</th>
+						<th style="width:100px">操作</th>
+					</tr> 
+				</thead>
+				<tbody id="tbody">
+
+				</tbody>
+			</table>
+		</div>
+	</div>
+	<div class="bottom">
+		<div class="button-container">
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*"><i class="layui-icon layui-icon-ok"></i>提交</button>
+			<button type="reset" class="layui-btn layui-btn-primary layui-btn-sm"><i class="layui-icon layui-icon-refresh"></i>重置</button>
+		</div>
+	</div>
+</form>
+{/block}
+{block name="script"}
+<script>
+var list = [];
+{if !empty($data)}
+list = {:json_encode($data)};
+{/if}
+
+layui.use(['tableSelect','select','laydate'], function () {
+	var $ = layui.jquery;
+	var tableSelect = layui.tableSelect;
+	var select = layui.select;
+	var laydate = layui.laydate;
+	
+	laydate.render({
+		elem: '#delivery_date',
+		type: 'date',
+		trigger: 'click',
+		done: function(value, date, endDate){
+			$('.delivery_date').val(value);
+		}
+	});
+	
+	window.submitCallBack = function (res){
+		parent.layui.table.reload('dataTable');
+		location.replace('{:url('erp.PurchaseApply/outsourcing')}?ids='+res.data.ids);
+	}
+	
+	window.deleteMaterial = function(_id){
+		$('#material_'+_id).remove();
+	}
+	
+	select.config("selectId",{
+		type:"post",
+		searchUrl:'{:url('common/material')}?limit=50&status=1&processing_way=2',    //请求地址
+		searchName: "keyword",
+		keyName:"name",
+		keyVal:"id" , 
+		beforeSuccess: function(id, url, searchVal, result){
+			$.each(result.data, function(index, item) {
+				item._name = item.name;
+				item.name = '物料编码：'+item.sn + ' | 物料名称：' + item.name + ' | 现有库存：' + item.stock + '';
+			});
+			return result;
+		}
+	},false)
+	
+	select.on('selectId', function(id, vals, item, isAdd, isDisabled){
+		if($('#material_'+item.id).length>0){
+			layer.msg('物料已添加');	
+			$('#material_'+item.id).find('.apply_num').focus();
+		}else if(item && item.id && item.name){
+			addMaterial(item);
+		}
+		$('.xm-select-parent>.xm-form-select').removeClass('xm-form-selected');
+		
+		lay('.delivery_date').each(function(){
+			laydate.render({
+				elem: this,
+				type: 'date',
+				trigger: 'click'
+			});
+		});
+		
+		return false;
+	});
+	
+	
+	if(list.length > 0){
+		$.each(list,function(idx,item){
+			addMaterial(item);
+		})
+		lay('.delivery_date').each(function(){
+			laydate.render({
+				elem: this,
+				type: 'date',
+				trigger: 'click'
+			});
+		});
+	}
+
+	function addMaterial(item){
+		var apply_num = '';
+		var delivery_date = '';
+		if(item.delivery_date){
+			delivery_date = item.delivery_date;
+		}else{
+			delivery_date = $('#delivery_date').val();
+		}
+		var html = '<tr id="material_'+item.id+'"><input type="hidden"  name="material['+item.id+'][id]" value="'+item.data_id+'" ><input type="hidden"  name="material['+item.id+'][type]" value="'+item.processing_way+'" >';
+		html += '	<td>'+item.sn+'</td>';
+		html += '	<td>'+(item._name?item._name:item.name)+'</td>';
+		html += '	<td>'+item.material+'</td>';
+		html += '	<td>'+item.color+'</td>';
+		html += '	<td><input type="text"  name="material['+item.id+'][delivery_date]" value="'+delivery_date+'" class="layui-input delivery_date" data-key="delivery_date" placeholder=""></td>';
+		
+		apply_num = item.no_warehous_num
+		html += '	<td><input type="text"  name="material['+item.id+'][apply_num]" min="1" max="'+apply_num+'" value="'+apply_num+'" data-key="apply_num" class="layui-input apply_num" lay-verify="required|number" placeholder="请输入数量"></td>';
+		html += '	<td><button type="button" onclick="deleteMaterial('+item.id+')" class="layui-btn layui-btn-xs layui-btn-danger">删除</button></td>';
+		html += '</tr>';
+		$('#tbody').prepend(html);	
+		$('#material_'+item.id).find('.apply_num').focus();
+	}
+	
+	
+	$(".layui-table").on("keydown",".layui-input",function(){
+		if (event.keyCode == 40) {
+			$(this).closest('tr').next().find('.'+$(this).data('key')).focus();
+		}else if (event.keyCode == 38) {
+			$(this).closest('tr').prev().find('.'+$(this).data('key')).focus();
+		}else if (event.keyCode == 13 || event.keyCode == 39) {
+			//右一个
+			$(this).closest('td').next().next().find('.layui-input').focus();
+		}else if (event.keyCode == 37) {
+			//左一个
+			$(this).closest('td').prev().prev().find('.layui-input').focus();
+		}
+	});
+
+});
+</script>
+{/block}

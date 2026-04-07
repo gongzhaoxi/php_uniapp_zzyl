@@ -1,0 +1,250 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-table-cell { height:auto;}
+.bom{margin:10px;font-size:12px;line-height:30px;}
+.bom .title{font-weight:600;font-size:13px;}
+.more{color: rgb(24, 144, 255);font-size:12px;}
+.error-img{max-width:100px;max-height:100px;margin-right:10px;}
+.confirm-time{color: rgb(24, 144, 255);}
+</style>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<div class="layui-tab layui-tab-brief">
+			<ul class="layui-tab-title">
+				<a href="{:url('list')}"><li >销售订单</li></a>
+				<a href="{:url('aftersale')}"><li class="layui-this">售后订单</li></a>
+			</ul>
+		</div>	
+		<form class="layui-form" action="" id="searchForm">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="customer_name" placeholder="客户名称/订货单位" class="layui-input">					
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="order_sn" placeholder="销售合同号" class="layui-input">	
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<select name="region_type">
+						<option value="">订单属性</option>
+						{foreach $region_type as $key=>$vo}
+						<option value="{$key}">{$vo}</option>
+						{/foreach}
+					</select>
+				</div>
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="shipping_date" placeholder="发货日期" class="layui-input rangedate">	
+				</div>							
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+					<button type="reset" class="pear-btn pear-btn-md"><i class="layui-icon layui-icon-refresh"></i>重置</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	<button class="layui-btn layui-btn-warm layui-btn-sm" lay-event="print"><i class="layui-icon layui-icon-print"></i> 打印产品出仓（发货）单</button>
+	<button class="layui-btn layui-btn-primary layui-btn-sm" lay-event="export"><i class="layui-icon layui-icon-export"></i>导出</button>
+	<button class="layui-btn layui-btn-sm" lay-event="confirm"><i class="layui-icon layui-icon-release"></i>批量确认出库</button>
+</script>
+<script type="text/html" id="options">
+	<div class="layui-btn-group">
+		 {{#  if(d.can_cancel){ }}<button class="layui-btn layui-btn-xs layui-btn-danger" lay-event="cancel">撤销通知</button>{{#  } }} 
+		 {{#  if(d.can_confirm){ }}<button class="layui-btn layui-btn-xs" lay-event="confirm">确认出库</button>{{#  } }} 
+	</div>
+</script>
+
+{/block}
+{block name="script"}
+<script>
+	var check_ids = [];
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('aftersale')}',
+			page: true,
+			cols: [[
+				{type: 'checkbox'},
+				{field: 'id',title: 'ID', sort: true, align: 'center',unresize: false,width: {:get_col_width('id',100)}, hide: getTableFieldIsHide('dataTable','id')},
+				{field: 'shipping_status_desc',title: '发货状态',align: 'center',unresize: false,width: {:get_col_width('shipping_status_desc',100)}, hide: getTableFieldIsHide('dataTable','shipping_status_desc')},
+				{field: 'shipping_sn',title: '发货单号',align: 'center',unresize: false,width: {:get_col_width('shipping_sn',140)}, hide: getTableFieldIsHide('dataTable','shipping_sn')},
+				{field: 'region_type_desc',title: '订单性质',align: 'center',unresize: false,width: {:get_col_width('region_type_desc',100)}, hide: getTableFieldIsHide('dataTable','region_type_desc')},
+				{field: 'order_sn',title: '销售合同号',align: 'center',unresize: false,width: {:get_col_width('order_sn',140)}, hide: getTableFieldIsHide('dataTable','order_sn')},
+				{field: 'customer_name',title: '客户名称/订货单位',align: 'center',unresize: false,width: {:get_col_width('customer_name',150)}, hide: getTableFieldIsHide('dataTable','customer_name')},
+				{field: 'address',title: '收货地址/国家',align: 'center',unresize: false,width:{:get_col_width('address')}, hide: getTableFieldIsHide('dataTable','address')},
+				{field: 'contacts',title: '联系人',align: 'center',unresize: false,width: {:get_col_width('contacts',80)}, hide: getTableFieldIsHide('dataTable','contacts')},
+				{field: 'material_sn',title: '物料编号',align: 'center',unresize: false,width: {:get_col_width('material_sn',100)}, hide: getTableFieldIsHide('dataTable','material_sn')},
+				{field: 'material_name',title: '物料名称',align: 'center',unresize: false,width: {:get_col_width('material_name',100)}, hide: getTableFieldIsHide('dataTable','material_name')},
+				{field: 'num',title: '数量',align: 'center',unresize: false,width: {:get_col_width('num',80)}, hide: getTableFieldIsHide('dataTable','num')},
+				{field: 'admin',title: '发起人',align: 'center',unresize: false,width: {:get_col_width('admin',100)}, hide: getTableFieldIsHide('dataTable','admin')},
+				{field: 'shipping_date',title: '发货日期',align: 'center',unresize: false,width: {:get_col_width('shipping_date',120)}, hide: getTableFieldIsHide('dataTable','shipping_date')},
+				{title: '操作',toolbar: '#options',align: 'center',unresize: true,width: 140}
+			]],
+			cellMinWidth: 80,
+			//skin: 'line',
+			toolbar: '#toolbar',
+			done: function(res, curr, count){
+                    // 解决操作栏因为内容过多换行问题
+                    $(".layui-table-main tr").each(function (index, val) {
+                        $($(".layui-table-fixed-l .layui-table-body tbody tr")[index]).height($(val).height());
+                        $($(".layui-table-fixed-r .layui-table-body tbody tr")[index]).height($(val).height());
+                    });
+			},
+			parseData: function(res){
+				for(var i in res.data) {
+					if(check_ids.length > 0 && check_ids.indexOf(res.data[i]['id']) != -1){
+						res.data[i]['LAY_CHECKED'] = true;
+					}
+				}
+				return res;
+			},
+			defaultToolbar: [{
+				title: '刷新',
+				layEvent: 'refresh',
+				icon: 'layui-icon-refresh',
+			}, 'filter']
+		});
+
+		table.on('sort(dataTable)', function(obj){
+			table.reload('dataTable', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+
+		table.on('tool(dataTable)', function(obj) {
+			if (obj.event === 'cancel') {
+				layerConfirm('确定要撤销通知?','{:url('cancel')}',{ids:[obj.data['id']]},function(res){
+					table.reload('dataTable');
+				})
+			} else if (obj.event === 'confirm') {
+				openLayer('确认出库','{:url('confirm')}?shipping_sn='+obj.data['shipping_sn'],'80%','90%');
+			}
+		});
+
+		table.on('toolbar(dataTable)', function(obj) {
+			if (obj.event === 'export') {
+				var index = layui.layer.load(1);
+				let column 	= [{text:'发货状态',key:'shipping_status_desc'},{text:'发货单号',key:'shipping_sn'},{text:'订单性质',key:'region_type_desc'},{text:'销售合同号',key:'order_sn'},{text:'客户名称/订货单位',key:'customer_name'},{text:'收货地址/国家',key:'address'},{text:'联系人',key:'contacts'},{text:'物料编号',key:'material_sn'},{text:'物料名称',key:'material_name'},{text:'数量',key:'num'},{text:'发起人',key:'admin'},{text:'发货日期',key:'shipping_date'}];
+				$.ajax({
+					type : "get",
+					url : "{:url('aftersale')}?limit=100000",
+					data: $('#searchForm').serialize(),
+					success : function(data) {
+						layui.layer.close(index);
+						if (data.count > 0) {
+							jsonToExcel(column, [column], data.data, '发货通知')
+						}else{
+							layui.layer.msg('暂无数据');
+						}
+					}
+				});
+			}else if(obj.event === 'print'){
+				var checkStatus = table.checkStatus('dataTable');
+				if(checkStatus.data.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				var ids = [];
+				var shipping_status = [];
+				var shipping_sn = []
+				
+				for(var i in checkStatus.data) {
+					ids.push(checkStatus.data[i].id);
+					shipping_status.push(checkStatus.data[i].shipping_status);
+					shipping_sn.push(checkStatus.data[i].shipping_sn);	
+				}	
+
+				console.log(shipping_status);	
+				console.log(shipping_sn);
+				
+				shipping_status = $.unique(shipping_status.sort());
+				shipping_sn = $.unique(shipping_sn.sort());
+				
+				console.log(shipping_status);	
+				console.log(shipping_sn);
+				
+				if(shipping_status.length > 1){
+					layui.layer.msg('不能打印');return;
+				}
+				if(shipping_status.length != 1 && shipping_sn.length > 1){
+					layui.layer.msg('不能打印');return;
+				}
+				
+				if(shipping_status[0] == 10){
+					ajaxActionCall('{:url('print')}',{ids:ids},function(res){
+						check_ids = ids;
+						table.reload('dataTable');
+						toPrintPage(53,{id:ids.join(',')})
+					},false)
+				}
+				if(shipping_status[0] == 20 ){
+					toPrintPage(53,{id:ids.join(',')})
+				}
+				
+				return;
+	
+			}else if (obj.event === 'refresh') {
+				table.reload('dataTable');
+			}else if (obj.event === 'confirm') {
+				var checkStatus = table.checkStatus('dataTable');
+				if(checkStatus.data.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				var shipping_sn = ''			
+				for(var i in checkStatus.data) {
+					if(shipping_sn == ''){
+						shipping_sn = checkStatus.data[i].shipping_sn
+					}else if(shipping_sn != checkStatus.data[i].shipping_sn){
+						layer.msg('出库单号必须相同');
+						return false;
+					}
+				}
+				if(shipping_sn == ''){
+					layer.msg('请选择有出库单号的数据');
+					return false;
+				}	
+				openLayer('确认出库','{:url('confirm')}?shipping_sn='+shipping_sn,'80%','90%');
+			}
+		});
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+		
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+		table.on('colToggled(dataTable)', function(obj){
+			setTableFieldIsHide(obj.config.id,obj.col.field,obj.col.hide);
+		});
+	})
+</script>
+{/block}
+
+

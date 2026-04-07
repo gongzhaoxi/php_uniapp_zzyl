@@ -1,0 +1,19 @@
+置安医疗：
+SVN
+IP：svn://81.70.56.203/zzyl
+name：shen
+PW：123456
+
+服务器（宝塔）：
+外网面板地址: http://49.232.201.41:8888/fb107c4b
+username: 6hpk5gvi
+password: 348d10e8
+
+域名：
+zzyl.ecloudm.com
+
+数据库：
+IP：49.232.201.41:3306
+name：zzyl
+user：zzyl
+PW：5kTPbdNH34cCAxH6

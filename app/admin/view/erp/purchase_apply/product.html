@@ -1,0 +1,165 @@
+{extend name="base" /}
+{block name="body"}
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="" id="searchForm">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="produce_sn" value="{$query['produce_sn']}" placeholder="产品编码" class="layui-input">					
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="product"  value="{$query['product']}" placeholder="型号/款式" class="layui-input">	
+				</div>
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="customer_name" value="{$query['customer_name']}" placeholder="客户名称" class="layui-input">	
+				</div>				
+				<div class="layui-form-item layui-inline">
+					<select name="salesman_id" lay-search>
+						<option value="">销售</option>
+						{foreach $admins as $key=>$vo}
+						<option value="{$vo['id']}" {if $vo['id'] == $query['salesman_id']}selected{/if}>{$vo['username']}</option>
+						{/foreach}
+					</select>
+				</div>
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="apply_date"  value="{$query['apply_date']}" id="apply_date" placeholder="申购日期" class="layui-input rangedate">	
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="delivery_date"  value="{$query['delivery_date']}" id="delivery_date" placeholder="要求交货日期" class="layui-input rangedate">	
+				</div>				
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+					<button type="reset" class="pear-btn pear-btn-md"><i class="layui-icon layui-icon-refresh"></i>重置</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<table class="layui-table" id="dataTable" lay-filter="dataTable">
+			<thead>
+				<tr>
+					<th lay-data="{field:'id', width:50,type: 'checkbox'}" class="excludeThisClass"></th>
+					<th lay-data="{field:'id', width:50,hide:true}" class="excludeThisClass"></th>
+					<th lay-data="{field:'delivery_date', width:{:get_col_width('delivery_date',110)}}">交货日期</th>
+					<th lay-data="{field:'produce_sn', width:{:get_col_width('produce_sn')}}">产品编码</th>
+					<th lay-data="{field:'product_model', width:{:get_col_width('product_model',120)}}">型号</th>
+					<th lay-data="{field:'product_specs', width:{:get_col_width('product_specs',100)}}">款式</th>
+					<th lay-data="{field:'queue_num', width:{:get_col_width('queue_num',80)}}">数量</th>
+					<th lay-data="{field:'order_sn', width:{:get_col_width('order_sn',140)}}">销售合同号</th>
+					<th lay-data="{field:'address', width:{:get_col_width('address')}}">收货地址/国家</th>
+					<th lay-data="{field:'nickname', width:{:get_col_width('nickname',80)}}">销售员</th>
+					<th lay-data="{field:'order_product_remark', width:{:get_col_width('order_product_remark')}}">备注</th>
+				</tr> 
+			</thead>
+			<tbody>
+				{volist name="list['data']" id="vo"}
+				<tr id="td{$vo['id']}" data-check="">
+					<td class="excludeThisClass"></td>
+					<td>{$vo['id']}</td>
+					<td>{$vo['delivery_date']}</td>
+					<td>{$vo['produce_sn']}</td>
+					<td>{$vo['product_model']}</td>
+					<td>{$vo['product_specs']}</td>
+					<td>{$vo['queue_num']}/{$vo['product_num']}</td>
+					<td>{$vo['order_sn']}</td>
+					<td>{$vo['address']}</td>
+					<td>{$vo['username']}</td>
+					<td>{$vo['order_product_remark']}</td>
+				</tr>
+				<tr>
+					<td class="excludeThisClass"></td>
+					<td colspan="10">
+						{$vo['order_product']['project_html']|raw}
+					</td>
+				</tr>
+				{/volist}
+			</tbody>
+		</table>
+		<div id="page-bar"></div>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	<button class="pear-btn pear-btn-primary pear-btn-sm" lay-event="orderAdd"><i class="layui-icon layui-icon-cart"></i>生成采购单</button>
+</script>
+<script type="text/html" id="options">
+	<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="edit"><i class="layui-icon layui-icon-edit"></i></button>
+	<button class="pear-btn pear-btn-danger pear-btn-xs" lay-event="remove"><i class="layui-icon layui-icon-delete"></i></button>
+</script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','laypage'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		let laypage = layui.laypage;
+		
+		laypage.render({
+			elem: 'page-bar',
+			limit:{:$list['extend']['limit']},
+			count: {:$list['extend']['count']},
+			curr:{:request()->get('page/d',1)},
+			jump: function(obj, first){
+				if(!first){
+					location.replace('{:url('product')}?page='+obj.curr+'&'+$('#searchForm').serialize());
+				}
+			}
+		});		
+
+		table.init('dataTable', {
+			escape :false,
+			height: 'full-230',
+			toolbar: '#toolbar',
+			defaultToolbar: [],
+			done: function(res, curr, count){
+				$(".layui-table-main tr").each(function (index, val) {
+					$($(".layui-table-fixed-l .layui-table-body tbody tr")[index]).height($(val).height());
+					$($(".layui-table-fixed-r .layui-table-body tbody tr")[index]).height($(val).height());
+					if(parseInt($(this).data('index'))%2 == 1){
+						$(this).html('<td colspan="11"><div class="layui-table-cell">'+$(this).find('td').eq(1).find('.layui-table-cell').html()+'</div></td>');
+					}
+				});
+			}
+		});
+
+		table.on('toolbar(dataTable)', function(obj) {
+			if (obj.event === 'orderAdd') {
+				var checkStatus = table.checkStatus('dataTable');
+				if(checkStatus.data.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				var id = [];			
+				for(var i in checkStatus.data) {
+					if(checkStatus.data[i].id && checkStatus.data[i].produce_sn){
+						id.push(checkStatus.data[i].id);
+					}
+				}
+				openLayer('生成采购单','{:url('erp.PurchaseOrder/productAdd')}?ids='+id.join(','),'90%','90%',function(){
+					location.reload();		
+				});
+			}
+		});
+
+		form.on('submit(query)', function(data) {
+			
+		});
+		
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+		
+	})
+</script>
+{/block}
+
+

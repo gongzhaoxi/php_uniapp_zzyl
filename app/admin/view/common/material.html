@@ -1,0 +1,184 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.num{color:red;font-size:16px;}
+</style>
+
+<div class="layui-card">
+	<div class="layui-card-body">
+		<div class="layui-row">
+			<div class="layui-col-md3">
+				<ul id="demoTree" class="dtree" ></ul>
+			</div>
+			<div class="layui-col-md9">
+				<form class="layui-form" action="" id="searchForm">
+					<div class="layui-form-item">
+						<div class="layui-form-item layui-inline">
+							<input type="text" name="keyword" placeholder="物料名称/编码" class="layui-input">					
+						</div>	
+						<div class="layui-form-item layui-inline">
+							<select name="supplier_id" lay-search>
+								<option value="" >供应商</option>
+								{foreach $supplier as $key=>$vo}
+								<option value="{$vo['id']}">{$vo['name']}</option>
+								{/foreach}
+							</select>
+						</div>
+						<div class="layui-form-item layui-inline">
+							<select name="stock_search" >
+								<option value="">筛选方案</option>
+								<option value="1">现有库存量 < 安全库存</option>
+								<option value="2">现有库存量 < 最低库存</option>	
+								<option value="3">现有库存量 <= 0</option>	
+							</select>
+						</div>
+						
+						<div class="layui-form-item layui-inline">
+							<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+							<button class="pear-btn pear-btn-success pear-btn-md" type="button" id="confirmSelect"><i class="layui-icon layui-icon-ok"></i>确认选取</button>
+						</div>
+						<div class="layui-form-item layui-inline" style="float:right;">总共选中物料：<span id="select_count" class="num">0</span> </div>
+					</div>
+				</form>
+				<table id="dataTable" lay-filter="dataTable"></table>
+			</div>
+		</div>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	<button class="pear-btn pear-btn-primary pear-btn-sm" lay-event="export"><i class="layui-icon layui-icon-download-circle"></i>导出</button>
+</script>
+<script type="text/html" id="photo">
+	<a onclick="layerPhotos('{{ d.photo_link }}','{{ d.id }}')" href="javascript:;"><img src="{{ d.photo_link }}" /> </a>
+</script>
+{/block}
+{block name="script"}
+<script>
+	var selected_ids = [];
+	var selected_items = [];
+	
+	layui.use(['table', 'form', 'jquery','common','dtree'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		var dtree = layui.dtree;
+		var tree_id = '';
+
+		var demoTree = dtree.render({
+			elem: "#demoTree",
+			data:{:json_encode($tree)},
+			menubar:true,
+			//skin: "laySimple",  // layui主题风格
+			//icon: "-1",  // 隐藏二级图标
+			line: true,  // 显示树线
+			response:{
+				treeId: "id",			  //节点ID
+				parentId: "pid",	  //父节点ID
+				title: "title",			  //节点名称 
+				childName: "children",	  //子节点名称
+			}
+		});
+
+		dtree.on("node('demoTree')" ,function(param){
+			tree_id = param.param.nodeId;
+			table.reload('dataTable', {
+				where: {tree_id:param.param.nodeId},
+				page:{curr: 1}
+			})
+		});
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('material')}?type={$type}&status=1',
+			page: true,
+			cols: [[
+				{type: 'checkbox',width:70,},
+				{field: 'id',title: 'ID', align: 'center',unresize: false,width: 80},
+				{field: 'sn',title: '物料编码',align: 'center',unresize: false,width: 260},
+				{field: 'name',title: '物料名称',align: 'left',unresize: false},
+				{field: 'supplier_name',title: '供应商',align: 'center',unresize: false,width: 260},
+				{field: 'stock',title: '现有库存',align: 'center',unresize: false,width: {:get_col_width('stock',120)},templet: function(d){return '<span style="'+(d.stock<d.safety_stock?'color:red':(d.stock>d.max_stock?'color:blue':'')) +'">'+d.stock+'</span>';}},
+				{field: 'safety_stock',title: '安全库存',align: 'center',unresize: false,width: {:get_col_width('safety_stock',120)}},
+			]],
+			limit:2000,
+			height:'full-130',
+			cellMinWidth: 100,
+			parseData: function(res){
+				for(var i in res.data) {
+					if(selected_ids.indexOf(res.data[i]['id']) == -1){
+						res.data[i]['LAY_CHECKED'] = false;
+					}else{
+						res.data[i]['LAY_CHECKED'] = true;
+					}
+				}
+				return res;
+			},
+			//skin: 'line',
+			toolbar: false,
+			defaultToolbar: false
+		});
+
+		table.on('checkbox(dataTable)', function(obj){
+			var thisCache = table.cache['dataTable'] || {};
+			var data = table.getData('dataTable');
+			var delete_ids = [];
+			for(var i in thisCache) {
+				if(thisCache[i]['LAY_CHECKED'] == true){
+					if(selected_ids.indexOf(thisCache[i].id) == -1){
+						selected_ids.push(thisCache[i].id);
+						selected_items.push(data[i]);
+					}
+				}else{
+					delete_ids.push(thisCache[i].id);
+				}
+			}
+			var ids = [];
+			for(var i in selected_ids) {
+				if(delete_ids.indexOf(selected_ids[i]) == -1){
+					ids.push(selected_ids[i]);
+				}
+			}
+			selected_ids = ids;
+			$('#select_count').html(selected_ids.length);
+			
+			var items = [];
+			for(var i in selected_items) {
+				if(delete_ids.indexOf(selected_items[i]['id']) == -1){
+					items.push(selected_items[i]);
+				}
+			}
+			selected_items = items;
+			
+			console.log(selected_ids);
+			console.log(selected_items);
+		});
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+		
+
+	})
+</script>
+<style>
+.dtree{
+    overflow-x:hidden;
+    overflow-y: auto;
+    width: 0px;
+    width: 90%;
+    height: 85vh;
+}
+.layui-col-md3{
+    overflow:hidden;
+}
+.layui-card-body .layui-form {
+  margin-top: 0px;
+}
+</style>
+{/block}
+
+

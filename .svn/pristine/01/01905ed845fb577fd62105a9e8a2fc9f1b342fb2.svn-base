@@ -1,0 +1,132 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-form-item {margin-bottom: 5px;}
+.layui-tab .layui-tab-title{border:none;}
+</style>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="" id="searchForm" lay-filter="searchForm" style="border-bottom:1px solid rgb(233, 233, 233);margin-bottom:5px;">
+			<input type="hidden" name="finish_date" id="finish_date" value="{$finish_date}" >		
+			<input type="hidden" name="region_type" id="region_type" value="{$region_type}" >	
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="year" id="year" value="{$year}" lay-verify="required" placeholder="选择年份" class="layui-input year">						
+				</div>				
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+					<button class="pear-btn pear-btn-md pear-btn-success" lay-submit lay-filter="export"><i class="layui-icon layui-icon-export"></i>导出</button>
+				</div>
+			</div>
+		</form>		
+		<div class="layui-tab layui-tab-brief" lay-filter="region_type">
+			<ul class="layui-tab-title">
+				<li {if $region_type == 1}class="layui-this"{/if} data-val="1">国内数据</li></a>
+				<li {if $region_type == 2}class="layui-this"{/if} data-val="2">国外数据</li>
+			</ul>
+		</div>
+		<div class="layui-btn-group nav" style="margin-top:15px;">
+			<button type="button"  class="layui-btn layui-btn-sm layui-btn-primary toStat">汇总</button>
+			{php}
+			for($i=1;$i<=12;$i++){
+				if($month == $i){
+					echo '<button type="button" data-val="'.$i.'" class="layui-btn layui-btn-sm  layui-bg-blue monthData">'.$i.'月</button> ';
+				}else{
+					echo '<button type="button" data-val="'.$i.'" class="layui-btn layui-btn-sm  layui-btn-primary monthData">'.$i.'月</button> ';
+				}				
+			}
+			{/php}
+		</div>	
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common','element'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		let element = layui.element;
+		table.render({
+			title:'成品发货统计',
+			type: 'xls',
+			elem: '#dataTable',
+			url: '{:url('list')}?finish_date={$finish_date}',
+			page: true,
+			cols: [[
+				{field: 'product_model',title: '型号',align: 'center',unresize: false,width: {:get_col_width('product_model',120)}, templet: function(d){return d.order_product?d.order_product.product_model:'';}},
+				{field: 'produce_sn',title: '机器编号',align: 'center',unresize: false,width:{:get_col_width('produce_sn')}},
+				{field: 'region_name',title: '区域',align: 'center',unresize: false,width: {:get_col_width('region_name')}},
+				{field: 'customer_name',title: '客户',align: 'center',unresize: false,width: {:get_col_width('customer_name')}},
+				{field: 'color',title: '颜色',align: 'center',unresize: false,width: {:get_col_width('color',100)}},
+				{field: 'order_sn',title: '销售合同号',align: 'center',unresize: false,width: {:get_col_width('order_sn',140)}},
+				{field: 'order_remark',title: '备注',align: 'center',unresize: false,width: {:get_col_width('order_remark',150)}},
+			]],
+			cellMinWidth: 100,
+			limit:1000,
+			height:'full-215',
+			//skin: 'line',
+			toolbar: false,
+			defaultToolbar: false
+		});
+		
+		$('.monthData').click(function(){
+			setFinishDate($(this).data('val'));
+			$('.nav .layui-bg-blue').removeClass('layui-bg-blue').addClass('layui-btn-primary');
+			$(this).addClass('layui-bg-blue');
+			table.reload('dataTable', {
+				where: form.val('searchForm'),
+				page:{curr: 1}
+			})
+		})
+		
+		$('.toStat').click(function(){
+			location = '{:url('stat')}?year='+$('#year').val()+'&region_type='+$('#region_type').val();
+		})
+		
+		function setFinishDate(month){
+			var year = $('#year').val();
+			var month = parseInt(month);
+			var days = getMonthDays(parseInt(year),month)
+			$('#finish_date').val(year+'-'+(month>9?'':'0')+month+'-01至'+year+'-'+(month>9?'':'0')+month+'-'+days);
+		}
+		
+		form.on('submit(query)', function(data) {
+			setFinishDate($('.nav .layui-bg-blue').data('val'));
+			table.reload('dataTable', {
+				where: form.val('searchForm'),
+				page:{curr: 1}
+			})
+			return false;
+		});	
+		
+		element.on('tab(region_type)', function(data){
+			$('#region_type').val($(data.elem).find('li').eq(data.index).data('val'));
+			table.reload('dataTable', {
+				where: form.val('searchForm'),
+				page:{curr: 1}
+			})
+		});
+		
+		form.on('submit(export)', function(data) {
+			table.exportFile('dataTable')
+			return false;
+		});			
+		
+		
+	})
+	
+	//根据两个月份同一天的差值获取,同样是传入需要获取的对应年份和月份
+	function getMonthDays(year,month){
+		var stratDate = new Date(year,month-1,1),
+		 endData = new Date(year,month,1);
+		var days = (endData -stratDate)/(1000*60*60*24);
+		return days;
+	}
+
+</script>
+{/block}
+
+

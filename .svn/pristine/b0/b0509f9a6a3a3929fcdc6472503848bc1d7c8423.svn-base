@@ -1,0 +1,111 @@
+{extend name="base" /}
+{block name="body"}
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="" id="searchForm">
+			<div class="layui-form-item">	
+				<div class="layui-form-item layui-inline" >
+					<input type="text" name="sn" value="" placeholder="组件编号" class="layui-input">	
+				</div>	
+				<div class="layui-form-item layui-inline" >
+					<input type="text" name="name" value="" placeholder="组件名称" class="layui-input">	
+				</div>	
+				<div class="layui-form-item layui-inline" >
+					<input type="text" name="plan_sn" value="" placeholder="排产批次号" class="layui-input">	
+				</div>				
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+
+</script>
+<script type="text/html" id="options">
+	<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="view">查看</button>
+</script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('schedule')}',
+			page: true,
+			height:'full-160',
+			limit:90,
+			cols: [[
+				{field: 'plan_sn',title: '排产批次号',align: 'center',unresize: false,width: {:get_col_width('plan_sn',140)}, hide: getTableFieldIsHide('dataTable','plan_sn')},
+				{field: 'start_date',title: '下达日期',align: 'center',unresize: false,width: {:get_col_width('start_date',120)}, hide: getTableFieldIsHide('dataTable','start_date')},
+				{field: 'sn',title: '组件编码',align: 'center',unresize: false,width: {:get_col_width('sn')}, hide: getTableFieldIsHide('dataTable','sn')},				
+				{field: 'name',title: '组件名称',align: 'center',unresize: false,width:{:get_col_width('name')}, hide: getTableFieldIsHide('dataTable','name')},
+				{field: 'type_desc',title: '计划方式来源',align: 'center',unresize: false,width: {:get_col_width('type_desc',120)}, hide: getTableFieldIsHide('dataTable','type_desc')},
+				{field: 'num',title: '排产量',align: 'center',unresize: false,width: {:get_col_width('num',120)}, hide: getTableFieldIsHide('dataTable','num')},
+				{field: 'assembled_num',title: '装配完成',align: 'center',unresize: false,width: {:get_col_width('num',120)}, hide: getTableFieldIsHide('dataTable','assembled_num')},
+				{field: 'inspect_num',title: '检验完成',align: 'center',unresize: false,width: {:get_col_width('finish_num',120)}, hide: getTableFieldIsHide('dataTable','inspect_num')},
+				{field: 'finish_num',title: '入库完成',align: 'center',unresize: false,width: {:get_col_width('finish_num',120)}, hide: getTableFieldIsHide('dataTable','finish_num')},
+				{field: 'status_desc',title: '计划方式来源',align: 'center',unresize: false,width: {:get_col_width('status_desc',120)}, hide: getTableFieldIsHide('dataTable','status_desc')},
+				{title: '操作',toolbar: '#options',align: 'center',unresize: true,width: 100,fixed:'right'}
+			]],
+			cellMinWidth: 100,
+			toolbar: '#toolbar',
+			defaultToolbar: [{
+				title: '刷新',
+				layEvent: 'refresh',
+				icon: 'layui-icon-refresh',
+			}, 'filter', 'print', 'exports'],
+		});
+
+		table.on('sort(dataTable)', function(obj){
+			table.reload('dataTable', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+
+		table.on('tool(dataTable)', function(obj) {
+			if (obj.event === 'view') {
+				openLayer('查看详细','{:url('scheduleDetail')}?id='+obj.data['id'],'90%','90%');
+			}	
+		});
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+		
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+		table.on('colToggled(dataTable)', function(obj){
+			setTableFieldIsHide(obj.config.id,obj.col.field,obj.col.hide);
+		});
+	})
+</script>
+{/block}
+
+

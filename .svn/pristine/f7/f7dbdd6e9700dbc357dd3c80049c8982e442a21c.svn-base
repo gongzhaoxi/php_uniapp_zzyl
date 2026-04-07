@@ -1,0 +1,185 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.uload_photos,.operate .layui-icon{display:none;}
+</style>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<div class="layui-tab  layui-tab-brief">
+			<ul class="layui-tab-title">
+				<li class="layui-this">生产信息</li>
+				<li>组件清单</li>
+				<li>组件追溯</li>
+			</ul>
+			<div class="layui-tab-content">			
+				<div class="layui-tab-item layui-show">
+					<blockquote class="layui-elem-quote">产品信息</blockquote>
+					<table class="layui-table" id="dataList">
+						<thead>
+							<tr>
+								<th rowspan="2">排产批次号</th>
+								<th rowspan="2">下达日期</th>
+								<th rowspan="2">物料编码</th>
+								<th rowspan="2">物料名称</th>
+								<th rowspan="2">计划方式来源</th>
+								<th rowspan="2">排产量</th>
+								<th colspan="{:count($model['process'])}">生产工艺组进度</th>	
+							</tr>
+							<tr>
+								{foreach $model['process'] as $v}
+								<th>{$v['process_name']}</th>
+								{/foreach}
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td>{$model['plan_sn']}</td>
+								<td>{$model['start_date']}</td>
+								<td>{$model['material']['sn']}</td>
+								<td>{$model['material']['name']}</td>
+								<td>{$model['type_desc']}</td>
+								<td>{$model['num']}</td>
+								{foreach $model['process'] as $v}
+								<td>
+									{if $v['username']}
+										<p>{$v['confirm_date']}</p>
+										<p>报工人：{$v['username']}</p>
+									{else/}
+									&nbsp;
+									{/if}
+								</td>
+								{/foreach}
+							</tr>
+						</tbody>
+					</table>
+					<blockquote class="layui-elem-quote">随工单信息</blockquote>
+					
+					<table class="layui-table">
+						<thead>
+							<tr>
+								<th>序号</th>
+								<th>报工工序</th>
+								<th>完成日期</th>
+								<th>完成人</th>
+								<th>所在随工单名称</th>
+								<th>操作</th>
+							</tr> 
+						</thead>
+						<tbody>
+							{volist name="model['process']" id="vo"}
+							<tr>
+								<td>{$i}</td>
+								<td>{$vo['process_name']}</td>
+								<td>{$vo['confirm_date']}</td>
+								<td>{$vo['username']}</td>
+								<td>{$vo['follow_name']}</td>
+								<td>{if $vo['follow_name']}<button class="pear-btn pear-btn-primary pear-btn-sm follow" data-process_id="{$vo['process_id']}" >查阅</button>{/if}</td>
+							</tr>
+							{/volist}
+						</tbody>
+					</table>
+				</div>
+				<div class="layui-tab-item">	
+					<table class="layui-table data-table">
+						<thead>
+							<tr>
+								<th>序号</th>
+								<th>物料编号</th>
+								<th>物料名称</th>
+								<th>需求数量</th>								
+								<th>单位</th>
+								<th>类别</th>											
+								<th>颜色</th>
+								<th>备注</th>
+							</tr> 
+						</thead>
+						<tbody>
+							{volist name="bom" id="vo"}
+							<tr class="cid-{$vo['cid']}" >
+								<td>{$i}</td>
+								<td>{$vo['sn']}</td>
+								<td>{$vo['name']}</td>
+								<td>{$vo['num']}</td>						
+								<td>{$vo['unit']}</td>
+								<td>{$vo['cid']}</td>
+								<td>{$vo['color']}</td>												
+								<td>{$vo['remark']}</td>								
+							</tr>
+							{/volist}
+						</tbody>
+					</table>
+				</div>
+				<div class="layui-tab-item">
+					<table class="layui-table data-table">
+						<thead>
+							<tr>
+								<th>序号</th>
+								<th>所在随工单名称</th>
+								<th>所在工序标题</th>
+								<th>组件编号/QC编号</th>								
+								<th>QC检验日期</th>
+								<th>QC检验员</th>											
+								<th>入库单号</th>
+								<th>入库日期</th>
+								<th>采购单号</th>
+								<th>供应商</th>
+								<th>采购日期</th>
+								<th>检验报告</th>
+								<th>操作</th>
+							</tr> 
+						</thead>
+						<tbody>
+							{volist name="code" id="vo"}
+							<tr >
+								<td>{$i}</td>
+								<td>{$vo['follow_name']}</td>
+								<td>{$vo['process_name']}</td>
+								<td>{$vo['sn']}</td>						
+								<td>{$vo['check_date']|default=''}</td>
+								<td>{$vo['check_username']|default=''}</td>
+								<td>{$vo['enter_order_sn']|default=''}</td>												
+								<td>{$vo['enter_stock_date']|default=''}</td>	
+								<td>{$vo['purchase_order_sn']|default=''}</td>	
+								<td>{$vo['supplier_name']|default=''}</td>	
+								<td>{$vo['purchase_order_date']|default=''}</td>	
+								<td align="center">{if $vo['data_id'] && $vo['data_type'] == 'erp_material_enter_material'}<i data-id="{$vo['data_id']}" class="layui-icon layui-icon-file-b report"></i>{/if} </td>	
+								<td>{if $vo['data_id'] && $vo['data_type'] == 'erp_material_enter_material'}<button type="button" data-id="{$vo['data_id']}" class="layui-btn layui-bg-blue layui-btn-sm product">关联产品</button>{/if}</td>	
+							</tr>							
+							{/volist}
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		$('.follow').click(function(){
+			openLayer('随工单查阅','{:url('follow')}?process_id='+$(this).data('process_id')+'&id={$model['id']}','90%','90%',function(){
+						
+			});	
+		})
+		$('.report').click(function(){
+			openLayer('检验报告	','{:url('erp.MaterialEnterMaterial/report')}?id='+$(this).data('id'),'90%','90%',function(){
+						
+			});	
+		})		
+		$('.product').click(function(){
+			openLayer('关联产品	','{:url('produceByEnter')}?enter_material_id='+$(this).data('id'),'90%','90%',function(){
+						
+			});	
+		})		
+		
+	})
+</script>
+{/block}
+
+

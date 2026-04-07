@@ -1,0 +1,236 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-table .sign_image{max-height:80px;}
+</style>
+<form class="layui-form" action="" method="post" data-reload="7" data-callback="cb">
+	<input type="hidden" value="{$model['id']}" name="id" id="id" />
+	<input type="hidden" value="{$model['status']}" name="status" id="status" />
+	<input type="hidden" value="{$model['finish_date']}" name="finish_date" id="finish_date" />
+	<div class="mainBox">
+		<div class="main-container">
+			<table class="layui-table">
+				<tbody>
+					<tr><td align="center" colspan="4" rowspan="1"  >不合格/返工评审处理单</td></tr>
+					<tr>
+						<td align="center" >生产计划/任何号</td>
+						<td>{$model['order_produce']['produce_sn']}</td>
+						<td align="center" >产品名称/型号</td>
+						<td>{$model['order_produce']['order_product']['product_name']}{$model['order_produce']['order_product']['product_model']}</td>
+					</tr>
+					<tr>
+						<td align="center" >生产数量</td>
+						<td>1</td>
+						<td align="center" >不合格数量</td>
+						<td>1</td>
+					</tr>					
+					<tr>
+						<td align="center" >订单号</td>
+						<td  colspan="3" rowspan="1"  >{$model['order_produce']['order']['order_sn']}</td>
+					</tr>
+					<tr>
+						<td  colspan="4" rowspan="1" >
+							<p>不合格描述</p>
+							<textarea placeholder="不可为空" name="remark" {if !in_array(10,request()->userInfo['permission'])}readonly disabled{/if}  lay-verify="required" class="layui-textarea">{$model['remark']}</textarea>
+						</td>
+					</tr>
+					<tr><td align="center" colspan="4" rowspan="1"  >不合格评审与处理</td></tr>
+					<tr>
+						<td  colspan="4" rowspan="1" >
+							<p>不合格处理方式</p>
+							<textarea placeholder="" name="comment" {if !in_array(10,request()->userInfo['permission'])}readonly disabled{/if} lay-verify="required" class="layui-textarea">{$model['comment']}</textarea>
+						</td>
+					</tr>					
+					<tr>
+						<td align="center" >返工操作员/日期</td>
+						<td>
+							{$model['username']}&nbsp;&nbsp;&nbsp;{:date('Y年m月d日',strtotime($model['create_time']))}
+						</td>
+						<td align="center" >
+							返工后检验员/日期
+						</td>
+						<td>
+							<input type="hidden" name="inspector_sign" id="inspector_sign" value="{$model['inspector_sign']|default=''}" >
+							<input type="hidden" name="inspector_sign_date" id="inspector_sign_date" value="{$model['inspector_sign_date']|default=''}" >
+							<div>
+							{if $model['inspector_sign']}
+								<img class="sign_image {if in_array(10,request()->userInfo['permission'])}sign{/if}"  data-field="inspector_sign" src="{$model['inspector_sign']}" />
+								{$model['inspector_sign_date']|default=''}
+							{else}
+								{if in_array(10,request()->userInfo['permission'])}
+								<button type="button" class="layui-btn layui-btn-xs sign" data-field="inspector_sign">签字</button>
+								{/if}
+							{/if}
+							</div>
+						</td>
+					</tr>
+					<tr>
+						<td align="center" >生产主管</td>
+						<td>
+							<input type="hidden" name="produce_sign" id="produce_sign" value="{$model['produce_sign']|default=''}" >
+							<input type="hidden" name="produce_sign_date" id="produce_sign_date" value="{$model['produce_sign_date']|default=''}" >
+							<div>
+							{if $model['produce_sign']}
+								<img class="sign_image {if in_array(11,request()->userInfo['permission'])}sign{/if}"  data-field="produce_sign" src="{$model['produce_sign']}" />
+								{$model['produce_sign_date']|default=''}
+							{else}
+								{if in_array(11,request()->userInfo['permission'])}
+								<button type="button" class="layui-btn layui-btn-xs sign" data-field="produce_sign">签字</button>
+								{/if}
+							{/if}
+							</div>
+						</td>						
+						<td align="center" >质管主管</td>
+						<td>
+							<input type="hidden" name="qc_sign" id="qc_sign" value="{$model['qc_sign']|default=''}" >
+							<input type="hidden" name="qc_sign_date" id="qc_sign_date" value="{$model['qc_sign_date']|default=''}" >
+							<div>
+							{if $model['qc_sign']}
+								<img class="sign_image {if in_array(12,request()->userInfo['permission'])}sign{/if}"  data-field="qc_sign" src="{$model['qc_sign']}" />
+								{$model['qc_sign_date']|default=''}
+							{else}
+								{if in_array(12,request()->userInfo['permission'])}
+								<button type="button" class="layui-btn layui-btn-xs sign" data-field="qc_sign">签字</button>
+								{/if}
+							{/if}
+							</div>
+						</td>
+					</tr>
+					
+				</tbody>
+			</table>
+		</div>
+	</div>
+	<div class="bottom">
+		<div class="button-container" style="right: 5%;width: 90%;">
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm layui-hide submit" lay-submit="" lay-filter="*">保存</button>	
+			<div class="layui-row">
+				<div class="layui-col-xs4">
+					{if $model['status'] == 0 && in_array(12,request()->userInfo['permission'])}<button type="button" class="layui-btn layui-btn-sm finish" >处理完成</button>{/if}
+				</div>
+				<div class="layui-col-xs4" style="text-align: center;">
+					{if in_array(12,request()->userInfo['permission'])}<button type="button" class="layui-btn layui-bg-red layui-btn-sm remove" >删除</button>{/if}
+				</div>
+				<div class="layui-col-xs4" style="text-align: right;">
+					{if in_array(10,request()->userInfo['permission'])}<button type="button" class="layui-btn layui-btn-normal layui-btn-sm edit" >保存</button>{/if}
+				</div>				
+			</div>
+		</div>
+	</div>
+</form>
+<div class="layui-row" id="signDiv" style="display: none;">
+    <div id="signatureparent">
+        <div id="signature" style="border: 2px dotted lightgrey;"></div>
+    </div>
+    <div class="layui-btn-container" style="text-align: right;margin-top: 15px;">
+		<input type="hidden" class="sign_field" value="" />
+        <button type="button" class="layui-btn layui-bg-orange toReset" >重写</button>
+        <button type="button" class="layui-btn layui-bg-blue getData" >提交</button>
+        <button type="button" class="layui-btn layui-btn-danger toDestroy" >关闭</button>
+    </div>
+</div>
+<script src="/static/tool/jquery.min.js"></script>
+<script src="//cdn.bootcdn.net/ajax/libs/jSignature/2.1.3/jSignature.min.js"></script>
+{/block}
+{block name="script"}
+<script>
+
+layui.use(['form', 'jquery'], function() {
+	let form = layui.form;
+	let $ = layui.jquery;
+	var signature;
+	
+	window.cb = function(){
+		parent.layui.table.reload('dataTable');
+		//location.reload();
+	}
+	
+	$('.edit').click(function(){
+		$('.submit').trigger("click");
+	})	
+
+	$('.finish').click(function(){
+		$('#finish_date').val('{:date('Y-m-d')}');
+		$('#status').val('1');
+		$('.submit').trigger("click");
+		$('.finish').hide();
+		parent.layui.table.reload('dataTable');
+	})
+	
+	$('.remove').click(function(){
+		layerConfirm('确定要删除?','{:url('reworkRemove')}',{ids:[{$model['id']}]},function(res){
+			parent.layui.table.reload('dataTable');
+			parent.layer.close(parent.layer.index);	
+		})
+	})	
+	
+	$("body").on("click",".sign",function(){
+		$('.sign_field').val($(this).data('field'))
+		
+		layer.open({
+			type: 1, // page 层类型
+			area: ['650px', '430px'],
+			title: '请签名：',
+			shade: 0.6, // 遮罩透明度
+			// shadeClose: true, // 点击遮罩区域，关闭弹层
+			closeBtn: 0,
+			content: $('#signDiv'),
+			success: function () {
+				signature = $('#signature').jSignature({
+					height: '300px',
+					width: '100%'
+				});//初始化控件
+			}
+		});
+	})
+	
+	$('.toReset').click(function(){
+		signature.jSignature('reset');
+	})
+	
+	$('.getData').click(function(){
+		var sign_field = $(this).parent().find('.sign_field').val();
+
+		var arr = signature.jSignature("getData", "image");
+		var isModified = signature.jSignature("isModified");
+		if (!isModified) {
+			layer.msg('请先完成签字，在提交');
+			return false;
+		}
+		
+		var  mime = arr[0].match(/(.*?);/)[1],
+		bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+		while(n--){
+			u8arr[n] = bstr.charCodeAt(n);
+		}
+		var obj = new Blob([u8arr], {type:mime});
+		var fd = new FormData();
+		fd.append("file", obj,"image.png");
+		$.ajax({
+			url: "{:url('index/upload')}",
+			type: "POST",
+			processData: false,
+			contentType: false,
+			data: fd,
+			success: function (data) {
+				//console.log(data);
+				$('#'+sign_field).val(data.data.src);
+				if(!$('#'+sign_field+'_date').val()){
+					$('#'+sign_field+'_date').val('{:date('Y年m月d日')}');
+				}
+				$('#'+sign_field).parent().find('div').html('<img class="sign_image sign"  src="'+data.data.src+'" />'+$('#'+sign_field+'_date').val());
+				
+				$('.submit').trigger("click");
+				signature.jSignature("destroy");
+				layer.closeAll();
+			}
+		});
+	})
+
+	$('.toDestroy').click(function(){
+		signature.jSignature("destroy");
+		layer.closeAll();
+	})
+})
+</script>
+{/block}

@@ -1,0 +1,163 @@
+{extend name="base" /}
+{block name="body"}
+<div class="layui-card">
+	<div class="layui-card-body">
+		<div class="layui-tab layui-tab-brief">
+			<ul class="layui-tab-title">
+				<li class="layui-this">采购入库明细</li>
+				<a href="{:url('productStat')}"><li>采购入库汇总</li></a>
+			</ul>
+		</div>		
+		<form class="layui-form" action="" id="searchForm">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="order_date" value="{$query['order_date']}"  placeholder="采购日期" class="layui-input rangedate">	
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="order_sn"  value="{$query['order_sn']}" placeholder="采购单编号" class="layui-input">	
+				</div>
+				<div class="layui-form-item layui-inline">
+					<select name="supplier_id" lay-search>
+						<option value="">供应商</option>
+						{foreach $supplier as $key=>$vo}
+						<option value="{$vo['id']}" {if $vo['id'] == $query['supplier_id']}selected{/if}>{$vo['name']}</option>
+						{/foreach}
+					</select>
+				</div>
+				<div class="layui-form-item layui-inline">
+					<select name="status">
+						<option value="">状态</option>
+						{foreach $status as $key=>$vo}
+						<option value="{$key}" {if $key == $query['status']}selected{/if}>{$vo}</option>
+						{/foreach}
+					</select>
+				</div>					
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<table class="layui-table" id="dataTable" lay-filter="dataTable">
+			<thead>
+				<tr>
+					<th lay-data="{field:'purchase_order_sn', width:{:get_col_width('purchase_order_sn',150)}}">采购单编号</th>
+					<th lay-data="{field:'supplier_name', width:{:get_col_width('supplier_name',110)}}">供应商</th>
+					<th lay-data="{field:'order_date', width:{:get_col_width('order_date',110)}}">采购日期</th>				
+					<th lay-data="{field:'over_day', width:{:get_col_width('over_day',110)}}">超期(天)</th>
+					<th lay-data="{field:'overdue_reason', width:{:get_col_width('overdue_reason',110)}}">超期原因</th>
+					<th lay-data="{field:'follow_admin_username', width:{:get_col_width('follow_admin_username',110)}}">采购跟进人</th>
+					<th lay-data="{field:'delivery_date', width:{:get_col_width('delivery_date',110)}}">交货日期</th>
+					<th lay-data="{field:'produce_sn', width:{:get_col_width('produce_sn',150)}}">产品编码</th>
+					<th lay-data="{field:'product_model', width:{:get_col_width('product_model',120)}}">型号</th>
+					<th lay-data="{field:'product_specs', width:{:get_col_width('product_specs',100)}}">款式</th>
+					<th lay-data="{field:'apply_num', width:{:get_col_width('apply_num',80)}}">数量</th>
+					<th lay-data="{field:'order_sn', width:{:get_col_width('order_sn',140)}}">销售合同号</th>
+					<th lay-data="{field:'address', width:{:get_col_width('address',150)}}">收货地址/国家</th>
+					<th lay-data="{field:'username', width:{:get_col_width('username',100)}}">销售员</th>
+					<th lay-data="{field:'order_type_desc', width:{:get_col_width('order_type_desc',100)}}">订单类型</th>
+					<th lay-data="{field:'status_desc', width:{:get_col_width('status_desc',100)}}">状态</th>
+					<th lay-data="{field:'warehous_date', width:{:get_col_width('warehous_date',120)}}">入库日期</th>
+					<th lay-data="{field:'warehous_num', width:{:get_col_width('warehous_num',100)}}">入库数量</th>
+				</tr> 
+			</thead>
+			<tbody>
+				{volist name="list['data']" id="vo"}
+				<tr id="td{$vo['id']}" data-check="">
+					<td>{$vo['purchase_order_sn']}</td>
+					<td>{$vo['supplier']['name']}</td>
+					<td>{$vo['order_date']}</td>
+					<td>{$vo['over_day']}</td>
+					<td>{$vo['overdue_reason']}</td>
+					<td>{$vo['follower']['username']}</td>
+					<td>{$vo['delivery_date']}</td>
+					<td>{$vo['produce_sn']}</td>
+					<td>{$vo['order_product']['product_model']}</td>
+					<td>{$vo['order_product']['product_specs']}</td>
+					<td>{$vo['apply_num']}</td>
+					<td>{$vo['order_sn']}</td>
+					<td>{$vo['address']}</td>
+					<td>{$vo['salesman']['username']}</td>
+					<td>{$vo['order_type_desc']}</td>
+					<td>{$vo['status_desc']}</td>
+					<td>{$vo['warehous_date']}</td>
+					<td>{$vo['warehous_num']}</td>
+				</tr>
+				<tr>
+					<td colspan="18">
+						{$vo['order_product']['project_html']|raw}
+					</td>
+				</tr>
+				{/volist}
+			</tbody>
+		</table>
+		<div id="page-bar"></div>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	<button class="pear-btn pear-btn-primary pear-btn-sm" lay-event="orderAdd"><i class="layui-icon layui-icon-cart"></i>生成采购单</button>
+</script>
+<script type="text/html" id="options">
+	<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="edit"><i class="layui-icon layui-icon-edit"></i></button>
+	<button class="pear-btn pear-btn-danger pear-btn-xs" lay-event="remove"><i class="layui-icon layui-icon-delete"></i></button>
+</script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','laypage'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		let laypage = layui.laypage;
+		
+		laypage.render({
+			elem: 'page-bar',
+			limit:{:$list['extend']['limit']},
+			count: {:$list['extend']['count']},
+			curr:{:request()->get('page/d',1)},
+			jump: function(obj, first){
+				if(!first){
+					location.replace('{:url('product')}?page='+obj.curr+'&'+$('#searchForm').serialize());
+				}
+			}
+		});		
+		
+		table.init('dataTable', {
+			escape :false,
+			height: 'full-270',
+			toolbar: false,
+			defaultToolbar: [],
+			done: function(res, curr, count){
+				$(".layui-table-main tr").each(function (index, val) {
+					$($(".layui-table-fixed-l .layui-table-body tbody tr")[index]).height($(val).height());
+					$($(".layui-table-fixed-r .layui-table-body tbody tr")[index]).height($(val).height());
+					if(parseInt($(this).data('index'))%2 == 1){
+						$(this).html('<td colspan="18"><div class="layui-table-cell">'+$(this).find('td').eq(0).find('.layui-table-cell').html()+'</div></td>');
+					}
+				});
+			}
+		});
+
+		form.on('submit(query)', function(data) {
+			
+		});
+		
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+		
+	})
+</script>
+{/block}
+
+

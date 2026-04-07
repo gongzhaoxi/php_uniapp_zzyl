@@ -1,0 +1,410 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-input-block {margin-left: 150px;}
+.layui-form-label {width: 120px;}
+.layui-col-md4{margin-bottom:10px;}
+.layui-table td, .layui-table th {padding: 9px 5px;}
+</style>
+<form class="layui-form" action="" method="post" data-reload="1" data-callback="submitCallBack">
+	<input type="hidden"  name="order_id" id="order_id"  value="">
+	<input type="hidden"  name="material_type" id="material_type"  value="">
+	<input type="hidden"  name="type" id="type"  value="allocate">
+	<div class="mainBox">
+		<div class="main-container">
+			<blockquote class="layui-elem-quote">单据单头信息</blockquote>
+			<div class="layui-form-item">
+				<div class="layui-row">
+					<div class="layui-col-md4">
+						<label class="layui-form-label">调拨日期</label>
+						<div class="layui-input-block">
+							<input type="text"  readonly name="stock_date" value="{:date('Y-m-d')}" lay-verify="required" placeholder="请选择,不可为空" autocomplete="off" class="layui-input date">
+						</div>	
+					</div>
+					<div class="layui-col-md4">
+						<label class="layui-form-label">备注/用途说明</label>
+						<div class="layui-input-block">
+							<input type="text" maxlength="255" name="remark"  placeholder="请输入" autocomplete="off" class="layui-input remark">
+						</div>	
+					</div>					
+				</div>
+			</div>			
+			<blockquote class="layui-elem-quote">
+				相关物料信息
+				<div class="layui-form-item" style="display: inline-block;margin: 0 0 0 20px !important;">
+					<div class="layui-inline">
+						<select id="warehouse_import">
+							<option value="">工位仓位</option>
+							{foreach $warehouse as $vo}
+							<option value="{$vo['id']}">{$vo['name']}</option>
+							{/foreach}
+						</select>
+					</div>
+					<div class="layui-inline">
+						<button type="button" class="layui-btn layui-btn-normal layui-btn-sm import" >导入</button>
+					</div>
+				</div>
+			</blockquote>
+			<div class="layui-row layui-col-space10">
+				<div class="layui-col-md12">
+					<input type="text"  id="select_material" readonly ts-selected="{$material_id}"  placeholder="请选择,不可为空" autocomplete="off" class="layui-input">
+				</div>
+				
+				<!--<div class="layui-col-md12">
+					<select id="selectId" xm-select-height="36px" xm-select-search-type="dl"  xm-select="selectId" xm-select-checkbox  xm-select-search=""></select>
+				</div>
+				
+				<div class="layui-col-md1">
+					<button type="button" class="layui-btn showSearch">高级筛选</button>
+				</div>-->
+			</div>
+			<table class="layui-table">
+				<thead>
+					<tr>
+						<th style="width: 135px;">物料编码</th>
+						<th>物料名称</th>
+						<th style="width: 60px;">单位</th>
+						<th style="width:200px;">工位仓位</th>
+						<th style="width:80px;">工位库存量</th>
+						<th style="width: 240px;">入库批次号</th>
+						<th style="width: 80px;">批次可用量</th>
+						<th style="width: 80px;">建议补充量</th>
+						<th style="width:90px;">调拨数量</th>
+						<th style="width:200px;">备注</th>
+						<th style="width: 60px;">操作</th>
+					</tr> 
+				</thead>
+				<tbody id="tbody">
+	
+				</tbody>
+			</table>
+		</div>
+		<div id="photoTlp" style="display:none;">
+			{:$form->optPhoto('__photo__')}
+		</div>
+	</div>
+	<div class="bottom">
+		<div class="button-container">
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*"><i class="layui-icon layui-icon-ok"></i>提交</button>
+		</div>
+	</div>
+</form>
+{/block}
+{block name="script"}
+<script>
+var warehouse = {:json_encode($warehouse)};
+var material_warehouse = {:json_encode($material_warehouse)};
+var default_material_id = '{$material_id}';
+layui.use(['tableSelect','form','select'], function () {
+	var $ = layui.jquery;
+	var tableSelect = layui.tableSelect,form = layui.form;
+	var select = layui.select;
+	
+	tableSelect.render({
+		elem: '#select_material',
+		checkedKey: 'id',
+		searchKey: 'keyword',
+		searchPlaceholder: '物料编码/物料名称',
+		table: {
+			url: '{:url('common/materialStock')}?status=1&warehouse_type=1,2',	
+			limit:100,
+			limits:[100,200,300,400,500],			
+			cols: [[
+				{type: 'checkbox' },
+				{field: 'sn',title: '物料编码',align: 'center',unresize: false,width: 300},
+				{field: 'name',title: '物料名称',align: 'center',unresize: false,width: 300},
+				{field: 'stock',title: '现有库存',align: 'center',unresize: false,width: 120},
+			]]
+		},
+		done: function (elem, data) {
+			layui.each(data.data, function (index, item) {
+				if($('#material_'+item.id).length>0){
+					//layer.msg('物料已添加');	
+					//$('#material_'+item.id).find('.stock_num').focus();
+				}else if(item && item.id && item.name){
+					addMaterial(item);
+				}
+			})
+		}
+	})
+	
+	window.submitCallBack = function (res){
+		location.replace('{:url('edit')}?id='+res.data.id);
+	}
+	
+	window.deleteMaterial = function(_id){
+		$('#material_'+_id).remove();
+	}
+	
+	$("body").on("change",".stock_num",function(){
+		var value 	= $(this).val();
+		var old 	= $(this).data('old');
+		//value 		= value.replace(/[^\d]/g,"");
+		if(!(/^([1-9][0-9]*)$/.test(value)) || value <= 0){ 
+			layer.msg('请输入大于0的正整数');
+			$(this).val(old);
+			return ;
+		}
+		value = parseInt(value);
+		var material_id = $(this).closest('tr').find('.material_id').val();
+		var material_key = $(this).closest('tr').data('key');
+		var ids = select.value('material_'+material_key, 'val'); 
+		console.log(ids);
+		var num = 0 ;
+		$(this).closest('tr').find('.enter_material_id option').each(function(){
+			var v = ($(this).val()).toString();
+			if(ids.indexOf(v) != -1){
+				num = num + parseInt($(this).data('num'));
+			}
+		})
+		if(num > 0 && value > num){
+			layer.msg('最多出库数量'+num);
+			$(this).val(old);
+			return ;
+		}
+		$(this).data('old',value);
+	});
+	
+	
+	select.config("selectId",{
+		type:"post",
+		searchUrl:'{:url('common/materialStock')}&limit=50&status=1&warehouse_type=1,2',    //请求地址
+		searchName: "keyword",
+		keyName:"name",
+		keyVal:"id" , 
+		beforeSuccess: function(id, url, searchVal, result){
+			$.each(result.data, function(index, item) {
+				item._name = item.name;
+				item.name = '物料编码：'+item.sn + ' | 物料名称：' + item.name + ' | 现有库存：' + item.stock + '';
+			});
+			return result;
+		}
+	},false)
+	
+	select.on('selectId', function(id, vals, item, isAdd, isDisabled){
+		if(isAdd){
+			if($('#material_'+item.id).length>0){
+				layer.msg('物料已添加');	
+				$('#material_'+item.id).find('.stock_num').focus();
+			}else if(item && item.id && item.name){
+				addMaterial(item);
+			}
+		}else{
+			$('#material_'+item.id).remove();
+		}
+		//$('.xm-select-parent>.xm-form-select').removeClass('xm-form-selected');
+		//return false;
+		
+	});
+	
+
+	form.on('select(warehouse_id)', function(data){
+		var tr = $(data.elem).closest('tr');
+		var stock = parseInt($(data.elem).find('option:selected').data('stock'));
+		var suggest_stock = parseInt($(data.elem).find('option:selected').data('max')) - stock;
+		tr.find('.warehouse_stock').html(stock);
+		tr.find('.suggest_stock').html(suggest_stock);	
+	});
+
+	function addMaterial(item){
+		var stock_num = '';
+		var warehouse_id = item.workstation_id?item.workstation_id:0;
+		var material_key = item.id+'-'+warehouse_id;
+		
+		var html = '<tr id="material_'+item.id+'" data-key="'+material_key+'"><input type="hidden"  name="material['+material_key+'][id]" value="'+item.id+'" class="material_id" ><input type="hidden"  name="material['+material_key+'][sn]" value="'+item.sn+'" class="sn" >';
+		html += '	<td>'+item.sn+'</td>';
+		html += '	<td>'+(item._name?item._name:item.name)+'</td>';
+		html += '	<td>'+item.unit+'</td>';
+		html += '	<td><select name="material['+material_key+'][warehouse_id]"  required lay-verify="required" lay-filter="warehouse_id">';
+		html += '		<option  data-stock="0" data-max="0" value="" >请选择</option>';
+		var warehouse_stock = 0;
+		var max_stock = 0;
+		
+		
+		layui.each(warehouse, function (index, vo) {
+			if(index == 0){
+				warehouse_stock = item['warehouse'][vo.id]?item['warehouse'][vo.id]:0;
+			}
+			if(index == 0){
+				max_stock = item['warehouse'][vo.id]?item['warehouse_max'][vo.id]:0;
+			}			
+			
+			if(warehouse_id && warehouse_id == vo.id){
+				warehouse_stock = item['warehouse'][vo.id]?item['warehouse'][vo.id]:0;
+				max_stock = item['warehouse'][vo.id]?item['warehouse_max'][vo.id]:0;
+			}
+			
+			html += '<option '+(warehouse_id && warehouse_id == vo.id?'selected':'')+' data-stock="'+(item['warehouse']&&item['warehouse'][vo.id]?item['warehouse'][vo.id]:0)+'" data-max="'+(item['warehouse_max']&&item['warehouse_max'][vo.id]?item['warehouse_max'][vo.id]:0)+'" value="'+vo.id+'" >'+vo.name+'</option>';
+		})
+		html += '	</select></td>';
+		html += '	<td class="warehouse_stock">'+warehouse_stock+'</td>';
+		html += '	<td><select name="material['+material_key+'][enter_material_id]" class="enter_material_id" xm-select="material_'+material_key+'" required lay-verify="required" xm-select-checkbox>';
+		if(item.enter.length > 0){
+			layui.each(item.enter, function (index2, item2) {
+				html += '<option '+(index2==0?'selected':'')+' data-num="'+item2.num+'" value="'+item2.id+'" >'+item2.order_sn+'('+item2.num+')</option>';
+			})
+		}else{
+			//html += '<option selected data-num="0" value="0" >无</option>';
+		}
+		
+		html += '	</select></td>';
+		var suggest_stock = (parseInt(max_stock) - parseInt(warehouse_stock));
+		suggest_stock = suggest_stock>0?suggest_stock:1;
+
+		html += '	<td>'+item.stock+'</td>';
+		html += '	<td class="suggest_stock">'+suggest_stock+'</td>';
+		html += '	<td><input type="text" data-old="'+suggest_stock+'"  name="material['+material_key+'][stock_num]" value=""  data-key="stock_num" class="layui-input stock_num" lay-verify="required|number" placeholder="请输入数量"></td>';
+		html += '	<td><input type="text"  name="material['+material_key+'][remark]" value="" class="layui-input remark" data-key="remark" placeholder=""></td>';
+		html += '	<td><button type="button" onclick="deleteMaterial('+item.id+')" class="layui-btn layui-btn-xs layui-btn-danger">删除</button></td>';
+		html += '</tr>';
+		$('#tbody').prepend(html);	
+		$('#material_'+item.id).find('.stock_num').focus();
+		form.render();
+		select.render('material_'+material_key+'');
+		
+		select.on('material_'+material_key, function(id, vals, item, isAdd, isDisabled){
+			//console.log(vals);
+			var ids = [];
+			$.each(vals,function(idx,vo){
+				ids.push(vo.value);
+			})
+			var max_num = 0;
+		
+			$('#'+id+' .enter_material_id option').each(function(){
+				if(ids.indexOf($(this).val().toString()) != -1){
+					max_num = $(this).data('num');
+				}
+			})
+			max_num = parseInt(max_num);
+			var stock_num = $('#'+id+' .stock_num').val();
+			
+			if(max_num > 0 && stock_num && max_num < parseInt(stock_num)){
+				$('#'+id+' .stock_num').val(max_num);
+			}
+		},true);
+	}
+	
+	
+	$(".layui-table").on("keydown",".layui-input",function(){
+		if (event.keyCode == 40) {
+			$(this).closest('tr').next().find('.'+$(this).data('key')).focus();
+		}else if (event.keyCode == 38) {
+			$(this).closest('tr').prev().find('.'+$(this).data('key')).focus();
+		}else if (event.keyCode == 13 || event.keyCode == 39) {
+			//右一个
+			$(this).closest('td').next().find('.layui-input').focus();
+		}else if (event.keyCode == 37) {
+			//左一个
+			$(this).closest('td').prev().find('.layui-input').focus();
+		}
+	});
+	
+	$('.showSearch').click(function(){
+		layer.open({
+			type: 2
+			,title: '高级筛选'
+			,content: '{:url('common/materialStock')}?type=&status=1&warehouse_type=1,2'
+			,area: ['95%','95%']
+			,success: function(layero, index){
+				var iframeWindow = window['layui-layer-iframe'+ index];
+				layero.find('iframe').contents().find('#confirmSelect').click(function(){
+					selectFuc();
+					return false;
+				})
+				
+				layero.find('iframe').contents().find('body').on("keydown", function(event) {
+					if (event.which === 13) {
+						selectFuc();
+						return false;
+					}
+				});
+				
+				function selectFuc(){
+					if(iframeWindow.selected_ids.length == 0){
+						layui.layer.msg('请选择物料');
+					}else{
+						$.each(iframeWindow.selected_items,function(idx,item){
+							if($('#material_'+item.id).length == 0){
+								addMaterial(item);
+							}
+						})
+						layui.layer.close(index);
+					}
+					return false;
+				}
+			}
+		});
+	})
+	
+	if(default_material_id){
+		var index =layer.load();
+		$.ajax({
+			type: 'GET',
+			url:'{:url('common/materialStock')}?limit=100&warehouse_type=1,2&type=&status=1&ids='+default_material_id,
+			dataType: 'json',
+			success: function(res){
+
+				if(material_warehouse.length > 0){
+					var tmp = {};		
+					$.each(res.data,function(idx,item){
+						tmp[item.id] = item;
+					})
+					
+					$.each(material_warehouse,function(idx2,item2){
+						tmp[item2.material_id].warehouse_id = item2.warehouse_id;
+						tmp[item2.material_id].workstation_id = item2.warehouse_id;
+						
+						addMaterial(tmp[item2.material_id]);
+					})
+				}else{
+					$.each(res.data,function(idx,item){
+						if($('#material_'+item.id).length == 0){
+							addMaterial(item);
+						}
+					})
+				}
+				
+				layui.layer.close(index);
+
+				return false;		     
+			},
+			error : function() {
+				alert('失败。');
+			}
+		});
+	}
+	
+	
+	$('.import').click(function(){
+		var workstation_id = $('#warehouse_import').val();
+		if(!workstation_id){
+			layer.msg('请选择工位仓位');
+			return;
+		}
+
+		$.ajax({
+			type: 'GET',
+			url:'{:url('common/materialStock')}?type=&warehouse_type=1,2&status=1&workstation_id='+workstation_id,
+			dataType: 'json',
+			success: function(res){
+				if(res.data.length == 0){
+					layer.msg('暂无数据，请先设置物料工位仓位');
+					return;
+				}
+				$.each(res.data,function(idx,item){
+					if($('#material_'+item.id).length == 0){
+						addMaterial(item);
+					}
+				})
+				return false;		     
+			},
+			error : function() {
+				alert('失败。');
+			}
+		});
+
+
+	})
+});
+</script>
+{/block}

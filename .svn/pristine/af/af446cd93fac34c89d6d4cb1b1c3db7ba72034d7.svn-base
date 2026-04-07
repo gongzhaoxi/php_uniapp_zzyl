@@ -1,0 +1,831 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.section1{	text-align:center;}
+.section2{	text-align:center;	margin: 5px 0;}
+.section3{	width:80%;	margin: 0 auto;	border-top: 2px solid #ccc;	padding-top:5px;}
+.section3>div{	display:inline-block;	margin-right:15px;}
+.section3 .item1{	font-size:18px;	font-weight:600;}
+.section3 .item2{	font-size:18px;	font-weight:600;	color: rgb(216, 0, 27);}
+.layui-btn-group{	position: fixed;	right: 20px;		z-index:999;}
+@media print {
+	.no-print {
+		display: none;
+	}
+	.layui-input,.layui-textarea{
+		border:none;
+	}
+}
+.layui-input-inline{max-width:none;}
+.layui-table .spec{	padding: 0px 0px 0px 5px;}
+.layui-table .spec .text{	float:left;font-size: 12px;}
+.layui-table .spec .checkbox{	float:right;}
+.layui-table .spec .layui-form-checkbox{	padding-left:20px;}
+.layui-input {height: 25px;line-height: 25px;}
+.layui-table td, .layui-table th {	padding: 0px 1px;	text-align:center;}
+.layui-table .left-td{	text-align:left;}
+.layui-textarea{	resize: none;}
+.layui-table .sign_image{max-width:100%;max-height:100%;}
+
+td .handling_sn{max-width:400px;}
+.mainBox{overflow:visible !important;}
+.layui-table,.layui-form-checkbox[lay-skin=primary]>div,.layui-form-checked[lay-skin=primary]>i{color: #000 !important;}
+.layui-form-checked[lay-skin=primary] i{border-color: #000 !important;background-color:#fff !important;}
+td{border-color:#000 !important; white-space: nowrap;}
+.layui-form-checkbox[lay-skin=primary]>i{border-color:#000 !important;}
+.layui-input:hover, .layui-textarea:hover{border-color:#fff !important;}
+.layui-badge-rim, .layui-border, .layui-colla-content, .layui-colla-item, .layui-collapse, .layui-elem-field, .layui-form-pane .layui-form-item[pane], .layui-form-pane .layui-form-label, .layui-input, .layui-input-split, .layui-panel, .layui-quote-nm, .layui-select, .layui-tab-bar, .layui-tab-card, .layui-tab-title, .layui-tab-title .layui-this:after, .layui-textarea{border-color:#fff !important;}
+#sign_image img{height: 15px; width: auto;}
+@media print {
+  body {
+    zoom: 85%; /* 或者使用 transform: scale(0.5); */
+  }
+}
+
+#unqualified_description {
+  overflow: hidden;
+  padding: 10px; /* 或者其他适当的内边距 */
+  box-sizing: border-box; /* 确保padding计入宽度和高度 */
+  resize: none; /* 防止用户手动调整大小 */
+}
+
+</style>
+
+<form class="layui-form" action="" method="post" data-reload="7" data-callback="cb" data-noshowmsg="1" id="formData" lay-filter="demo-val-filter">
+	<input type="hidden" name="material_enter_material_id" value="{$model['id']}" >
+	<div class="mainBox">
+		<div class="main-container" id="content-to-convert">
+			<div class="layui-btn-group no-print">
+			{if empty($hidden)}
+				<div style="position: fixed;left: 20px;">
+					{if in_array(13,request()->userInfo['permission'])}<button  type="button" class="layui-btn layui-bg-blue inspection">送检信息保存</button>{/if}
+					{if $model['status'] == 3}<button  type="button" class="layui-btn layui-bg-red">单据已结算</button>{/if}
+				</div>
+				<button type="button" class="layui-btn print">{if $model['report'] && $model['report']['print']}已打印{else}打印{/if}</button>
+				<button type="submit" class="layui-btn submit layui-hide" lay-submit="" lay-filter="*">保存</button>
+				{if in_array(6,request()->userInfo['permission'])}<button type="button" class="layui-btn save">检验信息保存</button>{/if}
+				{if in_array(7,request()->userInfo['permission'])}<button type="button" class="layui-btn check1 {if !$model['report']}layui-hide{/if}" >检验审批</button>{/if}
+				{if in_array(8,request()->userInfo['permission'])}<button type="button" class="layui-btn check2 {if !$model['report']}layui-hide{/if}" >主管审批</button>{/if}
+				{if !$model['report'] || $model['report']['can_finish']}
+				{if in_array(8,request()->userInfo['permission']) }
+				<button type="button" class="layui-btn finish {if !$model['report'] || !$model['report']['approval_date']}layui-hide{/if}">完成</button>
+				{/if}
+				{/if}
+			{elseif empty($download)}
+				<button type="submit" class="layui-btn submit" lay-submit="" lay-filter="*">送检信息保存</button>
+				<button type="button" class="layui-btn print">打印</button>
+			{/if}
+			{if empty($download)}
+				<button type="button" class="layui-btn download">下载</button>
+			{/if}
+			</div>
+			<h2 class="section1">{:config('web.front_company')}</h2>
+			<p class="section2">{:config('web.front_contact')}</p>
+			<div class="section3">
+				<div class="item1">进货检验报告</div>
+				<div class="item">{:config('web.front_version')}</div>
+				<div class="item1">报告编号: </div>
+				<div class="item2" id="code">{$model['report']['code']|default=''}</div>
+			</div>
+			<table class="layui-table">
+				<colgroup>
+					<!-- <col width="10%">
+					<col width="15%">
+					<col width="7%">
+					<col width="10%">
+					<col width="7%">
+					<col width="10%">
+					<col width="7%">
+					<col width="7%">
+					<col width="10%">
+					<col /> -->
+				</colgroup>
+				<tbody>
+					<tr>
+						<td colspan="10" >仓库送检填写</td>
+					</tr>
+					<tr>
+						<td>供应商名称</td>
+						<td>{$model['enter']['supplier']['name']|default=''}</td>
+						<td>采购单号</td>
+						<td>{$model['purchaseOrder']['order_sn']|default=''}</td>
+						<td>收货数量</td>
+						<td id="stock_num">{$model['stock_num']|default=''}</td>
+						<td>收货人</td>
+						<td>{$model['report']['consignee']|default=''}
+							<!-- <input type="text" {if empty($hidden) && !in_array(13,request()->userInfo['permission'])}disabled{/if} name="consignee" value="{$model['report']['consignee']|default=''}" placeholder="" autocomplete="off" class="layui-input"> -->
+						</td>
+						<td>收货日期</td>
+						<td><input type="text" {if empty($hidden) && !in_array(13,request()->userInfo['permission'])}disabled{/if} name="receiving_date" value="{$model['report']['receiving_date']|default=''}" placeholder="" autocomplete="off" class="layui-input date"></td>
+					</tr>
+					<tr>
+						<td>供应商送货单号</td>
+						<td>{$model['enter_batch_number']|default=''}</td>
+						<td>物料名称</td>
+						<td>{$model['material']['name']|default=''}</td>
+						<td>物料批号</td>
+						<td>{$model['enter']['order_sn']|default=''}</td>
+						<td>送检人</td>
+						<td>{$model['report']['inspection_by']|default=''}
+							<!-- <input type="text" {if empty($hidden) && !in_array(13,request()->userInfo['permission'])}disabled{/if} name="inspection_by" value="{$model['report']['inspection_by']|default=''}" placeholder="" autocomplete="off" class="layui-input"> -->
+						</td>
+						<td>送检日期</td>
+						<td><input type="text" {if empty($hidden) && !in_array(13,request()->userInfo['permission'])}disabled{/if} name="inspection_date" value="{$model['report']['inspection_date']|default=''}" placeholder="" autocomplete="off" class="layui-input date"></td>
+					</tr>					
+					<tr>
+						<td colspan="6" >物资类别:   
+							<input type="checkbox" name="material_category" lay-filter="material_category" title="重要物资" value="重要物资" lay-skin="primary" {if (!empty($model['report']['material_category']) && strstr($model['report']['material_category'],'重要物资')) || (empty($model['report']['material_category']) && $model['material']['material_category'] == '重要物资') }checked{/if}>    	
+							<input type="checkbox" name="material_category" lay-filter="material_category" title="一般物资" value="一般物资" lay-skin="primary" {if (!empty($model['report']['material_category']) && strstr($model['report']['material_category'],'一般物资')) || (empty($model['report']['material_category']) && $model['material']['material_category'] == '一般物资') }checked{/if}>   
+							<input type="checkbox" name="material_category" lay-filter="material_category" title="辅助物资" value="辅助物资" lay-skin="primary" {if (!empty($model['report']['material_category']) && strstr($model['report']['material_category'],'辅助物资')) || (empty($model['report']['material_category']) && $model['material']['material_category'] == '辅助物资') }checked{/if}>  
+						</td>
+						<td>物料型号</td>
+						<td>{$model['material']['supplier_code']|default=''}</td>
+						<td>物料编号(序列号)</td>
+						<td><div style="width: 100%;font-size: 0.7rem;">{$model['report']['material_code']|default=''}</div>
+							<!-- <input type="text" name="material_code" value="{$model['report']['material_code']|default=''}" style="width:180px;" placeholder="" autocomplete="off" class="layui-input"> -->
+						</td>
+					</tr>						
+					<tr>
+						<td colspan="10">质管检验填写</td>
+					</tr>	
+					<tr>
+						<td>检验方法</td>
+						<td>
+							<input type="checkbox" name="inspection_method" lay-filter="inspection_method" title="全检" value="全检" lay-skin="primary" {if (!empty($model['report']['inspection_method']) && strstr($model['report']['inspection_method'],'全检')) || empty($model['report']['inspection_method']) }checked{/if}>    	
+							<input type="checkbox" name="inspection_method" lay-filter="inspection_method" title="抽检" value="抽检" lay-skin="primary" {if !empty($model['report']['inspection_method']) && strstr($model['report']['inspection_method'],'抽检') }checked{/if}>  
+						</td>
+						<td>抽样方案</td>
+						<td colspan="3"><input type="text" name="sampling_plan" value="{$model['report']['sampling_plan']|default='GB/T2828.1'}" placeholder="" autocomplete="off" class="layui-input"></td>
+						<td>接收质量限AQL</td>
+						<td colspan="3" class="left-td">A类缺陷：0.4，B类缺陷：0.65，C类缺陷：1.5</td>
+					</tr>	
+					<tr>
+						<td colspan="1" rowspan="2">全检数量</td>
+						<td colspan="1" rowspan="2"><input type="text" name="inspection_quantity" id="inspection_quantity" value="{if !empty($model['report']['inspection_method'])}{$model['report']['inspection_quantity']}{else}{$model['stock_num']}{/if}" placeholder="" autocomplete="off" class="layui-input"></td>
+						<td colspan="1" rowspan="2">抽样数</td>
+						<td colspan="3" rowspan="2">
+							外观(<div class="layui-input-inline" style="width: 70px;"><input type="text" name="sampling_quantity_appearance" value="{$model['report']['sampling_quantity_appearance']|default=''}" placeholder="" autocomplete="off" class="layui-input"></div>)
+							尺寸与功能(<div class="layui-input-inline" style="width: 70px;"><input type="text" name="sampling_quantity_size" value="{$model['report']['sampling_quantity_size']|default=''}" placeholder="" autocomplete="off" class="layui-input"></div>)
+						</td>
+						<td colspan="1" rowspan="2">抽样水平</td>
+						<td colspan="3" rowspan="1" class="left-td">
+							外观:
+							<input type="checkbox" name="sampling_level_appearance" lay-filter="sampling_level_appearance" title="I" value="I" lay-skin="primary" {if !empty($model['report']['sampling_level_appearance']) && $model['report']['sampling_level_appearance'] == 'I' }checked{/if}>    
+							<input type="checkbox" name="sampling_level_appearance" lay-filter="sampling_level_appearance" title="II" value="II" lay-skin="primary" {if !empty($model['report']['sampling_level_appearance']) && $model['report']['sampling_level_appearance'] == 'II' }checked{/if}> 
+							<input type="checkbox" name="sampling_level_appearance" lay-filter="sampling_level_appearance" title="III" value="III" lay-skin="primary" {if !empty($model['report']['sampling_level_appearance']) && $model['report']['sampling_level_appearance'] == 'III' }checked{/if}> 
+						</td>
+					</tr>
+					<tr>
+						<td colspan="3" rowspan="1" class="left-td">
+							尺寸与功能:  
+							<input type="checkbox" name="sampling_level_size" lay-filter="sampling_level_size" title="S-1" value="S-1" lay-skin="primary" {if !empty($model['report']['sampling_level_size']) && strstr($model['report']['sampling_level_size'],'S-1') }checked{/if}>    
+							<input type="checkbox" name="sampling_level_size" lay-filter="sampling_level_size" title="S-2" value="S-2" lay-skin="primary" {if !empty($model['report']['sampling_level_size']) && strstr($model['report']['sampling_level_size'],'S-2') }checked{/if}> 
+							<input type="checkbox" name="sampling_level_size" lay-filter="sampling_level_size" title="S-3" value="S-3" lay-skin="primary" {if !empty($model['report']['sampling_level_size']) && strstr($model['report']['sampling_level_size'],'S-3') }checked{/if}>  
+							<input type="checkbox" name="sampling_level_size" lay-filter="sampling_level_size" title="S-4" value="S-4" lay-skin="primary" {if !empty($model['report']['sampling_level_size']) && strstr($model['report']['sampling_level_size'],'S-4') }checked{/if}>  
+						</td>
+					</tr>
+					<tr>
+						<td>检验依据/要求</td>
+						<td colspan="3">
+							<input type="checkbox" name="inspection_basis[]" lay-filter="inspection_basis"  title="样品" value="样品" lay-skin="primary" {if !empty($model['report']['inspection_basis']) && strstr($model['report']['inspection_basis'],'样品')  }checked{/if}>    	
+							<input type="checkbox" name="inspection_basis[]" lay-filter="inspection_basis"  title="图纸" value="图纸" lay-skin="primary" {if (!empty($model['report']['inspection_basis']) && strstr($model['report']['inspection_basis'],'图纸')) || empty($model['report']['inspection_basis'])}checked{/if}>  
+							<input type="checkbox" name="inspection_basis[]" lay-filter="inspection_basis"  title="来料检验作业指导书" value="来料检验作业指导书" lay-skin="primary" {if (!empty($model['report']['inspection_basis']) && strstr($model['report']['inspection_basis'],'来料检验作业指导书')) || empty($model['report']['inspection_basis'])}checked{/if}> 	
+						</td>
+						<td colspan="2">编号/版本:</td>
+						<td colspan="4" style="text-align: left;">
+							<input type="text" name="code_version"  id="code_version" readonly placeholder="" autocomplete="off" class="layui-input">
+						</td>
+					</tr>					
+					<tr>
+						<td colspan="2">检验项目 (有请打√)</td>
+						<td colspan="2">不合格描述</td>
+						<td colspan="2">检验仪器编号</td>
+						<td>有请打√</td>
+						<td>NG 数量</td>
+						<td>OK 数量</td>
+						<td>合格率</td>
+					</tr>
+					{php}
+					$ng_item = empty($model['report']['ng_item'])?[]:explode(',',$model['report']['ng_item']);
+					$ng_num = empty($model['report']['ng_num'])?[]:explode(',',$model['report']['ng_num']);
+					$instrument_number = empty($model['report']['instrument_number'])?[]:explode(',',$model['report']['instrument_number']);
+					{/php}					
+					<tr>
+						<td colspan="1" rowspan="1" class="spec"><div class="text">1.外观</div><div class="checkbox"><input type="checkbox" name="inspection_items[]" {if !empty($model['report']['inspection_items']) && strstr($model['report']['inspection_items'],'外观') }checked{/if} value="外观" title="" lay-skin="primary" ></div></td>
+						<td colspan="1" rowspan="1" class="spec"><div class="text">14.运动灵活</div><div class="checkbox"><input type="checkbox" name="inspection_items[]" {if !empty($model['report']['inspection_items']) && strstr($model['report']['inspection_items'],'运动灵活') }checked{/if}   value="运动灵活" title="" lay-skin="primary" ></div></td>
+						<td colspan="2" rowspan="13"><textarea placeholder="" id="unqualified_description" name="unqualified_description" class="layui-textarea">{$model['report']['unqualified_description']|default=''}</textarea></td>	
+						<td colspan="2" rowspan="1"><input placeholder="" name="instrument_number[]" value="{$instrument_number[0]|default=''}" class="layui-input"></input></td>
+						<td colspan="1" rowspan="1"><input type="checkbox" name="ng_item[]" {if $ng_item && in_array(0,$ng_item) }checked{/if} value="0" title="" lay-skin="primary" ></td>
+						<td colspan="1" rowspan="1"><input type="text" name="ng_num[]" value="{$ng_num[0]|default=''}" placeholder="" autocomplete="off" class="layui-input"></td>
+						<td colspan="1" rowspan="14"><textarea placeholder="" name="pass_num" class="layui-textarea" readonly>{$model['qualities_num']}</textarea></td>
+						<td colspan="1" rowspan="14"><textarea placeholder="" name="pass_rate" class="layui-textarea" readonly>{:round($model['qualities_num']*100/$model['stock_num'],2)}%</textarea></td>
+					</tr>
+					<tr>
+						<td colspan="1" rowspan="1" class="spec"><div class="text">2.安装尺寸</div><div class="checkbox"><input type="checkbox" name="inspection_items[]" {if !empty($model['report']['inspection_items']) && strstr($model['report']['inspection_items'],'安装尺寸') }checked{/if}  value="安装尺寸" lay-skin="primary" ></div></td>
+						<td colspan="1" rowspan="1" class="spec"><div class="text">15.限位角度</div><div class="checkbox"><input type="checkbox" name="inspection_items[]" {if !empty($model['report']['inspection_items']) && strstr($model['report']['inspection_items'],'限位角度') }checked{/if}  value="限位角度" lay-skin="primary" ></div></td>
+						<td colspan="2" rowspan="1"><input placeholder="" name="instrument_number[]" value="{$instrument_number[1]|default=''}" class="layui-input"></input></td>
+						<td colspan="1" rowspan="1"><input type="checkbox"  name="ng_item[]" {if $ng_item && in_array(1,$ng_item) }checked{/if} value="1" lay-skin="primary" ></td>
+						<td colspan="1" rowspan="1"><input type="text" name="ng_num[]" value="{$ng_num[1]|default=''}" placeholder="" autocomplete="off" class="layui-input"></td>
+					</tr>
+					<tr>
+						<td colspan="1" rowspan="1" class="spec"><div class="text">3.工作性能</div><div class="checkbox"><input type="checkbox" name="inspection_items[]" {if !empty($model['report']['inspection_items']) && strstr($model['report']['inspection_items'],'工作性能') }checked{/if}  value="工作性能" lay-skin="primary" ></div></td>
+						<td colspan="1" rowspan="1" class="spec"><div class="text">16.孔位</div><div class="checkbox"><input type="checkbox" name="inspection_items[]" {if !empty($model['report']['inspection_items']) && strstr($model['report']['inspection_items'],'孔位') }checked{/if}  value="孔位" lay-skin="primary" ></div></td>
+						<td colspan="2" rowspan="1"><input placeholder="" name="instrument_number[]" value="{$instrument_number[2]|default=''}" class="layui-input"></input></td>
+						<td colspan="1" rowspan="1"><input type="checkbox"  name="ng_item[]" {if $ng_item && in_array(2,$ng_item) }checked{/if} value="2" lay-skin="primary" ></td>
+						<td colspan="1" rowspan="1"><input type="text" name="ng_num[]" value="{$ng_num[2]|default=''}" placeholder="" autocomplete="off" class="layui-input"></td>
+					</tr>
+					<tr>
+						<td colspan="1" rowspan="1" class="spec"><div class="text">4.噪音</div><div class="checkbox"><input type="checkbox" name="inspection_items[]" {if !empty($model['report']['inspection_items']) && strstr($model['report']['inspection_items'],'噪音') }checked{/if}  value="噪音" lay-skin="primary" ></div></td>
+						<td colspan="1" rowspan="1" class="spec"><div class="text">17.规格</div><div class="checkbox"><input type="checkbox" name="inspection_items[]" {if !empty($model['report']['inspection_items']) && strstr($model['report']['inspection_items'],'规格') }checked{/if}  value="规格" lay-skin="primary" ></div></td>
+						<td colspan="2" rowspan="1"><input placeholder="" name="instrument_number[]" value="{$instrument_number[3]|default=''}" class="layui-input"></input></td>
+						<td colspan="1" rowspan="1"><input type="checkbox"  name="ng_item[]" {if $ng_item && in_array(3,$ng_item) }checked{/if} value="3" title="" lay-skin="primary" ></td>
+						<td colspan="1" rowspan="1"><input type="text" name="ng_num[]" value="{$ng_num[3]|default=''}" placeholder="" autocomplete="off" class="layui-input"></td>
+					</tr>
+					<tr>
+						<td colspan="1" rowspan="1" class="spec"><div class="text">5.行程</div><div class="checkbox"><input type="checkbox" name="inspection_items[]" {if !empty($model['report']['inspection_items']) && strstr($model['report']['inspection_items'],'行程') }checked{/if}  value="行程" lay-skin="primary" ></div></td>
+						<td colspan="1" rowspan="1" class="spec"><div class="text">18.阀体排气</div><div class="checkbox"><input type="checkbox" name="inspection_items[]" {if !empty($model['report']['inspection_items']) && strstr($model['report']['inspection_items'],'阀体排气') }checked{/if}  value="阀体排气" lay-skin="primary" ></div></td>
+						<td colspan="2" rowspan="1"><input placeholder="" name="instrument_number[]" value="{$instrument_number[4]|default=''}" class="layui-input"></input></td>
+						<td colspan="1" rowspan="1"><input type="checkbox"  name="ng_item[]" {if $ng_item && in_array(4,$ng_item) }checked{/if} value="4" title="" lay-skin="primary" ></td>
+						<td colspan="1" rowspan="1"><input type="text" name="ng_num[]" value="{$ng_num[4]|default=''}" placeholder="" autocomplete="off" class="layui-input"></td>
+					</tr>
+					<tr>
+						<td colspan="1" rowspan="1" class="spec"><div class="text">6.负载</div><div class="checkbox"><input type="checkbox" name="inspection_items[]" {if !empty($model['report']['inspection_items']) && strstr($model['report']['inspection_items'],'负载') }checked{/if}  value="负载" lay-skin="primary" ></div></td>
+						<td colspan="1" rowspan="1" class="spec"><div class="text">19.配合</div><div class="checkbox"><input type="checkbox" name="inspection_items[]" {if !empty($model['report']['inspection_items']) && strstr($model['report']['inspection_items'],'配合') }checked{/if}  value="配合" lay-skin="primary" ></div></td>
+						<td colspan="2" rowspan="1"><input placeholder="" name="instrument_number[]" value="{$instrument_number[5]|default=''}" class="layui-input"></input></td>
+						<td colspan="1" rowspan="1"><input type="checkbox"  name="ng_item[]" {if $ng_item && in_array(5,$ng_item) }checked{/if} value="5" title="" lay-skin="primary" ></td>
+						<td colspan="1" rowspan="1"><input type="text" name="ng_num[]" value="{$ng_num[5]|default=''}" placeholder="" autocomplete="off" class="layui-input"></td>
+					</tr>
+					<tr>
+						<td colspan="1" rowspan="1" class="spec"><div class="text">7.标识</div><div class="checkbox"><input type="checkbox" name="inspection_items[]" {if !empty($model['report']['inspection_items']) && strstr($model['report']['inspection_items'],'标识') }checked{/if}  value="标识" lay-skin="primary" ></div></td>
+						<td colspan="1" rowspan="1" class="spec"><div class="text">20.密封性</div><div class="checkbox"><input type="checkbox" name="inspection_items[]" {if !empty($model['report']['inspection_items']) && strstr($model['report']['inspection_items'],'密封性') }checked{/if}  value="密封性" lay-skin="primary" ></div></td>
+						<td colspan="2" rowspan="1"><input placeholder="" name="instrument_number[]" value="{$instrument_number[6]|default=''}" class="layui-input"></input></td>
+						<td colspan="1" rowspan="1"><input type="checkbox"  name="ng_item[]" {if $ng_item && in_array(6,$ng_item) }checked{/if} value="6" title="" lay-skin="primary" ></td>
+						<td colspan="1" rowspan="1"><input type="text" name="ng_num[]" value="{$ng_num[6]|default=''}" placeholder="" autocomplete="off" class="layui-input"></td>
+					</tr>
+					<tr>
+						<td colspan="1" rowspan="1" class="spec"><div class="text">8.电压</div><div class="checkbox"><input type="checkbox" name="inspection_items[]" {if !empty($model['report']['inspection_items']) && strstr($model['report']['inspection_items'],'电压') }checked{/if}  value="电压" lay-skin="primary" ></div></td>
+						<td colspan="1" rowspan="1" class="spec"><div class="text">21.螺牙</div><div class="checkbox"><input type="checkbox" name="inspection_items[]" {if !empty($model['report']['inspection_items']) && strstr($model['report']['inspection_items'],'螺牙') }checked{/if}  value="螺牙" lay-skin="primary" ></div></td>
+						<td colspan="2" rowspan="1"><input placeholder="" name="instrument_number[]" value="{$instrument_number[7]|default=''}" class="layui-input"></input></td>
+						<td colspan="1" rowspan="1"><input type="checkbox"  name="ng_item[]" {if $ng_item && in_array(7,$ng_item) }checked{/if} value="7" title="" lay-skin="primary" ></td>
+						<td colspan="1" rowspan="1"><input type="text" name="ng_num[]" value="{$ng_num[7]|default=''}" placeholder="" autocomplete="off" class="layui-input"></td>
+					</tr>
+					<tr>
+						<td colspan="1" rowspan="1" class="spec"><div class="text">9.电介质强度</div><div class="checkbox"><input type="checkbox" name="inspection_items[]" {if !empty($model['report']['inspection_items']) && strstr($model['report']['inspection_items'],'电介质强度') }checked{/if}  value="电介质强度" lay-skin="primary" ></div></td>
+						<td colspan="1" rowspan="1" class="spec"><div class="text">22.水平方向</div><div class="checkbox"><input type="checkbox" name="inspection_items[]" {if !empty($model['report']['inspection_items']) && strstr($model['report']['inspection_items'],'水平方向') }checked{/if}  value="水平方向" lay-skin="primary" ></div></td>
+						<td colspan="2" rowspan="1"><input placeholder="" name="instrument_number[]" value="{$instrument_number[8]|default=''}" class="layui-input"></input></td>
+						<td colspan="1" rowspan="1"><input type="checkbox"  name="ng_item[]" {if $ng_item && in_array(8,$ng_item) }checked{/if} value="8" title="" lay-skin="primary" ></td>
+						<td colspan="1" rowspan="1"><input type="text" name="ng_num[{$ng_num[8]|default=''}]" value="" placeholder="" autocomplete="off" class="layui-input"></td>
+					</tr>
+					<tr>
+						<td colspan="1" rowspan="1" class="spec"><div class="text">10.亮度</div><div class="checkbox"><input type="checkbox" name="inspection_items[]" {if !empty($model['report']['inspection_items']) && strstr($model['report']['inspection_items'],'亮度') }checked{/if}  value="亮度" lay-skin="primary" ></div></td>
+						<td colspan="1" rowspan="1" class="spec"><div class="text">23.焊缝</div><div class="checkbox"><input type="checkbox" name="inspection_items[]" {if !empty($model['report']['inspection_items']) && strstr($model['report']['inspection_items'],'焊缝') }checked{/if}  value="焊缝" lay-skin="primary" ></div></td>
+						<td colspan="2" rowspan="1"><input placeholder="" name="instrument_number[]" value="{$instrument_number[9]|default=''}" class="layui-input"></input></td>
+						<td colspan="1" rowspan="1"><input type="checkbox"  name="ng_item[]" {if $ng_item && in_array(9,$ng_item) }checked{/if} value="9" title="" lay-skin="primary" ></td>
+						<td colspan="1" rowspan="1"><input type="text" name="ng_num[]" value="{$ng_num[9]|default=''}" placeholder="" autocomplete="off" class="layui-input"></td>
+					</tr>
+					<tr>
+						<td colspan="1" rowspan="1" class="spec"><div class="text">11.接头尺寸牢固性</div><div class="checkbox"><input type="checkbox" name="inspection_items[]" {if !empty($model['report']['inspection_items']) && strstr($model['report']['inspection_items'],'接头尺寸牢固性') }checked{/if}  value="接头尺寸牢固性" lay-skin="primary" ></div></td>
+						<td colspan="1" rowspan="1" class="spec"><div class="text">24.随附件</div><div class="checkbox"><input type="checkbox" name="inspection_items[]" {if !empty($model['report']['inspection_items']) && strstr($model['report']['inspection_items'],'随附件') }checked{/if}  value="随附件" lay-skin="primary" ></div></td>
+						<td colspan="2" rowspan="1"><input placeholder="" name="instrument_number[]" value="{$instrument_number[10]|default=''}" class="layui-input"></input></td>
+						<td colspan="1" rowspan="1"><input type="checkbox"  name="ng_item[]" {if $ng_item && in_array(10,$ng_item) }checked{/if} value="10" title="" lay-skin="primary" ></td>
+						<td colspan="1" rowspan="1"><input type="text" name="ng_num[]" value="{$ng_num[10]|default=''}" placeholder="" autocomplete="off" class="layui-input"></td>
+					</tr>
+					<tr>
+						<td colspan="1" rowspan="1" class="spec"><div class="text">12.温度</div><div class="checkbox"><input type="checkbox" name="inspection_items[]" {if !empty($model['report']['inspection_items']) && strstr($model['report']['inspection_items'],'温度') }checked{/if}  value="温度" lay-skin="primary" ></div></td>
+						<td colspan="1" rowspan="1"></td>
+						<td colspan="2" rowspan="1"><input placeholder="" name="instrument_number[]" value="{$instrument_number[11]|default=''}" class="layui-input"></input></td>
+						<td colspan="1" rowspan="1"><input type="checkbox"  name="ng_item[]" {if $ng_item && in_array(11,$ng_item) }checked{/if} value="11" title="" lay-skin="primary" ></td>
+						<td colspan="1" rowspan="1"><input type="text" name="ng_num[]" value="{$ng_num[11]|default=''}" placeholder="" autocomplete="off" class="layui-input"></td>
+					</tr>
+					<tr>
+						<td colspan="1" rowspan="1" class="spec"><div class="text">13.电安全</div><div class="checkbox"><input type="checkbox" name="inspection_items[]" {if !empty($model['report']['inspection_items']) && strstr($model['report']['inspection_items'],'电安全') }checked{/if}  value="电安全" lay-skin="primary" ></div></td>
+						<td colspan="1" rowspan="1"></td>
+						<td colspan="2" rowspan="1"><input placeholder="" name="instrument_number[]" value="{$instrument_number[12]|default=''}" class="layui-input"></input></td>
+						<td colspan="1" rowspan="1"><input type="checkbox"  name="ng_item[]" {if $ng_item && in_array(12,$ng_item) }checked{/if} value="12" title="" lay-skin="primary" ></td>
+						<td colspan="1" rowspan="1"><input type="text" name="ng_num[]" value="{$ng_num[12]|default=''}" placeholder="" autocomplete="off" class="layui-input"></td>
+					</tr>
+					<tr>
+						<td colspan="7" rowspan="1" >不合格总数</td>
+						<td colspan="1" rowspan="1"><input type="text" name="unqualified_num" value="{$model['defective_num']}" readonly placeholder="" autocomplete="off" class="layui-input"></td>
+					</tr>
+					<tr>
+						<td>检验判定结果</td>
+						<td colspan="3">
+							<input type="checkbox" name="inspection_result" lay-filter="inspection_result" title="合格" value="合格" lay-skin="primary" {if !empty($model['report']['inspection_result']) && $model['report']['inspection_result'] == '合格' }checked{/if}>    	
+							<input type="checkbox" name="inspection_result" lay-filter="inspection_result" title="不合格" value="不合格" lay-skin="primary" {if !empty($model['report']['inspection_result']) && $model['report']['inspection_result'] == '不合格' }checked{/if} >   
+							<input type="checkbox" name="inspection_result" lay-filter="inspection_result" title="合格入库，不合格退货" value="合格入库，不合格退货" lay-skin="primary" {if !empty($model['report']['inspection_result']) && $model['report']['inspection_result'] == '合格入库，不合格退货' }checked{/if} >   
+						</td>
+						<td>检验员/日期: </td>
+						<td colspan="2">
+							<div class="layui-col-xs9">
+								<input type="text" 
+								{if empty($hidden) && !in_array(6,request()->userInfo['permission'])}readonly{/if} id="inspector_date"  name="inspector_date" 
+								
+								{if empty($hidden) && in_array(6,request()->userInfo['permission'])}
+									{if $model['report'] && $model['report']['inspector_date']}
+										value="{$model['report']['inspector_date']}"
+									{else}
+										value="{:request()->userInfo['name'].date('  Y年m月d日')}"
+									{/if}
+								{else}
+									value="{$model['report']['inspector_date']|default=''}"
+								{/if}
+								 placeholder="" autocomplete="off" class="layui-input"></div>
+							<div class="layui-col-xs3">
+								<input type="hidden" name="inspector_sign" id="inspector_sign" value="{$model['report']['inspector_sign']|default=''}" >
+								<div id="sign_image">
+									{if $model['report'] && $model['report']['inspector_sign']}
+										<img class="sign_image sign"  data-field="inspector_sign" lay-active="sign" src="{$model['report']['inspector_sign']}"/>
+									{elseif empty($hidden)}
+										{if in_array(6,request()->userInfo['permission'])}
+										<button type="button" class="layui-btn layui-btn-xs no-print sign" data-field="inspector_sign" lay-active="sign">签字</button>
+										{/if}
+									{/if}
+								</div>
+							</div>
+						</td>
+						<td>审批/日期:</td>
+						<td colspan="2">
+							<div class="layui-col-xs9"><input type="text" name="approval_date" id="approval_date" readonly value="{$model['report']['approval_date']|default=''}" placeholder="" autocomplete="off" class="layui-input"></div>
+							<div class="layui-col-xs3">
+								<input type="hidden" name="approval_sign" id="approval_sign" value="{$model['report']['approval_sign']|default=''}" >
+								<div id="sign_image">
+									{if $model['report'] && $model['report']['approval_sign']}
+										<img class="sign_image sign" data-field="approval_sign" src="{$model['report']['approval_sign']}"/>
+									{elseif empty($hidden)}
+										{if in_array(7,request()->userInfo['permission'])}
+										<button type="button" class="layui-btn layui-btn-xs no-print sign" data-field="approval_sign" lay-active="sign">签字</button>
+										{/if}
+									{/if}
+								</div>
+							</div>
+						</td>
+					</tr>
+					<tr>
+						<td colspan="10">不合格评审处理</td>
+					</tr>					
+					<tr>
+						<td colspan="1" rowspan="5">处理意见</td>
+						<td colspan="9" rowspan="1" class="left-td">
+							<input type="checkbox" name="handling_suggestion[]" value="1" title="特采" lay-skin="primary" {if !empty($model['report']['handling_suggestion']) && strstr($model['report']['handling_suggestion'],'1') }checked{/if}>
+							<input type="checkbox" name="handling_suggestion[]" value="2" title="建议" lay-skin="primary" {if !empty($model['report']['handling_suggestion']) && strstr($model['report']['handling_suggestion'],'2') }checked{/if}>
+						</td>
+					</tr>
+					<tr>
+						<td colspan="9" rowspan="1" class="left-td">
+							<div style="max-width:none;"  class="layui-input-inline">
+								<input type="checkbox" name="handling_suggestion[]" lay-filter="handling_suggestion"  value="3" title="" lay-skin="primary" {if !empty($model['report']['handling_suggestion']) && strstr($model['report']['handling_suggestion'],'3') }checked{/if}>
+								全部退货，要求供应商进行整改，给供应商发出来料品质异常联络单（编号:
+							</div>
+							<div  class="layui-input-inline handling_sn" style="max-width: 450px;"><input type="text" id="handling_sn1" name="handling_sn1" value="{$model['report']['handling_sn1']|default=''}" placeholder="" autocomplete="off" class="layui-input"></div>）
+						</td>
+					</tr>
+					<tr>
+						<td colspan="9" rowspan="1" class="left-td">
+							<div style="max-width:none;"  class="layui-input-inline">
+								<input type="checkbox" name="handling_suggestion[]" lay-filter="handling_suggestion"  value="4" title="" lay-skin="primary" {if !empty($model['report']['handling_suggestion']) && strstr($model['report']['handling_suggestion'],'4') }checked{/if}>
+								不合格退货，合格入库，要求供应商进行整改，给供应商发出来料品质异常联络单（编号:
+							</div>
+							<div   class="layui-input-inline handling_sn" style="max-width: 350px;"><input type="text" id="handling_sn2" name="handling_sn2" value="{$model['report']['handling_sn2']|default=''}" placeholder="" autocomplete="off" class="layui-input"></div>）
+						</td>
+					</tr>
+					<tr>
+						<td colspan="9" rowspan="1" class="left-td">
+							<div style="max-width:none;"  class="layui-input-inline">
+								<input type="checkbox" name="handling_suggestion[]" lay-filter="handling_suggestion"  value="5" title="" lay-skin="primary" {if !empty($model['report']['handling_suggestion']) && strstr($model['report']['handling_suggestion'],'5') }checked{/if}>
+								报废要求供应商进行整改，给供应商发出来料品质异常联络单（编号:
+							</div>
+							<div  class="layui-input-inline handling_sn" style="max-width: 450px;"><input type="text" id="handling_sn3" name="handling_sn3" value="{$model['report']['handling_sn3']|default=''}" placeholder="" autocomplete="off" class="layui-input"></div>）
+						</td>
+					</tr>
+					<tr>
+						<td colspan="9" rowspan="1" class="left-td">
+							质管主管/日期:
+							<div class="layui-input-inline" style="max-width:200px;"><input type="text" name="handling_date" id="handling_date"  value="{$model['report']['handling_date']|default=''}" placeholder="" autocomplete="off" class="layui-input"></div>
+							<div class="layui-input-inline">
+								<input type="hidden" name="handling_sign" id="handling_sign" value="{$model['report']['handling_sign']|default=''}" >
+								<div id="sign_image">
+									{if $model['report'] && $model['report']['handling_sign']}
+										<img class="sign_image sign" data-field="handling_sign"   src="{$model['report']['handling_sign']}" />
+									{elseif empty($hidden)}
+										{if in_array(8,request()->userInfo['permission'])}
+										<button type="button" class="layui-btn layui-btn-xs no-print sign" data-field="handling_sign" lay-active="sign">签字</button>
+										{/if}
+									{/if}
+								</div>
+							</div>
+						</td>
+					</tr>
+				</tbody>						
+			</table>
+		</div>
+	</div>
+</form>
+<div class="layui-row" id="signDiv" style="display: none;">
+    <div id="signatureparent">
+        <div id="signature" style="border: 2px dotted lightgrey;"></div>
+    </div>
+    <div class="layui-btn-container" style="text-align: right;margin-top: 15px;">
+		<input type="hidden" class="sign_field" value="" />
+		<button type="button" class="layui-btn  toView" >查看</button>
+        <button type="button" class="layui-btn layui-bg-orange toReset" >重写</button>
+        <button type="button" class="layui-btn layui-bg-blue getData" >提交</button>
+        <button type="button" class="layui-btn layui-btn-danger toDestroy" >关闭</button>
+    </div>
+</div>
+<script src="/static/tool/jquery.min.js"></script>
+<script src="/static/tool/jSignature.min.js"></script>
+
+<script src="/static/tool/html2canvas.min.js"></script>
+<script src="/static/tool/jspdf.umd.min.js"></script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		var signature;
+		$('#formData').data('reload',7);
+		
+		{if !empty($download)}
+		
+			$(document).ready(function() {
+				var load_index 	= layer.load(2);	
+				html2canvas(document.getElementById("content-to-convert")).then((canvas)=>{
+					const imgData = canvas.toDataURL('image/png');
+					const pdf = new jspdf.jsPDF('l','mm','a4');// A4 size PDF
+					const imgwidth=pdf.internal.pageSize.getWidth();
+					const imgHeight =(canvas.height*imgwidth)/canvas.width;
+					pdf.addImage(imgData,'PNG',0,0,imgwidth,imgHeight);
+					pdf.save('{$model['report']['code']|default='进货检验报告'}.pdf');
+					//parent.layui.layer.closeAll();
+					parent.downloadPdf();
+				});
+			});	
+		
+		{/if}
+		
+		$('.download').click(function(){				
+			window.print();
+		})
+		
+		form.on('checkbox(sampling_level_appearance)', function(data){
+			$('input[name="sampling_level_appearance"]').each(function() {
+				if(data.elem.value == $(this).val()) {
+					$(this).prop('checked', true);
+				}else {
+					$(this).prop('checked', false);
+				}
+			});
+			form.render('checkbox'); 
+		});		
+		form.on('checkbox(sampling_level_size)', function(data){
+			$('input[name="sampling_level_size"]').each(function() {
+				if(data.elem.value == $(this).val()) {
+					$(this).prop('checked', true);
+				}else {
+					$(this).prop('checked', false);
+				}
+			});
+			form.render('checkbox'); 
+		});			
+		
+		
+		form.on('checkbox(inspection_method)', function(data){
+			$('input[name="inspection_method"]').each(function() {
+				if(data.elem.value == $(this).val()) {
+					$(this).prop('checked', true);
+				}else {
+					$(this).prop('checked', false);
+				}
+			});
+			
+			if(data.elem.value == '全检') {
+				$('#inspection_quantity').val($('#stock_num').html());
+			}else{
+				$('#inspection_quantity').val('');
+			}
+			form.render('checkbox'); 
+		});		
+		
+		form.on('checkbox(material_category)', function(data){
+			$('input[name="material_category"]').each(function() {
+				if(data.elem.value == $(this).val()) {
+					$(this).prop('checked', true);
+				}else {
+					$(this).prop('checked', false);
+				}
+			});
+			form.render('checkbox'); 
+			setCodeVersion();
+		});	
+		/*
+		form.on('checkbox(material_category)', function(data){
+			$('input[name="material_category"]').each(function() {
+				if(data.elem.value == $(this).val()) {
+					$(this).prop('checked', true);
+				}else {
+					$(this).prop('checked', false);
+				}
+			});
+			form.render('checkbox'); 
+			setCodeVersion();
+		});
+		*/
+		
+		form.on('checkbox(inspection_basis)', function(data){
+			setCodeVersion();
+		});	
+		
+		form.on('checkbox(inspection_result)', function(data){
+			$('input[name="inspection_result"]').each(function() {
+				if(data.elem.value == $(this).val()) {
+					$(this).prop('checked', true);
+				}else {
+					$(this).prop('checked', false);
+				}
+				if(data.elem.value == '不合格' || data.elem.value == '合格入库，不合格退货'){
+				
+				}
+			});
+			form.render('checkbox'); 
+		});		
+		
+		form.on('checkbox(handling_suggestion)', function(data){
+			$('input[name="handling_suggestion[]"]').each(function() {
+				var v = parseInt($(this).val());
+				if(v == 3 || v == 4 || v == 5){
+					if(data.elem.value == $(this).val()) {
+						$(this).prop('checked', true);
+					}else {
+						$(this).prop('checked', false);
+					}
+					$('#handling_sn'+(v-2)).val('');
+				}
+			});
+			var v = parseInt(data.elem.value);
+			if(v >= 3){
+				$('#handling_sn'+(v-2)).val(getCurrentDateWithRandom());
+			}
+			form.render('checkbox'); 
+		});		
+				
+		function getCurrentDateWithRandom() {
+			// 获取当前日期
+			const now = new Date();
+			const year = now.getFullYear();
+			const month = String(now.getMonth() + 1).padStart(2, '0'); // 月份是从0开始的，所以需要+1，并补齐为两位数
+			const day = String(now.getDate()).padStart(2, '0'); // 日期补齐为两位数
+			
+			// 生成一个六位随机数
+			const randomNumber = Math.floor(1000 + Math.random() * 9000); // 生成100000到999999之间的随机数
+			
+			// 组合年月日和随机数
+			const dateWithRandom = `${year}${month}${day}${randomNumber}`;
+			return dateWithRandom;
+		}		
+		
+
+		function setCodeVersion(){
+			var data = form.val('demo-val-filter');
+			var code_version = [];
+			
+			var inspection_basis = [];
+			$('input[name="inspection_basis[]"]').each(function() {
+				if($(this).prop('checked')) {
+					inspection_basis.push($(this).val());
+				}
+			});
+
+			if(inspection_basis.indexOf('图纸') != -1){
+				code_version.push('{$model['material']['sn']|default=''}');
+			}
+			if(inspection_basis.indexOf('来料检验作业指导书') != -1){
+				$.ajax({
+					url: '{:url('')}?get_guide_book=1&data_type=1&data_id={$model['material']['id']|default=''}&material_category='+data.material_category,
+					success: function (result) {
+						if(result.data && result.data.code){
+							code_version.push(result.data.code);
+						}
+					},
+					async: false
+				});
+			}
+			$('#code_version').val(code_version.join('/'));
+		}
+		
+		setCodeVersion();
+		
+		//
+		$('.handling_sn').each(function(){
+			var w1 = $(this).parent().width();
+			var w2 = $(this).parent().find('.layui-input-inline').eq(0).width();
+			var w3 = w1 - w2 - 40;
+			$(this).width(w3);
+		})
+		
+		
+		$('.print').click(function(){
+			
+			{if empty($hidden)}
+			$.ajax({
+				url: "{:url('setPrint')}?id={$model['id']}",
+				type: "POST",
+				processData: false,
+				contentType: false,
+				success: function (data) {
+					$('.layui-btn-group .print').html('已打印');
+				}
+			});
+			{/if}
+			
+			window.print();
+		
+		})
+		
+		{if empty($hidden)}
+		
+		$('.finish').click(function(){
+			layerConfirm('确定完成?','{:url('finish')}',{id:{$model['id']}},function(res){
+				parent.layui.table.reloadData('dataTable');
+				location.reload();
+			})
+		})	
+		
+		$('.check1').click(function(){
+			
+			if({$model['qualities_num']} + {$model['defective_num']} < {$model['stock_num']}){
+				layer.msg('质检未完成，不可审批');
+				return false;
+			}
+			
+			
+			if(!$('#approval_sign').val()){
+				layer.msg('需签名后才可提交信息');
+				return false;
+			}		
+		
+			$('#approval_date').val('{:request()->userInfo['name'].date('  Y年m月d日')}');
+			$('#formData').data('reload',2);
+			$('.submit').trigger("click");
+			//$('.finish').removeClass('layui-hide')
+		})
+		
+		$('.check2').click(function(){
+			if(!$('#handling_sign').val()){
+				layer.msg('需签名后才可提交信息');
+				return false;
+			}	
+			$('#handling_date').val('{:request()->userInfo['name'].date('  Y年m月d日')}')
+			$('.submit').trigger("click");
+		})	
+
+		$('.save').click(function(){
+			
+			if({$model['qualities_num']} + {$model['defective_num']} < {$model['stock_num']}){
+				layer.msg('质检未完成，不可审批');
+				return false;
+			}			
+			
+			if($('input[name="inspection_method"]:checked').length == 0){
+				layer.msg('请选择检验方法');
+				return false;
+			}
+		
+			if(!$('#inspector_sign').val()){
+				layer.msg('需签名后才可提交信息');
+				return false;
+			}
+		
+			$('#inspector_date').val('{:request()->userInfo['name'].date('  Y年m月d日')}')
+			$('.submit').trigger("click");
+		})
+		
+		$('.inspection').click(function(){
+			//alert(11);
+			$('.submit').trigger("click");
+		})		
+		
+		
+
+		window.cb = function(res){
+			
+			if($('#code').html() == ''){
+				$('#code').html(res.data.code);
+				$('.check1').removeClass('layui-hide');
+				$('.check2').removeClass('layui-hide');
+				//$('.finish').removeClass('layui-hide');
+			}
+		}
+		
+		
+		$("body").on("click",".sign",function(){
+			$('.sign_field').val($(this).data('field'))
+			
+			layer.open({
+				type: 1, // page 层类型
+				area: ['90%','90%'],
+				title: '请签名：',
+				shade: 0.6, // 遮罩透明度
+				// shadeClose: true, // 点击遮罩区域，关闭弹层
+				closeBtn: 0,
+				content: $('#signDiv'),
+				success: function () {
+					signature = $('#signature').jSignature({
+						//color:"#00f",
+						//"background-color":"#0f0",
+						lineWidth:"20", 
+						height: '600px',
+						width: '100%'
+					});//初始化控件
+				}
+			});
+		})
+		
+		$('.toReset').click(function(){
+			signature.jSignature('reset');
+		})
+		
+		$('.getData').click(function(){
+			var sign_field = $(this).parent().find('.sign_field').val();
+
+			var arr = signature.jSignature("getData", "image");
+			var isModified = signature.jSignature("isModified");
+			if (!isModified) {
+				layer.msg('请先完成签字，在提交');
+				return false;
+			}
+			
+			var  mime = arr[0].match(/(.*?);/)[1],
+			bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+			while(n--){
+				u8arr[n] = bstr.charCodeAt(n);
+			}
+			var obj = new Blob([u8arr], {type:mime});
+			var fd = new FormData();
+			fd.append("file", obj,"image.jpg");
+			$.ajax({
+				url: "{:url('index/upload')}",
+				type: "POST",
+				processData: false,
+				contentType: false,
+				data: fd,
+				success: function (data) {
+					//console.log(data);
+					$('#'+sign_field).val(data.data.src);
+					$('#'+sign_field).parent().find('div').html('<img class="sign_image sign" data-field="'+sign_field+'" src="'+data.data.src+'" />');
+					
+					if(sign_field == 'approval_sign'){
+						$('#approval_date').val('{:request()->userInfo['name'].date('  Y年m月d日')}')
+					}
+					
+					if(sign_field == 'handling_sign'){
+						$('#handling_date').val('{:request()->userInfo['name'].date('  Y年m月d日')}')
+					}
+					
+					$('.submit').trigger("click");
+					signature.jSignature("destroy");
+					layer.closeAll();
+				}
+			});
+		})
+
+		$('.toView').click(function(){
+			var sign_field = $(this).parent().find('.sign_field').val();
+			if($('#'+sign_field).val()){
+				window.top.layer.photos({
+					shade:0.1,
+					photos: {
+						"title": "", 
+						"start": 0, 
+						"data": [{"src": $('#'+sign_field).val(),"thumb": $('#'+sign_field).val()}]
+					},
+					anim: 5 
+				});
+			}else{
+				layer.msg('请先提交签名');
+			}
+		})
+
+		$('.toDestroy').click(function(){
+			signature.jSignature("destroy");
+			layer.closeAll();
+		})
+		
+		{/if}
+
+	})
+	
+function autoResize(obj) {
+  obj.style.height = 'auto'; // 重置高度
+  obj.style.height = (obj.scrollHeight) + 'px'; // 设置高度为内容的高度
+}
+
+document.getElementById('unqualified_description').addEventListener('input', function() {
+	autoResize(this);
+});
+
+autoResize(document.getElementById('unqualified_description'));
+</script>
+{/block}

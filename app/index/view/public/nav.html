@@ -1,0 +1,22 @@
+<div class="layui-card">
+	<div class="layui-card-body">
+		<div class="layui-tab layui-tab-brief" >
+			<ul class="layui-tab-title nav-menu">
+				<a href="{:url('ErpMaterialWarehouse/index')}"><li >零件领用</li></a>
+				<a href="{:url('ErpMaterialAllocateMaterial/index')}"><li>调拨签收</li></a>
+				<!--<a href="{:url('ErpMaterialPlan/index')}"><li>组件报工</li></a>-->
+			</ul>
+		</div>
+	</div>
+</div>
+<script>
+	layui.use(['jquery'], function() {
+		let $ = layui.jquery;
+		let _href = window.location.href ;
+		$('.nav-menu a').each(function(index){
+			if($(this).attr('href') && _href.indexOf($(this).attr('href')) != -1){
+				$(this).find('li').addClass('layui-this');
+			}
+		})
+	})
+</script>

@@ -1,0 +1,67 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-input-block {margin-left: 150px;}
+.layui-form-label {width: 120px;}
+</style>
+<form class="layui-form" action="" method="post" data-reload="3">
+	<div class="mainBox">
+		<div class="main-container">
+			<table class="layui-table">
+				<thead>
+					<tr>
+						<th>备注内容</th>
+						<th>递属产品</th>
+						<th>操作</th>
+					</tr> 
+				</thead>
+				<tbody id="tobody">
+					
+				</tbody>
+			</table>
+			<button type="button" class="layui-btn layui-btn-primary layui-border-blue add">增加一行数据</button>
+		</div>
+	</div>
+	<div class="bottom">
+		<div class="button-container">
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*"><i class="layui-icon layui-icon-ok"></i>提交</button>
+			<button type="reset" class="layui-btn layui-btn-primary layui-btn-sm"><i class="layui-icon layui-icon-refresh"></i>重置</button>
+		</div>
+	</div>
+</form>
+{/block}
+{block name="script"}
+<script>
+	var orderProduct = {:json_encode($model['orderProduct'])} ;
+	var index = 0;
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		setHtml();
+		$('.add').click(function(){
+			setHtml();
+		})
+
+		function setHtml(){
+			var html = '<tr>';
+			html += '		<td><input type="hidden"  name="data['+index+'][order_id]" value="{$order_id}"><input type="text" maxlength="100" name="data['+index+'][remark]" lay-verify="required" placeholder="不可为空" autocomplete="off" class="layui-input"></td>';
+			html += '		<td><select lay-verify="required" name="data['+index+'][order_product_id]" ><option value="0">请选择</option>';		
+			layui.each(orderProduct, function (index, item) {
+				html += 		'<option value="'+item.id+'">序号'+(index+1)+'：'+item.product_model+item.product_specs+'</option>';
+			})
+			html += '		</select></td>';
+			html += '		<td><button type="button" class="layui-btn layui-btn layui-btn-danger  layui-btn-xs">删除</button></td>';
+			html += '	</tr>';
+			index++;
+			$('#tobody').append(html);
+			form.render();
+		}
+		
+
+		$("body").on("click",".layui-btn-danger",function(){
+			$(this).closest('tr').remove();
+		});
+	})
+</script>
+{/block}

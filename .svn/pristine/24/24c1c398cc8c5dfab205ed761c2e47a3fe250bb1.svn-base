@@ -1,0 +1,96 @@
+{extend name="base" /}
+{block name="body"}
+
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="">
+			<div class="layui-input-inline"><input type="text" name="keyword" placeholder="产品名称/产品编码" class="layui-input"></div>
+			<div class="layui-input-inline"><button type="button" class="pear-btn pear-btn-primary pear-btn-sm" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button></div>
+		</form>
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+<script type="text/html" id="options">
+	<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="bom">bom</button>
+</script>
+{/block}
+{block name="script"}
+<script>
+
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		let product_id;
+		let project_id = 0;
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('list')}',
+			page: true,	
+			
+			cols: [[
+				//{type: 'checkbox'},
+				{field: 'sn',title: '产品编码',align: 'center',unresize: false,width:{:get_col_width('sn')}, hide: getTableFieldIsHide('dataTable','sn')},
+				{field: 'name',title: '产品名称',align: 'left',unresize: false,width:{:get_col_width('name')}, hide: getTableFieldIsHide('dataTable','name')},
+				{field: 'model',title: '型号',align: 'center',unresize: false,width: {:get_col_width('model',100)}, hide: getTableFieldIsHide('dataTable','model')},
+				{field: 'specs',title: '款式',align: 'center',unresize: false,width: {:get_col_width('specs',100)}, hide: getTableFieldIsHide('dataTable','specs')},
+				{field: 'remark',title: '备注',align: 'left',unresize: false,width: {:get_col_width('remark',100)}, hide: getTableFieldIsHide('dataTable','remark')},
+				{field: 'status_desc',title: '状态',align: 'center',unresize: false,width: {:get_col_width('status_desc',100)},templet: function(d){return '<span '+(d.status==0?'style="color:red;"':'')+'>'+d.status_desc+'</span>';}, hide: getTableFieldIsHide('dataTable','status_desc')},
+				{title: '操作',toolbar: '#options',align: 'center',unresize: true,width: 80,fixed: 'right'}
+			]],
+			cellMinWidth: 100,
+			height:'full-140',
+			limit:90,
+			//skin: 'line',
+			toolbar: '#toolbar',
+			defaultToolbar: [{
+				title: '刷新',
+				layEvent: 'refresh',
+				icon: 'layui-icon-refresh',
+			}, 'filter']
+		});
+
+		table.on('sort(dataTable)', function(obj){
+			table.reload('dataTable', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+
+		table.on('tool(dataTable)', function(obj) {
+			if (obj.event === 'bom') {
+				openLayer('物料bom','{:url('erp.Product/bom')}?product_id='+obj.data['id'],'80%','90%');
+			}
+		});	
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+		
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+		table.on('colToggled(dataTable)', function(obj){
+			setTableFieldIsHide(obj.config.id,obj.col.field,obj.col.hide);
+		});
+		
+	})
+</script>
+{/block}
+
+

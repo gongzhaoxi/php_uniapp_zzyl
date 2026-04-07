@@ -1,0 +1,118 @@
+{extend name="base" /}
+{block name="body"}
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="name" placeholder="客户名称" class="layui-input">					
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="sn" placeholder="客户编码" class="layui-input">	
+				</div>				
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+					<button type="reset" class="pear-btn pear-btn-md"><i class="layui-icon layui-icon-refresh"></i>重置</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	<button class="pear-btn pear-btn-primary pear-btn-sm" lay-event="add"><i class="layui-icon layui-icon-add-1"></i>新增</button>
+	<button class="pear-btn pear-btn-danger pear-btn-sm" lay-event="batchRemove"><i class="layui-icon layui-icon-delete"></i>删除</button>
+	<button class="pear-btn pear-btn-sm" lay-event="recycle"><i class="layui-icon  layui-icon-close-fill"></i>回收站</button>
+</script>
+<script type="text/html" id="options">
+	<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="edit"><i class="layui-icon layui-icon-edit"></i></button>
+	<button class="pear-btn pear-btn-danger pear-btn-xs" lay-event="remove"><i class="layui-icon layui-icon-delete"></i></button>
+</script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('list')}',
+			page: true,
+			cols: [[
+				{type: 'checkbox'},
+				{field: 'id',title: 'ID', sort: true, align: 'center',unresize: true,width: 100, hide: getTableFieldIsHide('dataTable','id')},
+				{field: 'sn',title: '客户编码',align: 'center',unresize: true, hide: getTableFieldIsHide('dataTable','sn')},
+				{field: 'name',title: '客户名称',align: 'center',unresize: true, hide: getTableFieldIsHide('dataTable','name')},
+				{field: 'contacts',title: '联系人',align: 'center',unresize: true,width: 120, hide: getTableFieldIsHide('dataTable','contacts')},
+				{field: 'phone',title: '联系电话',align: 'center',unresize: true,width: 120, hide: getTableFieldIsHide('dataTable','phone')},
+				{field: 'address',title: '收货地址/国家',align: 'center',unresize: true, hide: getTableFieldIsHide('dataTable','address')},
+				{field: 'address_en',title: '收货地址/国家(英)',align: 'center',unresize: true, hide: getTableFieldIsHide('dataTable','address_en')},
+				{field: 'region_type_desc',title: '域属',align: 'center',unresize: true,width: 100, hide: getTableFieldIsHide('dataTable','region_type_desc')},
+				{field: 'status_desc',title: '状态',align: 'center',unresize: true,width: 100, hide: getTableFieldIsHide('dataTable','status_desc')},
+				{title: '操作',toolbar: '#options',align: 'center',unresize: true,width: 130}
+			]],
+			cellMinWidth: 100,
+			//skin: 'line',
+			toolbar: '#toolbar',
+			defaultToolbar: [{
+				title: '刷新',
+				layEvent: 'refresh',
+				icon: 'layui-icon-refresh',
+			}, 'filter']
+		});
+
+		table.on('sort(dataTable)', function(obj){
+			table.reload('dataTable', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+
+		table.on('tool(dataTable)', function(obj) {
+			if (obj.event === 'remove') {
+				layerConfirm('确定要删除该客户?','{:url('remove')}',{ids:[obj.data['id']]},function(res){
+					obj.del();
+				})
+			} else if (obj.event === 'edit') {
+				openLayer('修改客户','{:url('edit')}?id='+obj.data['id'],'80%','90%');
+			}
+		});
+
+		table.on('toolbar(dataTable)', function(obj) {
+			if (obj.event === 'add') {
+				openLayer('新增客户','{:url('add')}','80%','90%');
+			}else if (obj.event === 'refresh') {
+				table.reload('dataTable');
+			} else if (obj.event === 'batchRemove') {
+				tableAction(obj.config.id,'确定要删除这些客户','{:url('remove')}');
+			} else if (obj.event === 'recycle') {
+				openLayer('回收站','{:url('recycle')}','80%','90%',function () {
+					table.reload('dataTable');
+				});
+			}
+		});
+		table.on('colToggled(dataTable)', function(obj){
+			setTableFieldIsHide(obj.config.id,obj.col.field,obj.col.hide);
+		});
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+	})
+</script>
+{/block}
+
+

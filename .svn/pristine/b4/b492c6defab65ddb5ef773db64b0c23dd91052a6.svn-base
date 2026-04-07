@@ -1,0 +1,241 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-input-block {margin-left: 150px;}
+.layui-form-label {width: 120px;}
+</style>
+<form class="layui-form" action="" method="post">
+	 <input type="hidden" name="id" value="{$model['id']}" >
+	 <div class="mainBox">
+		<div class="main-container">
+			<div class="layui-form-item">
+				<label class="layui-form-label">物料编码</label>
+				<div class="layui-input-inline">
+					<input type="text" maxlength="100" name="sn"  value="{$model['sn']}"  placeholder="为空时系统自动生成" autocomplete="off" class="layui-input">
+				</div>
+				<label class="layui-form-label">物料名称</label>
+				<div class="layui-input-inline">
+					<input type="text" maxlength="100" name="name" lay-verify="required" value="{$model['name']}"  placeholder="请输入物料名称,不可为空" autocomplete="off" class="layui-input">
+				</div>				
+				<label class="layui-form-label">物料分类</label>
+				<div class="layui-input-inline">
+					<select name="cid" lay-verify="required" lay-search>
+						{foreach $category as $key=>$vo}
+						<option value="{$vo['id']}" {if $model['cid'] == $vo['id']}selected{/if}>{$vo['name']}</option>
+						{/foreach}
+					</select>
+				</div>
+			</div>			
+			<div class="layui-form-item">
+				<label class="layui-form-label">安全库存</label>
+				<div class="layui-input-inline">
+					<input type="number" maxlength="11" name="safety_stock" lay-verify="required|number" value="{$model['safety_stock']}"  placeholder="请输入,不可为空" autocomplete="off" class="layui-input">
+				</div>
+				<label class="layui-form-label">最低库存</label>
+				<div class="layui-input-inline">
+					<input type="number" maxlength="11" name="min_stock" lay-verify="required|number" value="{$model['min_stock']}"  placeholder="请输入,不可为空" autocomplete="off" class="layui-input">
+				</div>				
+				<label class="layui-form-label">最高库存</label>
+				<div class="layui-input-inline">
+					<input type="number" maxlength="11" name="max_stock" lay-verify="required|number" value="{$model['max_stock']}"  placeholder="请输入,不可为空" autocomplete="off" class="layui-input">
+				</div>				
+			</div>				
+			<div class="layui-form-item">
+				<label class="layui-form-label">单位</label>
+				<div class="layui-input-inline">
+					<input type="text" maxlength="100" name="unit"  placeholder="请输入" value="{$model['unit']}" autocomplete="off" class="layui-input">
+				</div>
+				<label class="layui-form-label">加工类型</label>
+				<div class="layui-input-inline">
+					<input type="text" maxlength="255" name="processing_type"  placeholder="请输入" value="{$model['processing_type']}" autocomplete="off" class="layui-input">
+				</div>
+				<label class="layui-form-label">材料</label>
+				<div class="layui-input-inline">
+					<input type="text" maxlength="255" name="material"  placeholder="请输入" value="{$model['material']}" autocomplete="off" class="layui-input">
+				</div>				
+			</div>				
+			<div class="layui-form-item">
+				<label class="layui-form-label">表面</label>
+				<div class="layui-input-inline">
+					<input type="text" maxlength="255" name="surface"  placeholder="请输入" value="{$model['surface']}" autocomplete="off" class="layui-input">
+				</div>
+				<label class="layui-form-label">颜色</label>
+				<div class="layui-input-inline">
+					<input type="text" maxlength="100" name="color"  placeholder="请输入" value="{$model['color']}" autocomplete="off" class="layui-input">
+				</div>
+				<label class="layui-form-label">备注</label>
+				<div class="layui-input-inline">
+					<input type="text" maxlength="255" name="remark"  placeholder="请输入" value="{$model['remark']}" autocomplete="off" class="layui-input">
+				</div>
+			</div>				
+			<div class="layui-form-item">
+				<label class="layui-form-label">仓位</label>
+				<div class="layui-input-inline">
+					<select name="warehouse_id" >
+						<option value="" >请选择</option>
+						{foreach $warehouse as $key=>$vo}
+						<option value="{$vo['id']}" {if $model['warehouse_id'] == $vo['id']}selected{/if}>{$vo['name']}</option>
+						{/foreach}
+					</select>
+				</div>
+				<label class="layui-form-label">状态</label>
+				<div class="layui-input-inline">
+					<input type="radio" name="status" value="1" title="启用" {if $model['status'] == 1}checked{/if}>
+					<input type="radio" name="status" value="0" title="禁用" {if $model['status'] == 0}checked{/if}>
+				</div>
+				<label class="layui-form-label">生产物料类别</label>
+				<div class="layui-input-inline">
+					<select name="produce_type" lay-verify="required" lay-search>
+						<option value="0" >请选择</option>
+						{foreach $material_produce_type as $key=>$vo}
+						<option value="{$vo['id']}" {if $model['produce_type'] == $vo['id']}selected{/if}>{$vo['name']}</option>
+						{/foreach}
+					</select>
+				</div>					
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">目录树</label>
+				<input type="hidden" name="tree_id" id="tree_id"  value="{$model['tree_id']}" >
+				<div class="layui-input-inline">
+					<ul id="demoTree" class="dtree" ></ul>
+				</div>	
+				<label class="layui-form-label">通用性</label>
+				<div class="layui-input-inline">
+					<input type="radio" name="generality" value="1" title="通用" {if $model['generality'] == 1}checked{/if}>
+					<input type="radio" name="generality" value="0" title="不通用" {if $model['generality'] == 0}checked{/if}>
+				</div>
+				<label class="layui-form-label">供应商</label>
+				<div class="layui-input-inline">
+					<select name="supplier_id"  xm-select="supplier_id" xm-select-search="" xm-select-height="36px" xm-select-search-type="dl">
+						<option value="" >请选择</option>
+						{foreach $supplier as $key=>$vo}
+						<option value="{$vo['id']}" {if in_array($vo['id'],$model['supplier_id']) }selected{/if}>{$vo['name']}</option>
+						{/foreach}
+					</select>
+				</div>				
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">加工方式</label>
+				<div class="layui-input-inline">
+					<select name="processing_way" lay-verify="required" lay-search>
+						<option value="">请选择</option>
+						{foreach $processing_way as $key=>$vo}
+						<option value="{$key}" {if $model['processing_way'] == $key}selected{/if}>{$vo}</option>
+						{/foreach}
+					</select>
+				</div>
+				<label class="layui-form-label">质检区域</label>
+				<div class="layui-input-inline">
+					<select name="quality_testing_area" lay-search >
+						<option value="0" >请选择</option>
+						{foreach $quality_testing_area as $key=>$vo}
+						<option value="{$vo['id']}" {if $model['quality_testing_area'] == $vo['id']}selected{/if}>{$vo['name']}</option>
+						{/foreach}
+					</select>
+				</div>					
+				<label class="layui-form-label">QC作业指导书编号和图号</label>
+				<div class="layui-input-inline">
+					<input type="text" maxlength="255" name="qc_code" value="{$model['qc_code']}" placeholder="请输入" autocomplete="off" class="layui-input">
+				</div>					
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">供应商物料型号</label>
+				<div class="layui-input-inline">
+					<input type="text" maxlength="255" name="supplier_code"  placeholder="请输入" value="{$model['supplier_code']}" autocomplete="off" class="layui-input">
+				</div>
+				<label class="layui-form-label">物资类别</label>
+				<div class="layui-input-inline">
+					<select name="material_category" lay-search >
+						<option value="重要物资" {if $model['material_category'] == '重要物资'}selected{/if} >重要物资</option>
+						<option value="一般物资" {if $model['material_category'] == '一般物资'}selected{/if} >一般物资</option>
+						<option value="辅助物资" {if $model['material_category'] == '辅助物资'}selected{/if} >辅助物资</option>
+					</select>
+				</div>	
+				<label class="layui-form-label">工位仓位</label>
+				<div class="layui-input-inline">
+					<select name="workstation_id" lay-search>
+						<option value="" >请选择</option>
+						{foreach $workstation as $key=>$vo}
+						<option value="{$vo['id']}" {if $model['workstation_id'] == $vo['id']}selected{/if}>{$vo['name']}</option>
+						{/foreach}
+					</select>
+				</div>				
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">标签识别码</label>
+				<div class="layui-input-inline">
+					<input type="text" maxlength="255" name="tag" value="{$model['tag']}" placeholder="请输入" autocomplete="off" class="layui-input">
+				</div>
+			</div>				
+			
+			
+			<input type="hidden" name="photo" value="" >
+			<div class="layui-form-item layui-hide">
+				<label class="layui-form-label">图片</label>
+				<div class="layui-input-block">
+					{:$form->optPhoto('photo',$model['photo'])}
+				</div>
+			</div>	
+			<input type="hidden" name="qc_file" value="" >
+			<div class="layui-form-item layui-hide">
+				<label class="layui-form-label">QC品检作业指导书</label>
+				<div class="layui-input-block">
+					{:$form->files('qc_file',$model['qc_file'])}
+				</div>
+			</div>	
+			<input type="hidden" name="produce_file" value="" >
+			<div class="layui-form-item layui-hide">
+				<label class="layui-form-label">生产作业指导书</label>
+				<div class="layui-input-block">
+					{:$form->files('produce_file',$model['produce_file'])}
+				</div>
+			</div>	
+			<input type="hidden" name="num_version" value="" >
+			<div class="layui-form-item  layui-hide">
+				<label class="layui-form-label">编号/版本</label>
+				<div class="layui-input-block">
+					{:$form->files('num_version',$model['num_version'])}
+				</div>
+			</div>	
+
+			
+		</div>
+	</div>       
+	<div class="bottom">
+		<div class="button-container">
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*"><i class="layui-icon layui-icon-ok"></i>提交</button>
+			<button type="reset" class="layui-btn layui-btn-primary layui-btn-sm"><i class="layui-icon layui-icon-refresh"></i>重置</button>
+		</div>
+    </div>
+</form>
+{/block}
+{block name="script"}
+<script>
+layui.use(['form','element','iconPicker','jquery','dtree'], function() {
+	var form = layui.form;
+	var element = layui.element;
+	var dtree = layui.dtree;
+	var $ = layui.jquery;
+	var demoTree = dtree.renderSelect({
+		elem: "#demoTree",
+		data:{:json_encode($tree)},
+		selectInitVal: "{$model['tree_id']}", 
+		//skin: "laySimple",  // layui主题风格
+		//icon: "-1",  // 隐藏二级图标
+		line: true,  // 显示树线
+		response:{
+            treeId: "id",			  //节点ID
+            parentId: "pid",	  //父节点ID
+            title: "title",			  //节点名称 
+            childName: "children",	  //子节点名称
+		}
+	});
+
+	dtree.on("node('demoTree')" ,function(param){
+		$('#tree_id').val(param.param.nodeId);
+	});
+
+
+});
+</script>
+{/block}

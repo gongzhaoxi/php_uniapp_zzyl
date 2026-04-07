@@ -1,0 +1,125 @@
+{extend name="base" /}
+{block name="body"}
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline">
+					<label class="layui-form-label">管理ID</label>
+					<div class="layui-input-inline">
+						<input type="text" name="uid" placeholder="" class="layui-input">
+					</div>
+				</div>
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query">
+						<i class="layui-icon layui-icon-search"></i>
+						查询
+					</button>
+					<button type="reset" class="pear-btn pear-btn-md">
+						<i class="layui-icon layui-icon-refresh"></i>
+						重置
+					</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	<button class="pear-btn pear-btn-danger pear-btn-sm" lay-event="batchRemove">
+		<i class="layui-icon layui-icon-delete"></i>
+		清空日志
+	</button>
+</script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		let common = layui.common;
+
+		let cols = [
+				[{
+						field: 'id',
+						title: 'ID',
+						unresize: true,
+						align: 'center',
+						width: 80
+					},{
+						field: 'uid',
+						title: '管理员ID',
+						unresize: true,
+						align: 'center'
+					}, {
+						field: 'url',
+						title: '操作页面',
+						unresize: true,
+						align: 'center',
+					},  {
+						field: 'ip',
+						title: '操作IP',
+						unresize: true,
+						align: 'center',
+					}, 
+					{
+						field: 'desc',
+						title: '描述',
+						unresize: true,
+						align: 'center'
+					}, 
+					{
+						field: 'user_agent',
+						title: 'User-Agent',
+						unresize: true,
+						align: 'center'
+					}, 
+					{
+						field: 'create_time',
+						title: '创建时间',
+						align: 'center',
+						unresize: true,
+					}
+				]
+			]
+
+		table.render({
+			elem: '#dataTable',
+			url:  '{:url('log')}',
+			page: true,
+			cols: cols,
+			cellMinWidth: 100,
+			skin: 'line',
+			toolbar: '#toolbar',
+			defaultToolbar: [{
+				title: '刷新',
+				layEvent: 'refresh',
+				icon: 'layui-icon-refresh',
+			}, 'filter', 'print', 'exports']
+		});
+
+		table.on('toolbar(dataTable)', function(obj) {
+			if (obj.event === 'refresh') {
+				table.reload('dataTable');
+			} else if (obj.event === 'batchRemove') {
+				layerConfirm('确定要删除日志?','{:url('removeLog')}',{},function(res){
+					table.reload('dataTable');
+				})
+			}
+		});
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+	})
+</script>
+{/block}

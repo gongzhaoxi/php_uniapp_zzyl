@@ -1,0 +1,307 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-table-cell { height:auto;}
+.bom{margin:10px;font-size:12px;line-height:30px;}
+.bom .title{font-weight:600;font-size:13px;}
+.more{color: rgb(24, 144, 255);font-size:12px;}
+.error-img{max-width:100px;max-height:100px;margin-right:10px;}
+.confirm-time{color: rgb(24, 144, 255);}
+</style>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<div class=" shipping_status">
+			<a href="{:url('produce')}?shipping_status=10,20" class="layui-btn  layui-btn-primary {if $shipping_status == '10,20'}layui-btn-warm{/if}">成品库存</a>
+			<a href="{:url('produce')}?shipping_status=30" class="layui-btn  layui-btn-primary {if $shipping_status == '30'}layui-btn-warm{/if}">已出仓成品</a>
+		</div>
+		<form class="layui-form" action="" id="searchForm">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="customer_name" placeholder="客户名称/订货单位" class="layui-input">					
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="order_sn" placeholder="销售合同号" class="layui-input">	
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="produce_sn" placeholder="产品编码" class="layui-input">	
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<select name="region_type">
+						<option value="">订单属性</option>
+						{foreach $region_type as $key=>$vo}
+						<option value="{$key}">{$vo}</option>
+						{/foreach}
+					</select>
+				</div>
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="bom_sn" placeholder="溯源码" class="layui-input">	
+				</div>	
+				<div class="layui-form-item layui-inline" style="width:190px;">
+					<input type="text" name="out_warehouse_time" placeholder="出仓日期" class="layui-input rangedate">	
+				</div>		
+				<div class="layui-form-item layui-inline" style="width:190px;">
+					<input type="text" name="finish_date" placeholder="入库日期" class="layui-input rangedate">	
+				</div>
+				
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+					<button type="reset" class="pear-btn pear-btn-md"><i class="layui-icon layui-icon-refresh"></i>重置</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	{if $shipping_status == '30'}<button class="layui-btn layui-btn-warm layui-btn-sm" lay-event="print"><i class="layui-icon layui-icon-print"></i> 打印产品出仓（发货）单</button>{/if}
+	<button class="layui-btn layui-btn-primary layui-btn-sm" lay-event="out_warehouse"><i class="layui-icon layui-icon-export"></i>导出</button>
+</script>
+<script type="text/html" id="options">
+	<div class="layui-btn-group">
+		 {{#  if(d.can_cancel){ }}<button class="layui-btn layui-btn-xs layui-btn-danger" lay-event="cancel">撤销通知</button>{{#  } }} 
+		 {{#  if(d.can_confirm){ }}<button class="layui-btn layui-btn-xs" lay-event="confirm">确认出库</button>{{#  } }} 
+	</div>
+</script>
+
+<script type="text/html" id="bom">
+	<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="bom">查看</button>
+</script>
+<script type="text/html" id="produce_bom">
+	<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="produce_bom">查看</button>
+</script>
+<script type="text/html" id="shipping">
+	<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="shipping">查看</button>
+</script>
+<div id="printFiled">
+	<h2 style="text-align:center;font-weight:600;font-size:20px;">佛山市中创医疗器械有限公司</h2>
+	<h2 style="text-align:center;font-weight:600;font-size:20px;">产品出仓(发货)单</h2>
+	<p  style="font-weight:600;">发货日期：20<span>&nbsp;&nbsp;</span>年<span>&nbsp;&nbsp;</span>月<span>&nbsp;&nbsp;</span>日</p>
+	<table class="layui-table" id="mtable" border="1" style="border-collapse:collapse;border: #333 solid 1px;"  width="100%" border="0" cellspacing="0" cellpadding="0" >
+		<thead>
+			<th>合同号</th>
+			<th>购货单位</th>
+			<th>收货地址及人</th>
+			<th>产品型号</th>
+			<th>单位</th>
+			<th>数量</th>
+			<th>配置说明</th>
+			<th>产品编号</th>
+		</thead>
+		<tbody id="tbody">
+		
+		</tbody>
+	</table>
+	<table class="layui-table"  width="100%"  style="border: #333 solid 0px;"  width="100%" border="0" cellspacing="0" cellpadding="0" >
+		<tbody >
+			<tr><td colspan="6">&nbsp;&nbsp;</td></tr>
+			<tr>
+				<td>主管：&nbsp;&nbsp;</td>
+				<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+				<td>会计：&nbsp;&nbsp;</td>
+				<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+				<td>提货(门卫)：</td>
+				<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+			</tr>
+		</tbody>
+	</table>
+</div>
+{/block}
+{block name="js"}
+<script type="text/javascript" src="/static/tool/jquery.min.js"></script>
+<script type="text/javascript" src="/static/tool/jquery.table2excel.js?v={:time()}"></script>
+<script src="/static/tool/FileSaver.js"></script>
+<script src='/static/tool/jquery.wordexport.js'></script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('produce')}?shipping_status={$shipping_status}',
+			page: true,
+			cols: [[
+				{type: 'checkbox'},
+				{field: 'region_type_desc',title: '订单性质',align: 'center',unresize: true,width: 90},
+				{field: 'finish_date',title: '入库日期',align: 'center',unresize: true,width: 120},
+				{field: 'out_warehouse_time',title: '出仓日期',align: 'center',unresize: true,width: 120},
+				{field: 'produce_sn',title: '产品编码',align: 'center',unresize: true,width: 170},
+				{field: 'model',title: '型号',align: 'center',unresize: true,width: 100, templet: function(d){return d.order_product?d.order_product.product_model:'';}},
+				{field: 'specs',title: '款式',align: 'center',unresize: true,width: 80, templet: function(d){return d.order_product?d.order_product.product_specs:'';}},
+				{field: 'num_desc',title: '数量',align: 'center',unresize: true,width: 80},
+				{field: 'unit',title: '单位',align: 'center',unresize: true,width: 80, templet: function(d){return d.order_product?d.order_product.product_unit:'';}},
+				{field: 'order_sn',title: '销售合同号',align: 'center',unresize: true,width: 140},
+				{field: 'address',title: '收货地址/国家',align: 'center',unresize: true,width: 150},
+				{field: 'contacts',title: '联系人',align: 'center',unresize: true,width: 80},
+				{field: 'bom',title: '具体配置',align: 'center',unresize: true,width: 100, templet:'#bom'},
+				{field: 'salesman',title: '业务员',align: 'center',unresize: true,width: 100},
+				{field: 'shipping_type_desc',title: '发货类型',align: 'center',unresize: true,width: 100},
+				{field: 'order_remark',title: '备注',align: 'center',unresize: true,width: 150},
+				{field: 'produce_bom',title: '溯源BOM',align: 'center',unresize: true,width: 100, templet:'#produce_bom'},	
+				{if $shipping_status == '30'}
+				{field: 'shipping',title: '物流信息',align: 'center',unresize: true,width: 100, templet:'#shipping'},
+				{/if}
+			]],
+			cellMinWidth: 80,
+			//skin: 'line',
+			toolbar: '#toolbar',
+			done: function(res, curr, count){
+                    // 解决操作栏因为内容过多换行问题
+                    $(".layui-table-main tr").each(function (index, val) {
+                        $($(".layui-table-fixed-l .layui-table-body tbody tr")[index]).height($(val).height());
+                        $($(".layui-table-fixed-r .layui-table-body tbody tr")[index]).height($(val).height());
+                    });
+			},
+			defaultToolbar: [{
+				title: '刷新',
+				layEvent: 'refresh',
+				icon: 'layui-icon-refresh',
+			}, 'filter']
+		});
+
+		table.on('sort(dataTable)', function(obj){
+			table.reload('dataTable', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+
+		table.on('tool(dataTable)', function(obj) {
+			if (obj.event === 'cancel') {
+				layerConfirm('确定要撤销通知?','{:url('cancel')}',{ids:[obj.data['id']]},function(res){
+					table.reload('dataTable');
+				})
+			} else if (obj.event === 'confirm') {
+				openLayer('确认出库','{:url('confirm')}?shipping_sn='+obj.data['shipping_sn'],'80%','90%');
+			}else if (obj.event === 'bom') {
+				layer.open({
+					type: 1, 
+					area: ['500px', '300px'],
+					content: '<div class="bom">'+obj.data.order_product.bom_html+'</div>'
+				});
+			}else if (obj.event === 'produce_bom') {
+				openLayer('溯源BOM','{:url('produceBom')}?order_produce_id='+obj.data['id'],'80%','90%');
+			}else if (obj.event === 'shipping') {
+				var photo = obj.data.shipping_photo.split(',');
+				var phtot_html = '';
+				for(var i in photo) {
+					phtot_html += '<a onclick="layerPhotos(\''+photo[i]+'\')" href="javascript:;"><img style="max-width:100px;max-height:100px;" src="'+photo[i]+'" /></a>';
+				}	
+				layer.open({
+					type: 1, 
+					title:'物流信息',
+					area: ['500px', '300px'],
+					content: '<div class="bom layui-form"><div class="layui-form-item"><label class="layui-form-label">物流单据图片</label><div class="layui-input-block">'+phtot_html+'</div></div><div class="layui-form-item"><label class="layui-form-label">物流单号</label><div class="layui-form-mid layui-word-aux">'+obj.data.shipping_num+'</div></div></div>'
+				});
+			}
+			
+			
+		});
+
+		table.on('toolbar(dataTable)', function(obj) {
+			if (obj.event === 'export') {
+				var index = layui.layer.load(1);
+				let column 	= [{text:'订单性质',key:'region_type_desc'},{text:'入库日期',key:'finish_date'},{text:'产品编码',key:'produce_sn'},{text:'型号',key:'order_product.product_model'},{text:'款式',key:'order_product.product_specs'},{text:'数量',key:'num_desc'},{text:'单位',key:'order_product.product_unit'},{text:'销售合同号',key:'order_sn'},{text:'收货地址/国家',key:'address'},{text:'联系人',key:'contacts'},{text:'具体配置',key:'order_product.bom_html'},{text:'业务员',key:'salesman'},{text:'发货类型',key:'shipping_type_desc'},{text:'备注',key:'order_remark'}];
+				$.ajax({
+					type : "get",
+					url : "{:url('produce')}?shipping_status={$shipping_status}&limit=100000",
+					data: $('#searchForm').serialize(),
+					success : function(data) {
+						layui.layer.close(index);
+						if (data.count > 0) {
+							jsonToExcel(column, [column], data.data, $('.shipping_status .layui-btn-warm').text())
+						}else{
+							layui.layer.msg('暂无数据');
+						}
+					}
+				});
+			}else if(obj.event === 'print'){
+				var checkStatus = table.checkStatus('dataTable');
+				if(checkStatus.data.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				var ids = [];
+				
+				var shipping_sn = []				
+				for(var i in checkStatus.data) {
+					ids.push(checkStatus.data[i].id);
+					shipping_sn.push(checkStatus.data[i].shipping_sn);	
+				}		
+				shipping_sn = $.unique(shipping_sn.sort());;			
+				if(shipping_sn.length > 1){
+					layui.layer.msg('不能打印');return;
+				}
+				toPrintPage(51,{id:ids.join(',')})
+				
+				return;
+	
+			}else if (obj.event === 'refresh') {
+				table.reload('dataTable');
+			}else if (obj.event === 'out_warehouse') {
+			
+				var checkStatus = table.checkStatus('dataTable');
+				if(checkStatus.data.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				var ids = [];			
+				for(var i in checkStatus.data) {
+					ids.push(checkStatus.data[i].id);
+				}
+				var index = layui.layer.load(1);
+				$.ajax({
+					type : "post",
+					url : "{:url('produceExport')}",
+					data: {ids:ids},
+					success : function(data) {
+						layui.layer.close(index);
+						if (data.count > 0) {
+							//jsonToExcel(column, [column], data.data, $('.shipping_status .layui-btn-warm').text())
+							
+							
+							$('#printFiled').wordExport('产品出仓(发货)单');
+						}else{
+							layui.layer.msg('暂无数据');
+						}
+					}
+				});
+
+				return ;
+
+				$("#mtable").table2excel({
+					exclude: ".excludeThisClass",
+					name: "Worksheet Name",
+					filename: "产品出仓(发货)单"+".xls", // do include extension
+					preserveColors: false // set to true if you want background colors and font colors preserved
+				});
+				return ;
+			
+			
+			
+			
+			}
+		});
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+	})
+</script>
+{/block}
+
+

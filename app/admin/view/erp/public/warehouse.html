@@ -1,0 +1,62 @@
+<style>
+.warehouse_stat .layui-icon-about{color:red;margin: 0 0 0 5px;display:none;}
+</style>
+<div class="layui-card warehouse_stat" >
+	<div class="layui-card-body warehouse-top">
+		<button class="pear-btn pear-btn-md pear-btn-primary" data-mark="1" data-url="{:url('erp.MaterialEnter/add')}?material_type={$material_type}"><i class="layui-icon layui-icon-add-1"></i>创建入库单</button>
+		<button class="pear-btn pear-btn-md pear-btn-primary" data-mark="2" data-url="{:url('erp.MaterialOut/add')}?material_type={$material_type}"><i class="layui-icon layui-icon-add-1"></i>创建出库单</button>
+		<button class="pear-btn pear-btn-md pear-btn-primary layui-hide" data-mark="3" data-url="{:url('erp.MaterialDiscard/add')}?material_type={$material_type}"><i class="layui-icon layui-icon-add-1"></i>创建报废单</button>
+		<button class="pear-btn pear-btn-md pear-btn-success" data-mark="4" data-url="{:url('erp.MaterialCheck/add')}?material_type={$material_type}"><i class="layui-icon layui-icon-add-1"></i>创建盘点</button>
+	</div>
+	<div class="layui-card-body warehouse-menu">
+		{if $material_type == 1}
+		<a href="{:url('erp.material/partnStock')}" data-mark="0" class="pear-btn pear-btn-md">物料列表</a>
+		{/if}
+		{if $material_type == 2}
+		<a href="{:url('erp.material/componentStock')}" data-mark="0" class="pear-btn pear-btn-md">物料列表</a>
+		{/if}	
+		<a href="{:url('erp.materialEnter/list')}?material_type={$material_type}" data-mark="1" class="pear-btn pear-btn-md" >入库单<i class="layui-icon layui-icon-about enter_count"></i></a>		
+		<a href="{:url('erp.materialOut/list')}?material_type={$material_type}" data-mark="2" class="pear-btn pear-btn-md" >出库单<i class="layui-icon layui-icon-about out_count"></i></a>
+		<a href="{:url('erp.MaterialDiscard/list')}?material_type={$material_type}" data-mark="3" class="pear-btn pear-btn-md layui-hide" >报废退货单<i class="layui-icon layui-icon-about discard_count"></i></a>
+		<a href="{:url('erp.MaterialCheck/list')}?material_type={$material_type}" data-mark="4" class="pear-btn pear-btn-md" >盘点单<i class="layui-icon layui-icon-about check_count"></i></a>
+		<a href="{:url('erp.material/errorStock')}?type={$material_type}" data-mark="5" class="pear-btn pear-btn-md">库存异常</a>
+		<a href="{:url('erp.materialEnter/back')}?material_type={$material_type}" data-mark="6" class="pear-btn pear-btn-md" >车间退回仓库<i class="layui-icon layui-icon-about enter_back_count"></i></a>		
+	</div>
+</div>
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		let _href = window.location.href ;
+		window.onload = function(){
+			getWarehouseStat();
+		}
+		$('.warehouse-menu a').each(function(index){
+			if($(this).attr('href') && _href.indexOf($(this).attr('href')) != -1){
+				$(this).addClass('pear-btn-warming');
+			}
+		})
+		$('.warehouse-top button').click(function(index){
+			let button_mark  = $(this).data('mark');
+			openLayer($(this).text(),$(this).data('url'),'80%','90%',function(){
+				if(button_mark == $('.warehouse-menu .pear-btn-warming').data('mark')){
+					location.reload();
+				}else{
+					getWarehouseStat();
+				}
+			});
+		})
+		window.getWarehouseStat = function(){
+			ajaxActionCall('{:url('common/warehouseStat')}?material_type={$material_type}',{},function(res){
+				$.each(res.data,function (index,val) {
+					 if(val > 0){
+						$('.warehouse_stat .'+index).html('').show();
+					}else{
+						$('.warehouse_stat .'+index).html('').hide();
+					}
+				});			
+			},false)
+		}
+	})
+</script>

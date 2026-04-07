@@ -1,0 +1,115 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-input-block {margin-left: 150px;}
+.layui-form-label {width: 120px;}
+</style>
+<form class="layui-form" action="" method="post">
+	<input type="hidden" name="id" value="{$model['id']}" >
+	<div class="mainBox">
+		<div class="main-container">
+			<div class="layui-form-item">
+				<label class="layui-form-label">委外物料</label>
+				<div class="layui-input-block">
+					<input type="hidden" name="material_id" id="material_id" value="{$model['material_id']}" >
+					<input type="text" name="material_name" id="material_name" readonly lay-verify="required" value="{$model['material']['name']}" ts-selected="{$model['material_id']}"  placeholder="请选择,不可为空" autocomplete="off" class="layui-input">
+				</div>
+			</div>					
+			<div class="layui-form-item">
+				<label class="layui-form-label">委外物料单位</label>
+				<div class="layui-input-block">
+					<input type="text"  name="material_unit" lay-verify="required" value="{$model['material_unit']}" placeholder="请输入" autocomplete="off" class="layui-input">
+				</div>
+			</div>			
+			<div class="layui-form-item">
+				<label class="layui-form-label">委外工序</label>
+				<div class="layui-input-block">
+					<select name="process_id" lay-verify="required"  lay-search>
+						<option value="">请选择</option>
+						{foreach $process as $key=>$vo}
+						<option value="{$vo['id']}" {if $model['process_id'] == $vo['id']}selected{/if}>{$vo['name']}</option>
+						{/foreach}
+					</select>
+				</div>
+			</div>	
+			<div class="layui-form-item">
+				<label class="layui-form-label">出库坯料</label>
+				<div class="layui-input-block">
+					<input type="hidden" name="related_material_id" id="related_material_id" value="{$model['related_material_id']}" >
+					<input type="text" name="related_material_name" id="related_material_name" readonly lay-verify="required" value="{$model['related_material']['name']}" ts-selected="{$model['related_material_id']}"  placeholder="请选择,不可为空" autocomplete="off" class="layui-input">
+				</div>
+			</div>					
+			<div class="layui-form-item">
+				<label class="layui-form-label">出库坯料单位</label>
+				<div class="layui-input-block">
+					<input type="text"  name="related_material_unit" lay-verify="required" value="{$model['related_material_unit']}" placeholder="请输入" autocomplete="off" class="layui-input">
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">用量</label>
+				<div class="layui-input-block">
+					<input type="text"  name="num" lay-verify="required|number" value="{$model['num']}" placeholder="请输入" autocomplete="off" class="layui-input">
+				</div>
+			</div>							
+			<div class="layui-form-item">
+				<label class="layui-form-label">备注</label>
+				<div class="layui-input-block">
+					<input type="text" maxlength="255" name="remark" value="{$model['remark']}" placeholder="请输入" autocomplete="off" class="layui-input">
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="bottom">
+		<div class="button-container">
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*"><i class="layui-icon layui-icon-ok"></i>提交</button>
+		</div>
+	</div>
+</form>
+{/block}
+{block name="script"}
+<script>
+layui.use(['tableSelect'], function () {
+	var $ = layui.jquery;
+	var tableSelect = layui.tableSelect;
+	tableSelect.render({
+		elem: '#material_name',
+		checkedKey: 'id',
+		searchKey: 'keyword',
+		searchPlaceholder: '物料名称/编码',
+		table: {
+			url: '{:url('common/material')}',		
+			cols: [[
+				{type: 'radio' },
+				{field: 'sn',title: '物料编码',align: 'center',unresize: false,width:250},
+				{field: 'name',title: '物料编码',align: 'center',unresize: false,width:350},
+			]]
+		},
+		done: function (elem, data) {
+			elem.val(data.data[0]['name']);
+			$('#material_id').val(data.data[0]['id']);
+		}
+	})
+	
+	tableSelect.render({
+		elem: '#related_material_name',
+		checkedKey: 'id',
+		searchKey: 'keyword',
+		searchPlaceholder: '物料名称/编码',
+		table: {
+			url: '{:url('common/material')}',		
+			cols: [[
+				{type: 'radio' },
+				{field: 'sn',title: '物料编码',align: 'center',unresize: false,width:250},
+				{field: 'name',title: '物料编码',align: 'center',unresize: false,width:350},
+			]]
+		},
+		done: function (elem, data) {
+			elem.val(data.data[0]['name']);
+			$('#related_material_id').val(data.data[0]['id']);
+		}
+	})	
+	
+	
+});
+</script>
+{/block}

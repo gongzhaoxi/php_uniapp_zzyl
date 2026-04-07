@@ -1,0 +1,21 @@
+<div class="layui-card">
+	<div class="layui-card-body">
+		<div class="layui-tab layui-tab-brief" >
+			<ul class="layui-tab-title nav-menu">
+				<a href="{:url('ErpOrderProduce/index')}"><li >生产明细</li></a>
+				<a href="{:url('ErpOrderProduce/stat')}"><li>生产汇总</li></a>
+			</ul>
+		</div>
+	</div>
+</div>
+<script>
+	layui.use(['jquery'], function() {
+		let $ = layui.jquery;
+		let _href = window.location.href ;
+		$('.nav-menu a').each(function(index){
+			if($(this).attr('href') && _href.indexOf($(this).attr('href')) != -1){
+				$(this).find('li').addClass('layui-this');
+			}
+		})
+	})
+</script>

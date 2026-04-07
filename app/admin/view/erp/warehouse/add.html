@@ -1,0 +1,54 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-input-block {margin-left: 150px;}
+.layui-form-label {width: 120px;}
+</style>
+<form class="layui-form" action="" method="post">
+	<div class="mainBox">
+		<div class="main-container">
+			<div class="layui-form-item">
+				<label class="layui-form-label">仓位编码</label>
+				<div class="layui-input-block">
+					<input type="text" maxlength="100" name="sn" lay-verify="required" placeholder="请输入仓位编码,不可为空" autocomplete="off" class="layui-input">
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">仓位名称</label>
+				<div class="layui-input-block">
+					<input type="text" maxlength="100" name="name" lay-verify="required" placeholder="请输入仓位名称,不可为空" autocomplete="off" class="layui-input">
+				</div>
+			</div>	
+			<div class="layui-form-item">
+				<label class="layui-form-label">用途</label>
+				<div class="layui-input-block">
+					<select name="type" lay-verify="required">
+						{foreach $type as $key=>$vo}
+						<option value="{$key}">{$vo}</option>
+						{/foreach}
+					</select>
+				</div>
+			</div>			
+			<div class="layui-form-item">
+				<label class="layui-form-label">仓位说明/备注</label>
+				<div class="layui-input-block">
+					<input type="text" maxlength="255" name="remark"  placeholder="请输入,可为空" autocomplete="off" class="layui-input">
+				</div>
+			</div>								
+			<div class="layui-form-item">
+				<label class="layui-form-label">状态</label>
+				<div class="layui-input-block">
+					<input type="radio" name="status" value="1" title="启用" checked>
+					<input type="radio" name="status" value="0" title="禁用" >
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="bottom">
+		<div class="button-container">
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*"><i class="layui-icon layui-icon-ok"></i>提交</button>
+			<button type="reset" class="layui-btn layui-btn-primary layui-btn-sm"><i class="layui-icon layui-icon-refresh"></i>重置</button>
+		</div>
+	</div>
+</form>
+{/block}

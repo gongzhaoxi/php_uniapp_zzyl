@@ -1,0 +1,94 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-table .sign_image{max-height:80px;}
+@media print {.noprn{ display:none;}}
+</style>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<table class="layui-table">
+			<tbody>
+				<tr><td align="center" colspan="4" rowspan="1"  >不合格/返工评审处理单</td></tr>
+				<tr>
+					<td align="center" >生产计划/任何号</td>
+					<td>{$model['order_produce']['produce_sn']}</td>
+					<td align="center" >产品名称/型号</td>
+					<td>{$model['order_produce']['order_product']['product_name']}{$model['order_produce']['order_product']['product_model']}</td>
+				</tr>
+				<tr>
+					<td align="center" >生产数量</td>
+					<td>1</td>
+					<td align="center" >不合格数量</td>
+					<td>1</td>
+				</tr>					
+				<tr>
+					<td align="center" >订单号</td>
+					<td  colspan="3" rowspan="1"  >{$model['order_produce']['order']['order_sn']}</td>
+				</tr>
+				<tr>
+					<td  colspan="4" rowspan="1" >
+						<p>不合格描述：</p>
+						<div>{$model['remark']}</div>
+					</td>
+				</tr>
+				<tr><td align="center" colspan="4" rowspan="1"  >不合格评审与处理</td></tr>
+				<tr>
+					<td  colspan="4" rowspan="1" >
+						<p>不合格处理方式：</p>
+						<div>{$model['comment']}</div>
+					</td>
+				</tr>					
+				<tr>
+					<td align="center" >返工操作员/日期</td>
+					<td>
+						{$model['username']}&nbsp;&nbsp;&nbsp;{:date('Y年m月d日',strtotime($model['create_time']))}
+					</td>
+					<td align="center" >
+						返工后检验员/日期
+					</td>
+					<td>
+						{if $model['inspector_sign']}
+							<img class="sign_image"  src="{$model['inspector_sign']}" />
+							{$model['inspector_sign_date']|default=''}
+						{/if}
+					</td>
+				</tr>
+				<tr>
+					<td align="center" >生产主管</td>
+					<td>
+						{if $model['produce_sign']}
+							<img class="sign_image"  data-field="produce_sign" src="{$model['produce_sign']}" />
+							{$model['produce_sign_date']|default=''}
+						{/if}
+					</td>						
+					<td align="center" >质管主管</td>
+					<td>
+						{if $model['qc_sign']}
+							<img class="sign_image"  data-field="qc_sign" src="{$model['qc_sign']}" />
+							{$model['qc_sign_date']|default=''}
+						{/if}
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+</div>
+<div class="bottom noprn">
+	<div class="button-container" style="right: 5%;width: 90%;text-align: center;">
+		<button type="button" class="layui-btn layui-bg-red layui-btn-sm print" >打印</button>
+	</div>
+</div>
+{/block}
+{block name="script"}
+<script>
+
+layui.use(['form', 'jquery'], function() {
+	let form = layui.form;
+	let $ = layui.jquery;
+
+	$('.print').click(function(){
+		window.print();
+	})	
+})
+</script>
+{/block}

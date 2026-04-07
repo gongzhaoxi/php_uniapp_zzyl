@@ -1,0 +1,203 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-table-cell {padding: 6px 5px;}
+</style>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="order_sn" placeholder="退货单编号" class="layui-input">					
+				</div>
+				<div class="layui-form-item layui-inline">
+					<select name="status">
+						<option value="">状态</option>
+						<option value="1" >未确认</option>
+						<option value="2" >已确认</option>
+					</select>
+				</div>						
+				<div class="layui-form-item layui-inline" style="width:auto;">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="layui-row layui-col-space10">
+	<div class="layui-col-md5">
+		<div class="layui-card">
+			<div class="layui-card-body">
+				<table id="dataTable" lay-filter="dataTable"></table>
+			</div>
+		</div>
+	</div>
+	<div class="layui-col-md7">
+		<div class="layui-card">
+			<div class="layui-card-body">
+				<div class="empty" style="margin-top: 50px;margin-left: 220px;margin-bottom: 80px;" width="184" height="152">
+					请点击左边“行”，选择入库单编号，查看明细！
+				</div>
+				<table id="materialTable" lay-filter="materialTable"></table>
+			</div>
+		</div>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	<button class="pear-btn pear-btn-warming pear-btn-sm  pear-btn-sm"  lay-event="print"><i class="layui-icon layui-icon-print"></i>打印退料单</button>
+</script>
+<script type="text/html" id="options">
+	{{#  if(d.can_confirm){ }}<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="confirm">确认</button>{{#  } }}
+	<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="feedback">反馈</button>
+</script>
+<script type="text/html" id="materialToolbar">
+	
+</script>
+<script type="text/html" id="photo">
+	{{#  if(d.photo_link){ }}<a onclick="layerPhotos('{{ d.photo_link }}','{{ d.id }}')" href="javascript:;"><i class="layui-icon layui-icon-link"></i> </a>  {{#  } }} 
+</script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		let order_id;
+		var order_sn = '';
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('index')}',
+			page: true,
+			height: 'full-180',
+			cols: [[
+				{type: 'checkbox',unresize: true},
+				{field: 'order_sn',title: '退货单编号',align: 'center',unresize: false,width: {:get_col_width('order_sn')}},
+				{field: 'system_name',title: '客户',align: 'center',unresize: false,width: {:get_col_width('system_name')},},
+				{field: 'stock_date',title: '退货日期',align: 'center',unresize: false,width: {:get_col_width('stock_date',100)}},
+				{title: '操作',toolbar: '#options',align: 'center',unresize: true,width: 120,fixed: 'right'}
+			]],
+			limit:100,
+			limits:[100,200,300,400,500],
+			cellMinWidth: 60,
+			toolbar: '#toolbar',
+			defaultToolbar: [{
+					title: '刷新',
+					layEvent: 'refresh',
+					icon: 'layui-icon-refresh',
+			}, 'filter'],
+		});
+
+		table.on('sort(dataTable)', function(obj){
+			table.reload('dataTable', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+
+		table.on('tool(dataTable)', function(obj) {
+			if (obj.event === 'confirm') {
+				layerConfirm('确认退货单?','{:url('confirm')}',{id:obj.data['id']},function(res){
+					table.reload('materialTable');
+					table.reload('dataTable');
+				})
+			}else if (obj.event === 'feedback') {
+				openLayer('反馈','{:url('feedback')}?id='+obj.data['id'],'80%','90%');
+			}
+		});	
+
+		table.on('toolbar(dataTable)', function(obj) {
+			if (obj.event === 'print') {
+
+				var checkStatus = table.checkStatus('dataTable');
+				if(checkStatus.data.length == 0){
+					layer.msg('请选择要操作的内容');
+					return false;
+				}
+				toPrintPage(5,{id:checkStatus.data[0]['id']});
+				return false;
+			}else if (obj.event === 'refresh') {
+				table.reload('dataTable');
+			}
+		});
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+		
+		table.on('row(dataTable)',function (obj) {
+			window.renderData(obj.data)
+		})		
+		
+		window.renderData = function(order) {
+			$(".empty").hide();
+			order_id = order.id
+			order_sn = order.order_sn;
+			table.render({
+				elem: '#materialTable',
+				url: "{:url('material')}?"+$('#searchForm').serialize()+"&order_id="+order_id,
+				page: true,
+				height: 'full-180',
+				limit:100,
+				limits:[100,200,300,400,500],
+				cols: [[
+					
+					{field: 'sn',title: '物料编码',align: 'center',unresize: false,width: {:get_col_width('sn'.'2',150)},templet: function(d){return d.material?d.material.sn:'';}},
+					{field: 'name',title: '物料名称',align: 'left',unresize: false,width: {:get_col_width('name'.'2',250)},templet: function(d){return d.material?d.material.name:'';}},
+					{field: 'stock_num',title: '退货量',align: 'center',unresize: false,width: {:get_col_width('stock_num'.'2',100)}},
+					{field: 'unit',title: '单位',align: 'center',unresize: false,width: {:get_col_width('unit'.'2',100)},templet: function(d){return d.material?d.material.unit:'';}},
+					{field: 'material',title: '材料',align: 'center',unresize: false,width: {:get_col_width('material'.'2',100)},templet: function(d){return d.material?d.material.material:'';}},
+					{field: 'surface',title: '表面',align: 'center',unresize: false,width: {:get_col_width('surface'.'2',100)},templet: function(d){return d.material?d.material.surface:'';}},
+					{field: 'color',title: '颜色',align: 'center',unresize: false,width: {:get_col_width('color'.'2',100)},templet: function(d){return d.material?d.material.color:'';}},
+					{field: 'photo',title: '图片',align: 'center',unresize: false,width: {:get_col_width('photo'.'2',100)},templet: '#photo'},
+					{field: 'remark',title: '备注',align: 'center',unresize: false,width: {:get_col_width('remark'.'2',120)}},
+				]],
+				toolbar: '#materialToolbar',
+				defaultToolbar: [{
+					title: '刷新',
+					layEvent: 'refresh',
+					icon: 'layui-icon-refresh',
+				}, 'filter'],
+			});
+		}
+
+		table.on('toolbar(materialTable)', function(obj) {
+			if (obj.event === 'print') {
+				
+			}
+		});
+
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field+'',width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+		
+		table.on('colResized(materialTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field+'2',width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+	})
+</script>
+{/block}
+
+

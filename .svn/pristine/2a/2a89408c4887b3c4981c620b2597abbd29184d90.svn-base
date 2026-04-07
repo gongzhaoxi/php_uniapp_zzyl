@@ -1,0 +1,207 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+body{background: rgb(242, 242, 242);}
+.bg-white{background: #fff;;}
+.section3 .title{padding:10px;}
+.section3 .title .time{float:right;}
+.layui-form-item .layui-input-inline{width:auto;}
+.pear-container{width:auto;}
+.echart{width:99%;}
+</style>
+
+<div class="layui-row layui-col-space10">
+	<div class="layui-col-md4 ">
+		<div class="bg-white section3">
+			<div class="layui-form-item title">
+				<div class="layui-form-mid layui-word-aux">投产异常出现率</div>
+				<div class="time">
+					<div class="layui-input-inline layui-form-mid"><a href="{:url('errors')}?month1={:date('Y-m')}">本月</a></div>
+					<div class="layui-input-inline"><input type="text" readonly name="month1" value="{$month1}" id="month1" placeholder="请选择" autocomplete="off" class="layui-input"></div>
+				</div>
+			</div>
+			<div class="echart" id="echart1"></div>
+		</div>
+	</div>
+	<div class="layui-col-md8 ">
+		<div class="bg-white section3">
+			<div class="layui-form-item title">
+				<div class="layui-form-mid layui-word-aux">近12个月异常出现趋势</div>
+			</div>
+			<div class="echart" id="echart2"></div>
+		</div>
+	</div>	
+</div>
+<div class="layui-row layui-col-space10">
+	<div class="layui-col-md6 ">
+		<div class="bg-white section3">
+			<div class="layui-form-item title">
+				<div class="layui-form-mid layui-word-aux">工艺组异常同比统计</div>
+				<div class="time"><input type="text" readonly name="month2" value="{$month2}" id="month2" placeholder="请选择" autocomplete="off" class="layui-input"></div>
+			</div>
+			<div class="echart" id="echart3"></div>
+		</div>
+	</div>
+	<div class="layui-col-md6 ">
+		<div class="bg-white section3">
+			<div class="layui-form-item title">
+				<div class="layui-form-mid layui-word-aux">近七天异常情况</div>
+			</div>
+			<div style="padding: 0 10px 10px 10px;">
+				<table class="layui-table" >
+					<thead>
+					<tr>
+						<th>序号</th>
+						<th>上报日期</th>
+						<th>所属上报工艺组</th>
+						<th>异常说明</th>
+						<th>是否已处理</th>
+					</tr> 
+					</thead>
+					<tbody>
+						{volist name="list" id="vo"}
+						<tr>
+							<td>{$i}</td>
+							<td>{:substr($vo['create_time'],0,10)}</td>
+							<td>{$vo['process_name']}</td>
+							<td>{$vo['error']}</td>
+							<td>{$vo['status']==1?'已处理':'<span style="color:red;">未处理</span>'}</td>
+						</tr>
+						{/volist}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>	
+</div>
+
+{/block}
+{block name="script"}
+<script>
+	layui.use(['echarts', 'form', 'jquery','common','laydate'], function() {
+		let echarts = layui.echarts;
+		let form = layui.form;
+		let $ = layui.jquery;
+		let laydate = layui.laydate;
+
+		laydate.render({ 
+			type:'month',
+			elem: '#month1',
+			max: '{:date('Y-m')}',
+			done: function(value, date, endDate){
+				location.replace('{:url('errors')}?month1='+value)
+			}
+		});
+		
+		laydate.render({ 
+			type:'month',
+			elem: '#month2',
+			max: '{:date('Y-m')}',
+			done: function(value, date, endDate){
+				location.replace('{:url('errors')}?month2='+value)
+			}
+		});	
+		
+		var echart1 = echarts.init(document.getElementById('echart1'),null, {height: 300});
+		var	option1 = {
+				tooltip: {
+					trigger: 'item'
+				},
+				toolbox: {
+					feature: {
+						saveAsImage: {title:'下载',name:'投产异常出现率'}
+					}
+				},
+				legend: {
+					y: 'bottom',
+					padding:[0,0,20,0],
+				},
+				series: [
+				{
+					name: '',
+					type: 'pie',
+					radius: ['40%', '70%'],
+					label: {
+						show: true,
+						formatter: "{c} {d}%",
+					},
+					data: {:json_encode($series1)}
+				}
+				]
+			};
+
+		echart1.setOption(option1);
+		
+		
+		var echart2 = echarts.init(document.getElementById('echart2'),null, {height: 300});
+
+		var	option2 = {
+				title: {
+					text: ''
+				},
+				tooltip: {
+					trigger: 'axis'
+				},
+				legend: {
+					y: 'bottom',
+					padding:[0,0,20,0],
+					data: {:json_encode(array_column($series2,'name'))}
+				},
+
+				toolbox: {
+					feature: {
+						saveAsImage: {title:'下载',name:'近12个月异常出现趋势'}
+					}
+				},
+				xAxis: {
+					type: 'category',
+					boundaryGap: false,
+					data: {:json_encode($x2)}
+				},
+				yAxis: {
+					type: 'value'
+				},
+				series: {:json_encode($series2)}
+			};
+
+		echart2.setOption(option2);
+		
+		
+		var option3 =  {
+				title: {
+					text: ''
+				},
+				tooltip: {
+					trigger: 'axis'
+				},
+				legend: {
+					y: 'bottom',
+					padding:[0,0,20,0],
+					data: {:json_encode(array_column($series3,'name'))}
+				},
+
+				toolbox: {
+					feature: {
+						saveAsImage: {title:'下载',name:'工艺组异常同比统计'}
+					}
+				},
+				xAxis: {
+					type: 'category',
+					boundaryGap: false,
+					data: {:json_encode($x3)}
+				},
+				yAxis: {
+					type: 'value'
+				},
+				series: {:json_encode($series3)}
+			};
+
+		var echart3 = echarts.init(document.getElementById('echart3'),null, {height: 400});
+
+		echart3.setOption(option3);
+
+	})
+</script>
+{/block}
+
+

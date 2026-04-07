@@ -1,0 +1,131 @@
+{extend name="base" /}
+{block name="body"}
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="" id="searchForm">		
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="material_keyword" placeholder="委外物料编码/名称" class="layui-input">					
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="related_material_keyword" placeholder="出库坯料物料编码/名称" class="layui-input">					
+				</div>							
+				<div class="layui-form-item layui-inline">
+					<select name="process_id"  lay-search>
+						<option value="">委外工序</option>
+						{foreach $process as $key=>$vo}
+						<option value="{$vo['id']}">{$vo['name']}</option>
+						{/foreach}
+					</select>
+				</div>				
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+				</div>
+			</div>
+		</form>
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	<button class="pear-btn pear-btn-primary pear-btn-sm" lay-event="add"><i class="layui-icon layui-icon-add-1"></i>新增</button>
+	<button class="pear-btn pear-btn-success pear-btn-sm" lay-event="import"><i class="layui-icon layui-icon-upload"></i>导入</button>
+	<button class="pear-btn pear-btn-danger pear-btn-sm" lay-event="batchRemove"><i class="layui-icon layui-icon-delete"></i>删除</button>
+</script>
+<script type="text/html" id="options">
+	<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="edit"><i class="layui-icon layui-icon-edit"></i></button>
+	<button class="pear-btn pear-btn-danger pear-btn-xs" lay-event="remove"><i class="layui-icon layui-icon-delete"></i></button>
+</script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('list')}',
+			page: true,
+			height:'full-130',
+			cols: [[
+				{type: 'checkbox'},
+				{field: 'sn',title: '委外物料编码',align: 'center',unresize: false,width: {:get_col_width('sn')}, hide: getTableFieldIsHide('dataTable','sn')},
+				{field: 'name',title: '委外物料',align: 'left',unresize: false,width: {:get_col_width('name')}, hide: getTableFieldIsHide('dataTable','name')},
+				{field: 'material_unit',title: '委外物料单位',align: 'center',width: {:get_col_width('material_unit',120)}, hide: getTableFieldIsHide('dataTable','material_unit')},
+				{field: 'process_name',title: '委外工序',align: 'center',width: {:get_col_width('process_name',100)}, hide: getTableFieldIsHide('dataTable','process_name')},
+				{field: 'related_sn',title: '出库坯料编码',align: 'center',unresize: false,width: {:get_col_width('related_sn')}, hide: getTableFieldIsHide('dataTable','related_sn')},
+				{field: 'related_name',title: '出库坯料',align: 'left',unresize: false,width: {:get_col_width('related_name')}, hide: getTableFieldIsHide('dataTable','related_name')},
+				{field: 'related_material_unit',title: '出库坯料单位',align: 'center',width: {:get_col_width('related_material_unit',120)}, hide: getTableFieldIsHide('dataTable','related_material_unit')},				
+				{field: 'num',title: '用量',align: 'center',width: {:get_col_width('num',100)}, hide: getTableFieldIsHide('dataTable','num')},
+				{field: 'remark',title: '备注',align: 'center',width: {:get_col_width('remark',150)}, hide: getTableFieldIsHide('dataTable','remark')},
+				{title: '操作',toolbar: '#options',align: 'center',width: 100,unresize:true}
+			]],
+			cellMinWidth: 100,
+			//skin: 'line',
+			toolbar: '#toolbar',
+			defaultToolbar: [{
+				title: '刷新',
+				layEvent: 'refresh',
+				icon: 'layui-icon-refresh',
+			}, 'filter']
+		});
+
+		table.on('sort(dataTable)', function(obj){
+			table.reload('dataTable', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+
+		table.on('tool(dataTable)', function(obj) {
+			if (obj.event === 'remove') {
+				layerConfirm('确定要删除?','{:url('remove')}',{ids:[obj.data['id']]},function(res){
+					obj.del();
+				})
+			} else if (obj.event === 'edit') {
+				openLayer('修改','{:url('edit')}?id='+obj.data['id'],'80%','90%');
+			}
+		});
+
+		table.on('toolbar(dataTable)', function(obj) {
+			if (obj.event === 'add') {
+				openLayer('新增','{:url('add')}','80%','90%');
+			}if (obj.event === 'import') {
+				openLayer('导入','{:url('import')}','80%','90%');
+			}else if (obj.event === 'refresh') {
+				table.reload('dataTable');
+			} else if (obj.event === 'batchRemove') {
+				tableAction(obj.config.id,'确定要删除','{:url('remove')}');
+			}
+		});
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+		
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+		table.on('colToggled(dataTable)', function(obj){
+			setTableFieldIsHide(obj.config.id,obj.col.field,obj.col.hide);
+		});
+	})
+</script>
+{/block}
+
+

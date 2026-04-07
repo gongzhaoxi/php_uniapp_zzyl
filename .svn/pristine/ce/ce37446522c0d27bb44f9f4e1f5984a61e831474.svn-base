@@ -1,0 +1,81 @@
+{extend name="base" /}
+{block name="body"}
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action="">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline">
+					<label class="layui-form-label">用户信息</label>
+					<div class="layui-input-inline">
+						<input type="text" name="keyword" placeholder="账号/昵称/手机号码" class="layui-input">
+					</div>
+				</div>
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+					<button type="reset" class="pear-btn pear-btn-md"><i class="layui-icon layui-icon-refresh"></i>重置</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	<button class="pear-btn pear-btn-primary pear-btn-sm" lay-event="batchRecovery"><i class="layui-icon layui-icon-refresh"></i>恢复数据</button>
+	<button class="pear-btn pear-btn-danger pear-btn-sm" lay-event="batchRemove"><i class="layui-icon layui-icon-delete"></i>彻底删除</button>
+</script>
+{/block}
+{block name="script"}
+<script>
+layui.use(['table', 'form', 'jquery','common'], function() {
+	let table = layui.table;
+	let form = layui.form;
+	let $ = layui.jquery;
+
+	table.render({
+		elem: '#dataTable',
+		url: '{:url('recycle')}',
+		page: true,
+		cols: [[
+				{type: 'checkbox'},
+				{field: 'id',title: 'ID', sort: true, align: 'center',unresize: true},
+				{field: 'name',title: '姓名',align: 'center',unresize: true,},
+				{field: 'title',title: '职称',align: 'center',unresize: true,},
+				{field: 'mobile',title: '手机',align: 'center',unresize: true,},
+				{field: 'sn',title: '手机端身份识别码',align: 'center',unresize: true,},
+				{field: 'create_time',title: '添加时间',unresize: true,align: 'center'}, 
+				{field: 'delete_time',title: '删除时间',unresize: true,align: 'center'}
+		]],
+		cellMinWidth: 100,
+		skin: 'line',
+		toolbar: '#toolbar',
+		defaultToolbar: [{
+			title: '刷新',
+			layEvent: 'refresh',
+			icon: 'layui-icon-refresh',
+		}, 'filter', 'print', 'exports']
+	});
+
+	table.on('toolbar(dataTable)', function(obj) {
+		if (obj.event === 'batchRemove') {
+			tableAction(obj.config.id,'确定要删除这些员工?','{:url('batchRecycle')}');
+		}else if (obj.event === 'batchRecovery') {
+			tableAction(obj.config.id,'确定要恢复这些员工?','{:url('batchRecycle')}?type=1');
+		}else if (obj.event === 'refresh') {
+			table.reload('dataTable');
+		} 
+	});
+
+	form.on('submit(query)', function(data) {
+		table.reload('dataTable', {
+			where: data.field,
+			page:{curr: 1}
+		})
+		return false;
+	});
+})
+</script>
+{/block}

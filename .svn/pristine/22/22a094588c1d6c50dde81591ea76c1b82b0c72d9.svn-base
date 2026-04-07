@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="/static/component/pear/css/pear.css" />
+<script src="/static/component/layui/layui.js"></script>
+<script src="/static/component/pear/pear.js"></script>
+<script>
+var jmreport = {:json_encode(config('web.jmreport'))};
+var print_add_url = '{:url('common/printAdd')}';
+</script>
+{block name="css"}{/block}
+</head>
+<body class="pear-container">
+{block name="body"}{/block}
+<script src="/static/main.js?t={:time()}"></script>
+</body>
+{block name="js"}{/block}
+{block name="script"}{/block}
+<style>
+.mainBox{background:#fff;}
+.layui-table img {max-height: 100%;}
+.photos { width:100%;  margin: 10px 0px 0px 0px;}
+.photos .priview li { width:90px; float: left; margin-right: 5px;position: relative;}
+.photos .priview li .layui-input { display: initial; }
+.photos .priview li a { position: absolute; top: 0; display: block; }
+.photos .priview li a i { font-size: 24px; background-color: #008800; }    
+.photos .priview .item_img img{ max-width: 90px; max-height: 90px;}
+.photos .priview li .operate{ color: #000; display: none;}
+.photos .priview li .toleft{ position: absolute;top: 40px; left: 1px; cursor:pointer;}
+.photos .priview li .toright{ position: absolute;top: 40px; right: 1px;cursor:pointer;}
+.photos .priview li .close{position: absolute;top: 5px; right: 5px;cursor:pointer;}
+.photos .priview li:hover .operate{ display: block;}
+.layui-btn-warm {color: #000;}
+.layui-table tbody tr:hover, .layui-table thead tr, .layui-table-click, .layui-table-header, .layui-table-hover, .layui-table-mend, .layui-table-patch, .layui-table-tool, .layui-table-total, .layui-table-total tr, .layui-table[lay-even] tr:nth-child(2n) {
+  background-color: #FAFAFA;
+}
+
+.dtree-menubar .layui-btn-group .layui-btn-sm i {font-size: 16px !important;}
+.dtree-menubar .layui-btn-group .layui-btn-sm {height: auto;line-height: 20px;padding: 1px 7px;}
+.dtree-menubar {margin-bottom: 10px;}
+</style>
+</html>

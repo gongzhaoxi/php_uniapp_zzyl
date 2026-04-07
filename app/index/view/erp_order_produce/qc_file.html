@@ -1,0 +1,145 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.item{text-align:center;height:150px;overflow:hidden;}
+.item .layui-icon{font-size:30px;}
+.item p{height: 20px;line-height: 20px;text-align:left;}
+.item .detail{background: #cbe6eb;padding:30px 10px;margin: 0 0 5px 0;position: relative;}
+.item .version{color:#999999;}
+.item .name{color:#000000;}
+.item .detail .layui-btn{background-color: #0098ab;}
+.item .code{display:none;}
+.item .tip{position: absolute;left: 0;top: 0;padding: 0 5px; color: #fff;}
+.item .tip1{background: #ff0000;}
+.item .tip2{background: #00a479;}
+.item .tip3{background: #007fa4;}
+</style>
+<div class="mainBox">
+	<div class="main-container">
+		<div class="layui-tab layui-tab-brief">
+			<ul class="layui-tab-title">
+				<li class="layui-this">指导书</li>
+				<li>编号/版本</li>
+			</ul>
+			<div class="layui-tab-content">
+				<div class="layui-tab-item layui-show">
+					<form class="layui-form" action="">
+						<div class="layui-form-item">
+							<div class="layui-inline">
+								<input type="text" name="code" placeholder="编号(图号)" class="layui-input">					
+							</div>	
+							<div class="layui-inline">
+								<input type="text" name="name" placeholder="指导书名称" class="layui-input">	
+							</div>					
+							<div class="layui-inline">
+								<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query">查询</button>
+							</div>
+						</div>
+					</form>					
+					<div class="layui-row layui-col-space30 guide_book">
+						{if !empty($model['product']['guide_book'])}
+						{foreach $model['product']['guide_book'] as $vo}
+						<div class="layui-col-xs6 layui-col-sm4 layui-col-md2 col">
+							<div class="item">
+								<a {if $vo['is_image']}onclick="layerPhotos(this)" data-href="{$vo['attachment']}"{else}onclick="openLayer('{$vo['name']}','{$vo['attachment']}')" target="_blank"{/if} >
+								
+									<div class="detail">
+										<button class="layui-btn">点击查看</button>
+										{if $vo['material_category'] == '一般物资'}
+											<span class="tip tip2">般</span>
+										{/if}
+										{if $vo['material_category'] == '重要物资'}
+											<span class="tip tip1">重</span>
+										{/if}
+										{if $vo['material_category'] == '辅助物资'}
+											<span class="tip tip3">辅</span>
+										{/if}
+									</div>
+								</a>
+								<p class="code">{$vo['code']}</p>
+								<p class="name">{$vo['name']}</p>
+								<p class="version">版本号：{$vo['version']}</p>
+							</div>
+						</div>
+						{/foreach}
+						{/if}
+					</div>
+				</div>
+				<div class="layui-tab-item">
+					<form class="layui-form" action="">
+						<div class="layui-form-item">
+							<div class="layui-inline">
+								<input type="text" name="name" placeholder="名称" class="layui-input">	
+							</div>					
+							<div class="layui-inline">
+								<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query2">查询</button>
+							</div>
+						</div>
+					</form>	
+					<div class="layui-row layui-col-space30 num_version">
+						{if !empty($model['product']['num_version_link'])}
+						{foreach $model['product']['num_version_link']['file'] as $k=>$vo}
+						<div class="layui-col-xs6 layui-col-sm4 layui-col-md2 col">
+							<div class="item">
+								<a {if $model['product']['num_version_link']['is_image'][$k]}onclick="layerPhotos(this)" data-href="{$vo}"{else}href="{$vo}" target="_blank"{/if} >
+									<div class="detail">
+										<button class="layui-btn">点击查看</button>
+									</div>
+								</a>
+								<p class="name">{$model['product']['num_version_link']['name'][$k]}</p>
+							</div>
+						</div>
+						{/foreach}
+						{/if}
+					</div>					
+					
+				</div>
+			</div>
+		</div>			
+	</div>
+</div>
+
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+		form.on('submit(query)', function(data) {
+			$('.guide_book .col').each(function(){
+				var check = true;
+				if(data.field.code && ($(this).find('.code').html()).indexOf(data.field.code) == -1){
+					check = false;
+				}
+				if(data.field.name && ($(this).find('.name').html()).indexOf(data.field.name) == -1){
+					check = false;
+				}	
+				if(check){
+					$(this).show();
+				}else{
+					$(this).hide();
+				}
+			})
+			return false;
+		});
+		
+		form.on('submit(query2)', function(data) {
+			$('.num_version .col').each(function(){
+				var check = true;
+				if(data.field.name && ($(this).find('.name').html()).indexOf(data.field.name) == -1){
+					check = false;
+				}	
+				if(check){
+					$(this).show();
+				}else{
+					$(this).hide();
+				}
+			})
+			return false;
+		});		
+
+	})
+</script>
+{/block}

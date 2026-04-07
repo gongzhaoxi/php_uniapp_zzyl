@@ -1,0 +1,475 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-input-block {margin-left: 160px;}
+.layui-form-label {width: 130px;}
+.cabinet_num{display:none;}
+</style>
+ <div class="mainBox">
+	<div class="main-container">
+		<blockquote class="layui-elem-quote">
+			合同信息
+			{if $model['is_special']}
+				{if $model['technician_approve']}
+					<span class="layui-badge">技术已审核</span>
+				{else/}
+					<span class="layui-badge layui-bg-black">技术未审核</span>
+				{/if}
+			{/if}
+			{if $model['salesman_approve']}
+				<span class="layui-badge">销售已审核</span>
+			{else/}
+				<span class="layui-badge layui-bg-black">销售未审核</span>
+			{/if}
+			<button type="button" style="float:right;" class="pear-btn pear-btn-primary pear-btn-xs log-order" >订单变更</button>
+		</blockquote>
+		<form class="layui-form" action="{:url('edit')}" method="post" lay-filter="demo-val-filter">
+			<input type="hidden" name="id" value="{$model['id']}" >
+			<div class="layui-form-item">
+				<label class="layui-form-label"><span class="asterisk">*</span>销售合同号</label>
+				<div class="layui-input-inline">
+					<input type="text" maxlength="20" name="order_sn" value="{$model['order_sn']}"  lay-verify="required" placeholder="请输入销售合同号,不可为空" autocomplete="off" class="layui-input">
+				</div>
+				<label class="layui-form-label"><span class="asterisk">*</span>客户名称/订货单位</label>
+				<div class="layui-input-inline">
+					<input type="hidden" name="customer_id" id="customer_id" value="{$model['customer_id']}">
+					<input type="text" name="customer_name" id="customer_name" readonly lay-verify="required" ts-selected="{$model['customer_id']}" value="{$model['customer_name']}"  placeholder="请选择,不可为空" autocomplete="off" class="layui-input">
+				</div>	
+				<label class="layui-form-label"><span class="asterisk">*</span>下单日期</label>
+				<div class="layui-input-inline">
+					<input type="text" name="create_time" readonly lay-verify="required" value="{$model['create_time']}"  placeholder="请选择,不可为空" autocomplete="off" class="layui-input datetime">
+				</div>					
+				<label class="layui-form-label"><span class="asterisk">*</span>交货日期</label>
+				<div class="layui-input-inline">
+					<input type="text" name="delivery_time" readonly value="{$model['delivery_time']}" lay-verify="required"  placeholder="请选择,不可为空" autocomplete="off" class="layui-input date">
+				</div>	
+				<div class="layui-input-inline">
+					<input type="text" name="delivery_remark" value="{$model['delivery_remark']}" placeholder="补充要求,可为空" autocomplete="off" class="layui-input">
+				</div>					
+			</div>
+			<div class="layui-form-item">
+				<input type="hidden" name="region" id="region" value="{$model->getData('region')}">
+				<input type="hidden" name="region_name" id="region_name" value="">
+				<label class="layui-form-label"><span class="asterisk">*</span>区域</label>
+				<div class="layui-input-inline">
+					<ul id="demoTree" class="dtree" ></ul>
+				</div>
+				<label class="layui-form-label"><span class="asterisk">*</span>收货地址/国家</label>
+				<div class="layui-input-inline">
+					<input type="text" maxlength="255" name="address" value="{$model['address']}" id="address" lay-verify="required" placeholder="请输入,不可为空" autocomplete="off" class="layui-input">
+				</div>
+				<label class="layui-form-label"><span class="asterisk">*</span>订单类型</label>
+				<div class="layui-input-inline">
+					<select name="order_type" lay-verify="required">
+						{foreach $order_type as $key=>$vo}
+						<option value="{$key}" {if $model['order_type'] == $key}selected{/if}>{$vo}</option>
+						{/foreach}
+					</select>
+				</div>	
+				<label class="layui-form-label"><span class="asterisk">*</span>域属</label>
+				<div class="layui-input-inline">
+					{foreach $region_type as $key=>$vo}
+					<input type="radio" name="region_type" value="{$key}" title="{$vo}" {if $model['region_type'] == $key}checked{/if}  lay-filter="region_type">
+					{/foreach}
+				</div>				
+			</div>				
+			<div class="layui-form-item">
+				<label class="layui-form-label"><span class="asterisk">*</span>联系人</label>
+				<div class="layui-input-inline">
+					<input type="text" maxlength="100" name="contacts" id="contacts" value="{$model['contacts']}" lay-verify="required"  placeholder="请输入,不可为空" autocomplete="off" class="layui-input">
+				</div>
+				<label class="layui-form-label"><span class="asterisk">*</span>联系电话</label>
+				<div class="layui-input-inline">
+					<input type="text" maxlength="100" name="phone" id="phone" value="{$model['phone']}" lay-verify="required" placeholder="请输入,不可为空" autocomplete="off" class="layui-input">
+				</div>
+				<label class="layui-form-label cabinet_num" {if $model['region_type'] == 2}style="display:block;"{/if}>装柜号</label>
+				<div class="layui-input-inline cabinet_num" {if $model['region_type'] == 2}style="display:block;"{/if}>
+					<input type="text" maxlength="255" name="cabinet_num" value="{$model['cabinet_num']}" placeholder="请输入,可为空" autocomplete="off" class="layui-input">
+				</div>
+			</div>			
+			<div class="layui-form-item">
+				<label class="layui-form-label">技术参数</label>
+				<div class="layui-input-inline">
+					<input type="text" maxlength="255" name="technical_parameter" value="{$model['technical_parameter']}" placeholder="请输入,可为空" autocomplete="off" class="layui-input">
+				</div>
+				<label class="layui-form-label">要求</label>
+				<div class="layui-input-inline">
+					<input type="text" maxlength="255" name="customer_remark" value="{$model['customer_remark']}" placeholder="请输入,可为空" autocomplete="off" class="layui-input">
+				</div>		
+				<label class="layui-form-label"><span class="asterisk">*</span>发货类型</label>
+				<div class="layui-input-inline">
+					<select name="shipping_type" lay-verify="required">
+						{foreach $shipping_type as $key=>$vo}
+						<option value="{$key}" {if $model['shipping_type'] == $key}selected{/if}>{$vo}</option>
+						{/foreach}
+					</select>
+				</div>		
+				<label class="layui-form-label" style="display:none;">订单金额</label>
+				<div class="layui-input-inline" style="display:none;">
+					<input type="text"  value="{$model['order_amount']}" disabled placeholder="请输入,可为空" autocomplete="off" class="layui-input">
+				</div>
+			</div>				
+			<div class="layui-form-item">
+				<label class="layui-form-label">电机编码</label>
+				<div class="layui-input-inline">
+					<input type="text" maxlength="255" name="motor_code" value="{$model['motor_code']}" placeholder="请输入,可为空" autocomplete="off" class="layui-input">
+				</div>
+				<label class="layui-form-label">特殊订单</label>
+				<div class="layui-input-inline">
+					<input type="radio" name="is_special" value="0" title="否" {if $model['is_special'] == 0}checked{/if}>
+					<input type="radio" name="is_special" value="1" title="是" {if $model['is_special'] == 1}checked{/if}>
+				</div>
+				<label class="layui-form-label">备注</label>
+				<div class="layui-input-inline">
+					<input type="text" maxlength="255" name="order_remark" value="{$model['order_remark']}" placeholder="请输入,可为空" autocomplete="off" class="layui-input">
+				</div>
+				<label class="layui-form-label"><span class="asterisk">*</span>销售</label>
+				<input type="hidden" name="salesman_name" id="salesman_name" value="{$model['salesman_name']}" >
+				<div class="layui-input-inline">
+					<select name="salesman_id"  lay-verify="required" lay-filter="salesman_id">
+						{foreach $admins as $key=>$vo}
+						<option value="{$vo['id']}" {if $model['salesman_id'] == $vo['id']}selected{/if}>{$vo['nickname']}</option>
+						{/foreach}
+					</select>
+				</div>
+			</div>
+			<div class="layui-form-item">
+				{if $model['can_edit']}<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*"><i class="layui-icon layui-icon-ok"></i>保存信息</button>{/if}
+				{if empty($salesman_check)}
+				<button type="button" class="layui-btn layui-btn-success layui-btn-sm ship"><i class="layui-icon layui-icon-release"></i>发起发货通知</button>
+				{else/}
+					{if $model['salesman_approve'] == 0}<button type="button" class="layui-btn layui-btn-success layui-btn-sm salesman-pass"><i class="layui-icon layui-icon-ok-circle"></i>销售审批</button>{/if}
+					{if $model['salesman_approve'] == 1}<button type="button" class="layui-btn layui-btn-danger layui-btn-sm salesman-reset"><i class="layui-icon layui-icon-close-fill"></i>销售反审</button>{/if}
+				{/if}
+			</div>
+		</form>
+		<div style="margin-bottom:20px;">
+			<button onclick="toPrintPage(11,{id:{$model['id']}})" type="button" class="layui-btn  layui-btn-warm layui-btn-sm"><i class="layui-icon layui-icon-print layui-font-12"></i>打印确认单</button>
+			<button onclick="toPrintPage(12,{id:{$model['id']}})" type="button" class="layui-btn  layui-btn-warm layui-btn-sm"><i class="layui-icon layui-icon-print layui-font-12"></i>打印订货单</button>
+			<button onclick="toPrintPage(13,{id:{$model['id']}})" type="button" class="layui-btn  layui-btn-warm layui-btn-sm"><i class="layui-icon layui-icon-print layui-font-12"></i>打印“国内”包装标签</button>
+			<button onclick="toPrintPage(14,{id:{$model['id']}})" type="button" class="layui-btn  layui-btn-warm layui-btn-sm"><i class="layui-icon layui-icon-print layui-font-12"></i>打印“国外”包装标签</button>
+			<button onclick="toPrintPage(15,{id:{$model['id']}})" type="button" class="layui-btn  layui-btn-warm layui-btn-sm"><i class="layui-icon layui-icon-print layui-font-12"></i>打印价格确认单</button>
+		</div>
+		<blockquote class="layui-elem-quote">
+			产品信息
+			<div class="layui-btn-group"  style="float:right;" >
+				<button type="button" class="layui-btn layui-btn-normal layui-btn-sm add-product" ><i class="layui-icon layui-icon-add-circle"></i>添加产品</button>
+				<button type="button" class="layui-btn layui-btn-normal layui-btn-sm add-returned" ><i class="layui-icon layui-icon-add-circle"></i>调用库存成品</button>
+			</div>
+		</blockquote>
+		<table class="layui-table">
+			<thead>
+				<tr>
+					<th>序号</th>
+					<th>产品名称</th>
+					<th>型号</th>
+					<th>款式</th>
+					<th>颜色</th>
+					<th>数量</th>
+					<th>备注</th>
+					<th style="display:none;">单价</th>
+					<th style="display:none;">金额</th>
+					<th>操作</th>
+				</tr> 
+			</thead>
+			<tbody>
+				{foreach $model->orderProduct as $k1=>$v1}
+				<tr id="order_product_id_{$v1['id']}">
+					<td class="index">{$k1+1}</td>
+					<td>{$v1['product_name']}</td>
+					<td>{$v1['product_model']}</td>
+					<td>{$v1['product_specs']}</td>
+					<td>{$v1['color']}</td>
+					<td>{$v1['product_num']}</td>
+					<td>{$v1['remark']}</td>
+					<td style="display:none;">{$v1['product_price']}</td>
+					<td style="display:none;">{$v1['total_price']}</td>
+					<td>
+						<button class="pear-btn pear-btn-primary pear-btn-xs edit-product" data-id="{$v1['id']}"><i class="layui-icon layui-icon-edit"></i></button>
+						<button class="pear-btn pear-btn-danger pear-btn-xs remove-product" lay-event="remove" data-id="{$v1['id']}"><i class="layui-icon layui-icon-delete"></i></button>
+						<button class="pear-btn pear-btn-success pear-btn-xs copy-product" data-id="{$v1['id']}">复制</button>
+						{if $v1['is_pause'] == 0}<button class="pear-btn pear-btn-xs pause-product" data-id="{$v1['id']}">暂停</button>{/if}
+					</td>					
+				</tr>
+				<tr>
+					<td></td>
+					<td colspan="8">
+						<div class="layui-row">
+							<div class="layui-col-md11">
+								方案配置：
+								{$v1['project_html']|raw}
+							</div>
+							<div class="layui-col-md1">
+								<button class="pear-btn pear-btn-primary pear-btn-xs log-product" data-id="{$v1['id']}">产品变更</button>
+							</div>
+						</div>
+					</td>
+				</tr>
+				{/foreach}
+			</tbody>
+		</table>
+		<blockquote style="display:none;" class="layui-elem-quote">配件信息<button style="float:right;" type="button" class="layui-btn layui-btn-normal layui-btn-sm add-accessory" ><i class="layui-icon layui-icon-add-circle"></i>添加配件</button></blockquote>
+		<table class="layui-table"  style="display:none;">
+			<thead>
+				<tr>
+					<th>产品名称</th>
+					<th>型号</th>
+					<th>数量</th>
+					<th style="display:none;">单价</th>
+					<th style="display:none;">金额</th>
+					<th>发运时间</th>
+					<th>备注</th>
+					<th>所属序号产品</th>
+					<th style="width:100px">操作</th>
+				</tr>			
+			</thead>
+			<tbody id="accessory">
+				{foreach $model->orderAccessory as $k=>$vo}
+				<tr data-id="{$vo['order_product_id']}">
+					<td>{$vo['product_name']}</td>
+					<td>{$vo['product_model']}</td>
+					<td>{$vo['product_num']}</td>
+					<td style="display:none;">{$vo['product_price']}</td>
+					<td style="display:none;">{$vo['total_price']}</td>
+					<td>{$vo['shipping_time']}</td>
+					<td>{$vo['remark']}</td>
+					<td class="index"></td>
+					<td><div class="layui-btn-group">
+						<button type="button" data-id="{$vo['id']}" class="layui-btn layui-btn layui-btn-normal  layui-btn-xs edit-accessory">编辑</button>
+						<button type="button" data-id="{$vo['id']}" class="layui-btn layui-btn layui-btn-danger  layui-btn-xs del-accessory">删除</button>
+						</div>
+					</td>
+				</tr>
+				{/foreach}	
+			</tbody>
+		</table>
+	
+		<blockquote class="layui-elem-quote">备注2<button style="float:right;" type="button" class="layui-btn layui-btn-normal layui-btn-sm add-remark" ><i class="layui-icon layui-icon-add-circle"></i>添加备注2</button></blockquote>
+		<table class="layui-table">
+			<thead>
+				<tr>
+					<th>备注</th>
+					<th>所属序号产品</th>
+					<th style="width:100px">操作</th>
+				</tr>			
+			</thead>
+			<tbody id="remark">
+				{foreach $model->orderRemarks as $k=>$vo}
+				<tr data-id="{$vo['order_product_id']}">
+					<td>{$vo['remark']}</td>
+					<td class="index"></td>
+					<td><div class="layui-btn-group">
+						<button type="button" data-id="{$vo['id']}" class="layui-btn layui-btn layui-btn-normal  layui-btn-xs edit-remark">编辑</button>
+						<button type="button" data-id="{$vo['id']}" class="layui-btn layui-btn layui-btn-danger  layui-btn-xs del-remark">删除</button>
+						</div>
+					</td>
+				</tr>
+				{/foreach}	
+			</tbody>
+		</table>	
+	
+	</div>
+</div>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common','dtree','tableSelect'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		var dtree = layui.dtree;
+		var tableSelect = layui.tableSelect;
+
+		form.on('radio(region_type)', function(data){
+			if(data.elem.value == 1){
+				$('.cabinet_num').hide();
+			}else{
+				$('.cabinet_num').show();
+			}
+		});	
+
+		var demoTree = dtree.renderSelect({
+			elem: "#demoTree",
+			data:{:json_encode($tree)},
+			selectInitVal: "{:$model['region']?$model['region'][count($model['region'])-1]:100000}", 
+			//skin: "laySimple",  // layui主题风格
+			//icon: "-1",  // 隐藏二级图标
+			line: true,  // 显示树线
+			response:{
+				treeId: "id",			  //节点ID
+				parentId: "parent_id",	  //父节点ID
+				title: "name",			  //节点名称 
+				childName: "children",	  //子节点名称
+			}
+		});
+
+		dtree.on("node('demoTree')" ,function(param){
+			var arr = dtree.getAllParentParam(demoTree, param.param.nodeId);
+			var ids = [];
+			$.each(arr,function(idx,item){
+				ids.push(item.nodeId);
+			})
+			ids.push(param.param.nodeId);
+			$('#region').val(ids.join(','));
+		});
+
+
+		tableSelect.render({
+			elem: '#customer_name',
+			checkedKey: 'id',
+			searchKey: 'keyword',
+			searchPlaceholder: '客户名称/编码/联系人/联系电话',
+			table: {
+				url: '{:url('erp.customer/list')}',		
+				cols: [[
+					{type: 'radio' },
+					{field: 'id', title: 'id' },
+					{field: 'sn',title: '客户编码',align: 'center',unresize: false,},
+					{field: 'name',title: '客户名称',align: 'center',unresize: false,},
+					{field: 'contacts',title: '联系人',align: 'center',unresize: false},
+				]]
+			},
+			done: function (elem, data) {
+				elem.val(data.data[0]['name']);
+				$('#customer_id').val(data.data[0]['id']);
+				$('#contacts').val(data.data[0]['contacts']);
+				$('#phone').val(data.data[0]['phone']);
+				$('#address').val(data.data[0]['region_name']+data.data[0]['address']);
+				$('#region').val(data.data[0]['region'].join(','));
+				
+				demoTree.reload({
+					selectInitVal: data.data[0]['region'].length>0?data.data[0]['region'][data.data[0]['region'].length-1]:'100000', 
+				})
+			}
+		})
+
+		form.on('select(salesman_id)', function(data){
+			$('#salesman_name').val($(data.elem).find('option:selected').text());
+		});
+
+		$('.add-product').click(function(){
+			openLayer('添加产品','{:url('erp.orderProduct/add')}?order_id={$model['id']}&region_type='+form.val('demo-val-filter')['region_type'],'90%','90%',function(){
+						
+			});
+		})
+		
+		$('.add-returned').click(function(){
+			openLayer('调用库存成品','{:url('erp.orderProduct/addFromReturned')}?order_id={$model['id']}','90%','90%',function(){
+						
+			});
+		})		
+
+		$('.ship').click(function(){
+			openLayer('发货通知','{:url('shipping')}?id={$model['id']}','90%','90%',function(){
+						
+			});
+		})
+
+
+
+		$('.edit-product').click(function(){
+			openLayer('编辑产品','{:url('erp.orderProduct/edit')}?id='+$(this).data('id'),'90%','90%',function(){
+				location.reload();		
+			});
+		})
+
+		$('.log-product').click(function(){
+			openLayer('产品变更记录','{:url('log')}?order_id={$model['id']}&order_product_id='+$(this).data('id'),'90%','90%',function(){
+						
+			});
+		})
+		
+		$('.log-order').click(function(){
+			openLayer('订单变更记录','{:url('log')}?order_id={$model['id']}&order_product_id=0','90%','90%',function(){
+						
+			});
+		})
+		
+		$('.remove-product').click(function(){
+			layerConfirm('确认删除？','{:url('erp.orderProduct/remove')}',{'id':$(this).data('id')},function(){
+				location.reload();	
+			})
+		})
+		
+		$('.copy-product').click(function(){
+			layerConfirm('确认复制？','{:url('erp.orderProduct/copy')}',{'id':$(this).data('id')},function(){
+				location.reload();	
+			})
+		})		
+		
+		
+		$('.pause-product').click(function(){
+			layerConfirm('确认暂停？','{:url('erp.orderProduct/pause')}',{'id':$(this).data('id')},function(){
+				location.reload();	
+			})
+		})			
+		
+		
+		
+		$('.salesman-reset').click(function(){
+			layerConfirm('确认反审？','{:url('salesmanReset')}',{'id':'{$model['id']}'},function(){
+				location.reload();	
+			})
+		})
+
+		$('.salesman-pass').click(function(){
+			layerConfirm('确认审批？','{:url('salesmanPass')}',{'id':'{$model['id']}'},function(){
+				location.reload();	
+			})
+		})
+		
+		$('.add-accessory').click(function(){
+			openLayer('添加配件','{:url('erp.orderAccessory/add')}?order_id={$model['id']}','90%','90%',function(){
+						
+			});
+		})
+		
+		$("body").on("click",".del-accessory",function(){
+			layerConfirm('确认删除？','{:url('erp.orderAccessory/remove')}',{'id':$(this).data('id')},function(){
+				location.reload();	
+			})
+		});
+		
+		$('.edit-accessory').click(function(){
+			openLayer('编辑配件','{:url('erp.orderAccessory/edit')}?id='+$(this).data('id'),'90%','90%',function(){
+				location.reload();		
+			});
+		})
+		
+		$('#accessory tr').each(function(){
+			var id = $(this).data('id');
+			if(id && id>0 && $('#order_product_id_'+id+' .index').length > 0){
+				$(this).find('.index').html('序号：'+$('#order_product_id_'+id+' .index').html());
+			}
+		})
+		
+		
+		$('.add-remark').click(function(){
+			openLayer('添加备注2','{:url('erp.orderRemark/add')}?order_id={$model['id']}','90%','90%',function(){
+						
+			});
+		})
+		
+		$("body").on("click",".del-remark",function(){
+			layerConfirm('确认删除？','{:url('erp.orderRemark/remove')}',{'id':$(this).data('id')},function(){
+				location.reload();	
+			})
+		});
+		
+		$('.edit-remark').click(function(){
+			openLayer('编辑备注2','{:url('erp.orderRemark/edit')}?id='+$(this).data('id'),'90%','90%',function(){
+				location.reload();		
+			});
+		})
+		
+		$('#remark tr').each(function(){
+			var id = $(this).data('id');
+			if(id && id>0 && $('#order_product_id_'+id+' .index').length > 0){
+				$(this).find('.index').html('序号：'+$('#order_product_id_'+id+' .index').html());
+			}
+		})
+		
+		
+	})
+</script>
+{/block}

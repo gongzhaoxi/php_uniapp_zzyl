@@ -1,0 +1,86 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-input-block {margin-left: 150px;}
+.layui-form-label {width: 120px;}
+.lack_num {background:red;color:#fff;cursor: pointer;}
+</style>
+<form class="layui-form" action="" method="post">
+	 <div class="mainBox">
+		<div class="main-container">	
+			<div class="layui-form-item">
+				<div class="layui-input-inline" >
+					<select lay-filter="category-partn">
+						<option value="">全部零件</option>
+						{volist name="category" id="vo"}
+						<option value="{$vo['id']}">{$vo['name']}</option>
+						{/volist}
+					</select>
+				</div>	
+			</div>
+			<table class="layui-table">		
+				<thead>
+					<tr >
+						<th>序号</th>
+						<th>物料编号</th>
+						<th>物料名称</th>
+						<th>需求数量</th>
+						<th>欠缺数量</th>
+						<th>单位</th>
+						<th>类别</th>
+						<th>材料</th>
+						<th>表面</th>
+						<th>颜色</th>
+						<th>备注</th>
+					</tr> 
+				</thead>
+				<tbody>
+				{volist name="bom" id="vo"}
+				<tr class="cid-{$vo['related_material']['cid']}">
+					<td>{$i}</td>
+					<td>{$vo['related_material']['sn']}</td>
+					<td>{$vo['related_material']['name']}</td>
+					<td>{$vo['num']}</td>
+					<td class="{if $vo['lack_num']>0}lack_num{/if} _lack" >{$vo['lack_num']}</td>
+					<td>{$vo['related_material']['unit']}</td>
+					<td>{$vo['related_material']['category_name']}</td>
+					<td>{$vo['related_material']['material']}</td>
+					<td>{$vo['related_material']['surface']}</td>
+					<td>{$vo['related_material']['color']}</td>
+					<td>{$vo['related_material']['remark']}</td>
+				</tr>
+				{/volist}
+				</tbody>
+			</table>
+		</div>
+	</div>       
+</form>
+{/block}
+{block name="script"}
+<script>
+	var is_lack = true;
+
+	layui.use(['table', 'form', 'jquery','common','laydate'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		let laydate = layui.laydate;
+		let layer = layui.layer;
+		let element = layui.element;
+		    
+		form.on('select(category-partn)', function(data){
+			if(data.value){
+				$('.layui-table tbody tr').hide();
+				$('.layui-table tbody .cid-'+data.value).show();
+			}else{
+				$('.layui-table tbody tr').show();
+			}
+		});		
+		
+		if($('.lack_num').length == 0){
+			is_lack = false
+		}
+	})
+</script>
+{/block}
+

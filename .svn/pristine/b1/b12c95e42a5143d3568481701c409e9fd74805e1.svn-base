@@ -1,0 +1,152 @@
+{extend name="base" /}
+{block name="body"}
+<div class="layui-card">
+	<div class="layui-card-body">
+		<div class="layui-tab layui-tab-brief">
+			<ul class="layui-tab-title">
+				<li class="layui-this">采购单明细</li>
+				<a href="{:url('material')}"><li>采购入库明细</li></a>
+				<a href="{:url('materialStat')}"><li>采购入库汇总</li></a>
+			</ul>
+		</div>		
+		<form class="layui-form" action=""  lay-filter="searchForm">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="order_date" value="{:date('Y-m-01')} 至 {:date('Y-m-'.date('t'))}"  placeholder="采购日期" class="layui-input rangedate">	
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="order_sn" placeholder="采购单编号" class="layui-input">	
+				</div>
+				<div class="layui-form-item layui-inline">
+					<select name="supplier_id" lay-search>
+						<option value="">供应商</option>
+						{foreach $supplier as $key=>$vo}
+						<option value="{$vo['id']}">{$vo['name']}</option>
+						{/foreach}
+					</select>
+				</div>
+				<div class="layui-form-item layui-inline">
+					<select name="follow_admin_id" lay-search>
+						<option value="">跟进人</option>
+						{foreach $admins as $key=>$vo}
+						<option value="{$vo['id']}" >{$vo['username']}</option>
+						{/foreach}
+					</select>
+				</div>	
+				<div class="layui-form-item layui-inline">
+					<select name="order_status">
+						<option value="">状态</option>
+						{foreach $status as $key=>$vo}
+						<option value="{$key}" {if $default_status == $key}selected{/if}>{$vo}</option>
+						{/foreach}
+					</select>
+				</div>		
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="material" placeholder="物料编号/物料名称" class="layui-input">					
+				</div>					
+				<div class="layui-form-item layui-inline">
+					<button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+					<button class="pear-btn pear-btn-md" lay-submit lay-filter="export"><i class="layui-icon layui-icon-export"></i>导出</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="layui-card">
+	<div class="layui-card-body">
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+
+</script>
+<script type="text/html" id="options">
+	<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="edit"><i class="layui-icon layui-icon-edit"></i></button>
+	<button class="pear-btn pear-btn-danger pear-btn-xs" lay-event="remove"><i class="layui-icon layui-icon-delete"></i></button>
+</script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+		table.render({
+			elem: '#dataTable',
+			url: '{:url('materialList')}?order_status={$default_status}&order_date={:date('Y-m-01')} 至 {:date('Y-m-'.date('t'))}',
+			page: true,
+			limit:90,
+			height:'full-210',
+			cols: [[
+				{field: 'order_sn',title: '采购单编号',align: 'center',width: {:get_col_width('order_sn',150)}, hide: getTableFieldIsHide('dataTable','order_sn')},
+				{field: 'supplier_name',title: '供应商',align: 'center',width: {:get_col_width('supplier_name',120)}, hide: getTableFieldIsHide('dataTable','supplier_name')},
+				{field: 'order_date',title: '采购日期',align: 'center',width: {:get_col_width('order_date',120)}, hide: getTableFieldIsHide('dataTable','order_date')},
+				{field: 'overdue_reason',title: '超期原因',align: 'center',width: {:get_col_width('overdue_reason',120)}, hide: getTableFieldIsHide('dataTable','overdue_reason')},
+				{field: 'follow_admin_username',title: '采购跟进人',align: 'center',width: {:get_col_width('follow_admin_username',100)}, hide: getTableFieldIsHide('dataTable','follow_admin_username')},
+				{field: 'check_admin',title: '审批人',align: 'center',width: {:get_col_width('check_admin',100)}, hide: getTableFieldIsHide('dataTable','check_admin')},
+				{field: 'check_date',title: '审批时间',align: 'center',width: {:get_col_width('check_date',120)}, hide: getTableFieldIsHide('dataTable','check_date')},
+				{field: 'sn',title: '物料编码',align: 'center',width: {:get_col_width('sn')}, hide: getTableFieldIsHide('dataTable','sn')},
+				{field: 'name',title: '物料名称',align: 'center',width: {:get_col_width('name')}, hide: getTableFieldIsHide('dataTable','name')},
+				{field: 'apply_num',title: '采购量',align: 'center',width: {:get_col_width('apply_num',100)}, hide: getTableFieldIsHide('dataTable','apply_num')},
+				{field: 'unit',title: '单位',align: 'center',width: {:get_col_width('unit',100)}, hide: getTableFieldIsHide('dataTable','unit')},
+				{field: 'material',title: '材料',align: 'center',width: {:get_col_width('material',100)}, hide: getTableFieldIsHide('dataTable','material')},
+				{field: 'surface',title: '表面',align: 'center',width: {:get_col_width('surface',100)}, hide: getTableFieldIsHide('dataTable','surface')},
+				{field: 'color',title: '颜色',align: 'center',width: {:get_col_width('color',100)}, hide: getTableFieldIsHide('dataTable','color')},
+				{field: 'delivery_date',title: '要求交货日期',align: 'center',width: {:get_col_width('delivery_date',120)}, hide: getTableFieldIsHide('dataTable','delivery_date')},
+				{field: 'status_desc',title: '状态',align: 'center',width: {:get_col_width('status_desc',100)}, hide: getTableFieldIsHide('dataTable','status_desc')},
+			]],
+			cellMinWidth: 100,
+			//skin: 'line',
+			toolbar: '#dataTable',
+			defaultToolbar: [{
+				title: '刷新',
+				layEvent: 'refresh',
+				icon: 'layui-icon-refresh',
+			}, 'filter']
+		});
+
+		table.on('sort(dataTable)', function(obj){
+			table.reload('dataTable', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+		
+		
+		form.on('submit(export)', function(data) {
+			var data = form.val('searchForm');
+			exportData('{:url('materialListExport')}',data);
+			return false;
+		});			
+		
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+		table.on('colToggled(dataTable)', function(obj){
+			setTableFieldIsHide(obj.config.id,obj.col.field,obj.col.hide);
+		});
+		
+	})
+</script>
+{/block}
+
+

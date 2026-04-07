@@ -1,0 +1,99 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.num{color:red;font-size:16px;}
+</style>
+{include file="erp/public/warehouse" /}
+
+<div class="layui-card">
+	<div class="layui-card-body">
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+<script type="text/html" id="toolbar">
+	<button class="pear-btn pear-btn-primary pear-btn-sm" lay-event="reset"><i class="layui-icon layui-icon-edit"></i>修正</button>
+</script>
+<script type="text/html" id="options">
+	<button class="pear-btn pear-btn-primary pear-btn-xs" lay-event="check">盘点</button>
+</script>
+{/block}
+{block name="script"}
+<script>
+	layui.use(['table', 'form', 'jquery','common'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+
+		table.render({
+			elem: '#dataTable',
+			data:{:json_encode($data)},
+			page: true,
+			cols: [[
+				{type: 'checkbox',unresize: true},
+				{field: 'warehouse_name',title: '仓位',align: 'center',unresize: false,width: {:get_col_width('warehouse_name')}, hide: getTableFieldIsHide('dataTable','warehouse_name')},
+				{field: 'sn',title: '物料编码',align: 'center',unresize: false,width: {:get_col_width('sn')}, hide: getTableFieldIsHide('dataTable','sn')},
+				{field: 'name',title: '物料名称',align: 'left',unresize: false,width: {:get_col_width('name')}, hide: getTableFieldIsHide('dataTable','name')},
+				{field: 'stock',title: '现有库存',align: 'center',unresize: false,width: {:get_col_width('stock')}, hide: getTableFieldIsHide('dataTable','stock')},
+				{field: 'sum',title: '入库单库存',align: 'center',unresize: false,width: {:get_col_width('sum')}, hide: getTableFieldIsHide('dataTable','sum')},
+				//{title: '操作',toolbar: '#options',align: 'center',unresize: true,width: 120,fixed: 'right'}
+			]],
+			cellMinWidth: 100,
+			//skin: 'line',
+			toolbar: '#toolbar',
+			defaultToolbar: [{
+				title: '刷新',
+				layEvent: 'refresh',
+				icon: 'layui-icon-refresh',
+			}, 'filter']
+		});
+
+		table.on('sort(dataTable)', function(obj){
+			table.reload('dataTable', {
+				initSort: obj,
+				where: {
+					sort: obj.field,
+					order: obj.type
+				}
+			},true);
+		});
+
+		table.on('toolbar(dataTable)', function(obj) {
+			if (obj.event === 'refresh') {
+				table.reload('dataTable');
+			} else if (obj.event === 'reset') {
+				tableAction(obj.config.id,'确定要修正现有库存为入库单库存量？','{:url('errorStock')}',2);
+			} 
+		});
+
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});
+		
+		table.on('tool(dataTable)', function(obj) {
+			if (obj.event === 'check') {
+				openLayer('盘点物料','{:url('erp.MaterialCheck/add')}?material_type='+obj.data['material_type']+'&material_id='+obj.data['material_id']+'&warehouse_id='+obj.data['warehouse_id']+'&stock_after='+obj.data['stock'],'80%','90%');
+			}
+		});		
+		
+		table.on('colResized(dataTable)', function(obj){
+			$.ajax({
+				type : "post",
+				url : "{:url('Common/setColWidth')}",
+				data: {field:obj.col.field,width:obj.col.width,path:'{:request()->baseUrl()}'},
+				success : function(data) {
+	
+				}
+			});
+		});
+		table.on('colToggled(dataTable)', function(obj){
+			setTableFieldIsHide(obj.config.id,obj.col.field,obj.col.hide);
+		});
+	})
+</script>
+{/block}
+
+

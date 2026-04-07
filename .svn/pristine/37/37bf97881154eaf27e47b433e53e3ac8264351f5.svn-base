@@ -1,0 +1,42 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-input-block {margin-left: 150px;}
+.layui-form-label {width: 120px;}
+</style>
+    <form class="layui-form" action="" method="post">
+        <input type="hidden" name="id" value="{$model['id']}" >
+		<div class="mainBox">
+            <div class="main-container">
+                <div class="layui-form-item">
+                    <label class="layui-form-label">物料编号</label>
+                    <div class="layui-form-mid layui-text-em">{$model['material']['sn']}</div>
+                </div>                
+                <div class="layui-form-item">
+                    <label class="layui-form-label">物料名称</label>
+                    <div class="layui-form-mid layui-text-em">{$model['material']['name']}</div>
+                </div>  				
+                <div class="layui-form-item">
+                    <label class="layui-form-label">工位仓位</label>
+                    <div class="layui-form-mid layui-text-em">{$model['warehouse']['name']}</div>
+                </div>  				
+				<div class="layui-form-item">
+                    <label class="layui-form-label">退仓数量</label>
+                    <div class="layui-input-block">
+                        <input type="text" maxlength="255" name="stock_num" value="{$model['stock_num']}" placeholder="请输入" lay-verify="required|number" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">发起人</label>
+                    <div class="layui-form-mid layui-text-em">{$model['username']}</div>
+                </div> 
+            </div>
+        </div>
+        <div class="bottom">
+			<div class="button-container">
+				<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*"><i class="layui-icon layui-icon-ok"></i>提交</button>
+				<button type="reset" class="layui-btn layui-btn-primary layui-btn-sm"><i class="layui-icon layui-icon-refresh"></i>重置</button>
+			</div>
+		</div>
+	</form>
+{/block}

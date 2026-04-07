@@ -1,0 +1,91 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+.layui-input-block {margin-left: 150px;}
+.layui-form-label {width: 120px;}
+</style>
+<form class="layui-form" action="" method="post" data-reload="3">
+	<input type="hidden" name="material_type" id="material_type">
+	<input type="hidden" name="order_id" id="order_id" value="{$order_id}">
+	<div class="mainBox">
+		<div class="main-container">
+			<div class="layui-form-item">
+				<div class="layui-row">
+					<div class="layui-col-md4">
+						<label class="layui-form-label">物料编码</label>
+						<div class="layui-input-block">
+							<input type="hidden" name="material_id" id="material_id">
+							<input type="text" name="material_sn" id="material_sn" readonly lay-verify="required" ts-selected=""  placeholder="请选择,不可为空" autocomplete="off" class="layui-input">
+						</div>
+					</div>
+					<div class="layui-col-md4">
+						<label class="layui-form-label">物料名称</label>
+						<div class="layui-input-block">
+							<input type="text" name="material_name" id="material_name" readonly lay-verify="required"   placeholder="" autocomplete="off" class="layui-input">
+						</div>
+					</div>
+					<div class="layui-col-md4">
+						<label class="layui-form-label">物料分类</label>
+						<div class="layui-input-block">
+							<input type="text" name="material_category" id="material_category"   placeholder="" autocomplete="off" class="layui-input">
+						</div>
+					</div>				
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<div class="layui-row">
+					<div class="layui-col-md4">
+						<label class="layui-form-label">数量</label>
+						<div class="layui-input-block">
+							<input type="text" name="material_num"  id="material_num" lay-verify="required|number"   placeholder="" autocomplete="off" class="layui-input cal_price">
+						</div>
+					</div>	
+					<div class="layui-col-md4">
+						<label class="layui-form-label">备注</label>
+						<div class="layui-input-block">
+							<input type="text" name="remark"   placeholder="" autocomplete="off" class="layui-input">
+						</div>
+					</div>						
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="bottom">
+		<div class="button-container">
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*"><i class="layui-icon layui-icon-ok"></i>提交</button>
+		</div>
+	</div>
+</form>
+{/block}
+{block name="script"}
+<script>
+
+layui.use(['tableSelect'], function () {
+	var $ = layui.jquery;
+	var tableSelect = layui.tableSelect,form = layui.form;
+
+	tableSelect.render({
+		elem: '#material_sn',
+		checkedKey: 'id',
+		searchKey: 'keyword',
+		searchPlaceholder: '物料名称/编码',
+		table: {
+			url: '{:url('common/material')}',		
+			cols: [[
+				{type: 'radio' },
+				{field: 'sn',title: '物料编码',align: 'center',unresize: false,width: 200},
+				{field: 'name',title: '物料名称',align: 'left',unresize: false,width: 250},
+				{field: 'category_name',title: '物料分类',align: 'center',unresize: false,width: 100},
+			]]
+		},
+		done: function (elem, data) {
+			$('#material_id').val(data.data[0]['id']);
+			$('#material_sn').val(data.data[0]['sn']);
+			$('#material_name').val(data.data[0]['name']);
+			$('#material_category').val(data.data[0]['category_name']);
+			$('#material_type').val(data.data[0]['type']);
+		}
+	})	
+});
+</script>
+{/block}

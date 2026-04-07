@@ -1,0 +1,309 @@
+{extend name="layout" /}
+{block name="body"}
+<style>
+.layui-table-cell{
+    padding: 6px 0px;
+    height:auto !important;
+	white-space:normal;
+}
+#codeTpl{display:none;}
+.layui-btn-fluid{margin-top:5px; width:148px;}
+/* .layui-badge {position: absolute;right: 0; top: 0;padding: 0 2px;} */
+.layui-btn-xs{height:30px}
+</style>
+<style media="print">
+#codeTpl{display:block;margin:0px;padding:0; }
+</style>
+
+<div class="layui-card">
+	<div class="layui-card-body">
+		<form class="layui-form" action=""  lay-filter="search-form" id="search-form">
+			<div class="layui-form-item">
+				<div class="layui-form-item layui-inline">
+					<select name="quality_testing_area" lay-search >
+						<option value="" >质检区域</option>
+						{foreach $quality_testing_area as $key=>$vo}
+						<option value="{$vo['id']}" >{$vo['name']}</option>
+						{/foreach}
+					</select>					
+				</div>				
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="sn" value="" placeholder="物料编码" class="layui-input">						
+				</div>
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="name" value="" placeholder="物料名称" class="layui-input">	
+				</div>				
+				<div class="layui-form-item layui-inline">
+					<input type="text" name="order_sn" placeholder="入库单号" class="layui-input">					
+				</div>
+				<div class="layui-form-item layui-inline">
+					<select name="finish_status" lay-search >
+						<option value="" >完成状态</option>
+						<option value="1" selected >未完成</option>
+						<option value="2" >已完成</option>
+					</select>					
+				</div>
+				<div class="layui-form-item layui-inline">
+					<select name="report_status" lay-search >
+						<option value="" >报告状态</option>
+						<option value="1" selected >报告未填写</option>
+						<option value="2" >待审批</option>
+					</select>					
+				</div>				
+				<div class="layui-form-item layui-inline">
+					<button class="layui-btn" lay-submit lay-filter="query"><i class="layui-icon layui-icon-search"></i>查询</button>
+				</div>
+				<div class="layui-form-item layui-inline">
+					<button class="layui-btn layui-btn-primary layui-border" lay-submit lay-filter="refresh"><i class="layui-icon layui-icon-refresh"></i></button>
+				</div>				
+			</div>
+		</form>	
+		<table id="dataTable" lay-filter="dataTable"></table>
+	</div>
+</div>
+<script type="text/html" id="options">
+	<div class="layui-btn-group">
+		<button class="layui-btn layui-btn-primary layui-btn-xs" lay-event="file"><i class="layui-icon layui-icon-file"></i></button>
+		<button class="layui-btn layui-btn-xs" lay-event="report">检验报告</button>
+		<button class="layui-btn  layui-bg-orange layui-btn-xs" lay-event="print">标签打印</button>
+		{{#  if(d.can_check === true && d.report_status != 2){ }}<button class="layui-btn layui-bg-blue layui-btn-xs  layui-btn-fluid" lay-event="check">保存本次检验数量</button>{{#  } }}
+	</div>
+</script>
+<div type="text/html" id="codeTpl">
+</div>
+{/block}
+{block name="js"}
+<script src="/static/tool/jquery.min.js"></script>
+<script src="/static/tool/jQuery.print.min.js"></script>
+<script src="/static/tool/qrcode.min.js"></script>
+{/block}
+{block name="script"}
+<script>
+	var data_count = 0;
+	var _interval = '';
+	
+	layui.use(['table', 'form', 'jquery'], function() {
+		let table = layui.table;
+		let form = layui.form;
+		let $ = layui.jquery;
+		
+		var editable = function(d){
+			if(d.report_status != 2) return 'text';
+		};
+		
+		table.render({
+			elem: '#dataTable',
+			url: "{:url('index')}?finish_status=1&report_status=1",
+			page: true,
+			height: 'full-170',
+			limit:100,
+			size:'sm',
+			scrollPos : 'fixed',
+			limits:[100,200,300,400,500],
+			cols: [[
+				{field: 'order_sn',title: '入库单号',align: 'center',unresize: false,width: {:get_col_width('order_sn',120)},templet: function(d){return d.order_sn+(d.inspector_sign&&d.status!=2&&d.report_status!=2?'<span class="layui-badge">待审批</span>':'')+(d.status==3&&d.report_status!=2?'<span class="layui-badge">已结算</span>':'');}},
+				{field: 'is_prior',title: '优先检验',align: 'center',unresize: false,width: {:get_col_width('is_prior',80)},templet: function(d){return d.is_prior==1?'优先':'';}},		
+				{field: 'sn',title: '物料编码',align: 'left',unresize: false,width: {:get_col_width('sn',160)},templet: function(d){return d.sn;}},
+				{field: 'name',title: '物料名称',align: 'left',unresize: false,width: {:get_col_width('name')},minWidth: 200,templet: function(d){return d.name;}},				
+				{field: 'stock_num',title: '要求质检量',align: 'center',unresize: false,width: {:get_col_width('stock_num',90)}},				
+				{field: 'qualities_num',title: '已检正品量',align: 'center',unresize: false,width: {:get_col_width('qualities_num',90)}, edit: editable},
+				{field: 'defective_num',title: '已检次品量',align: 'center',unresize: false,width: {:get_col_width('defective_num',90)}, edit: editable},
+				{field: 'num',title: '本次正品量',align: 'center',unresize: false,width: {:get_col_width('num',90)}, edit: editable},
+				{field: 'num2',title: '本次次品量',align: 'center',unresize: false,width: {:get_col_width('num2',90)}, edit: editable},
+				{field: 'unit',title: '单位',align: 'center',unresize: false,width: {:get_col_width('unit',60)},templet: function(d){return d.unit;}},
+				{title: '操作',toolbar: '#options',align: 'center',unresize: true,width: 200,fixed: 'right'}
+			]],
+			done: function(res, curr, count){
+				data_count = count;				
+			},			
+		});
+		
+		// 单元格普通编辑事件
+		table.on('edit(dataTable)', function(obj){	
+			var reg = /^([0-9]*)$/
+			var check_result = true;
+			if(reg.test(obj.value)) {
+				
+				if(obj.field == 'num'){
+					var num =  parseInt(obj.data.stock_num) - parseInt(obj.data.qualities_num_original) - parseInt(obj.data.defective_num_original) - parseInt(obj.data.num2);
+					if(parseInt(obj.value) > num){
+						layer.msg('最大数量为:'+num);
+						check_result = false;
+					}
+				}
+				
+				if(obj.field == 'num2'){
+					var num =  parseInt(obj.data.stock_num) - parseInt(obj.data.qualities_num_original) - parseInt(obj.data.defective_num_original) - parseInt(obj.data.num);
+					if(parseInt(obj.value) > num){
+						layer.msg('最大数量为:'+num);
+						check_result = false;
+					}
+				}
+				
+				if(obj.field == 'qualities_num'){
+					var num = parseInt(obj.value) - parseInt(obj.data.qualities_num_original);
+					if(parseInt(obj.data.stock_num) - parseInt(obj.value) - parseInt(obj.data.defective_num) < 0){
+						layer.msg('已检正品量+已检次品量不可大于要求质检量');
+						check_result = false;
+					}else{
+						var update = {};
+						update.num = num;
+						obj.update(update);
+					}
+				}
+				
+				if(obj.field == 'defective_num'){
+					var num = parseInt(obj.value) - parseInt(obj.data.defective_num_original);
+					if(parseInt(obj.data.stock_num) - parseInt(obj.value) - parseInt(obj.data.qualities_num) < 0){
+						layer.msg('已检正品量+已检次品量不可大于要求质检量');
+						check_result = false;
+					}else{
+						var update = {};
+						update.num2 = num;
+						obj.update(update);
+					}
+				}				
+				
+			}else{
+				layer.msg('请输入大于0的正整数')
+				check_result = false;
+			}
+			if(check_result == false){
+				obj.td.find('.layui-table-cell').html(obj.oldValue);
+				obj.td.find('.layui-table-cell .layui-input').val(obj.oldValue);
+				var update = {};
+				update[obj.field] = obj.oldValue;
+				obj.update(update);
+			}else{
+				//console.log(obj);
+				/*
+				if(obj.field == 'num'){
+					var update = {};
+					update['num2'] = parseInt(obj.data.stock_num) - parseInt(obj.data.quality_num) - parseInt(obj.data.stocked_num) - parseInt(obj.value)  ;
+					obj.update(update);
+				}
+				if(obj.field == 'num2'){
+					var update = {};
+					update['num'] = parseInt(obj.data.stock_num) - parseInt(obj.data.quality_num) - parseInt(obj.data.stocked_num) - parseInt(obj.value)  ;
+					obj.update(update);
+				}*/
+			}
+		});	
+
+		table.on('tool(dataTable)', function(obj) {
+			//console.log(obj); // 查看对象所有成员
+			//var btn = $("button[lay-event='check']");
+			if (obj.event === 'report') {
+				openLayer('检验报告','{:url('report')}?id='+obj.data['id'],'80%','90%');
+			} else if (obj.event === 'file') {
+				openLayer('QC品检作业指导书','{:url('qcFile')}?id='+obj.data['id'],'80%','90%');
+			}else if (obj.event === 'check') {
+				if(obj.data.can_check != true){
+					layer.msg('已完成质检');
+					return false;
+				}
+				if(obj.data['num'] == 0 && obj.data['num2'] == 0){
+					layer.msg('请输入本次正品量或本次次品量');
+					return false;
+				}
+				
+				var data = {ids:[],num:{},defective:{}};
+				data['ids'] = [obj.data['id']];
+				data['num'][obj.data['id']] = obj.data['num']?obj.data['num']:0;
+				data['defective'][obj.data['id']] = obj.data['num2']?obj.data['num2']:0;
+				layerConfirm('确定品检审核?','{:url('check')}',data,function(res){
+					table.reloadData('dataTable');
+					
+					toPrintPage(80,{id:obj.data['id'],quality_num:obj.data['num'],defective_num:obj.data['num2'],admin:'{:request()->userInfo['name']}'})
+				})
+			}else if (obj.event === 'print') {
+				layer.prompt({
+						title: '打印数量', 
+						formType: 2,
+						value:1,
+						btn: ['确定','补打标签'],
+						btn2: function () {
+							layer.prompt({title: '输入标签编号', formType: 2,value:''}, function(text, prompt_index){							
+								ajaxActionCall('{:url('checkCode')}',{code:text,num:1},function(res){
+									if(res.code == 200){
+										layer.close(prompt_index);
+										printCode(res.data.code);
+									}else{
+										layer.msg(res.msg);
+									}									
+								},false)
+							});	
+						}
+					}, function(text, prompt_index){
+					layer.close(prompt_index);
+					ajaxActionCall('{:url('code')}',{id:obj.data['id'],num:text},function(res){
+						printCode(res.data.code);
+					},false)
+				});	
+
+			}
+		});	
+		
+		function printCode(code){
+			var html = '';
+			layui.each(code, function (index, item) {
+				if(index != 0){
+					html += '<div style="page-break-after: always;display: block;"></div>';
+				}
+				QRCode.toDataURL(item, function(error, url) {
+					if (error) {
+						alert(error);
+					}else{
+						html += '<div style="width:100%;height:80%;margin:0;left:0px;padding:0;overflow:hidden;" ><img src="'+url+'" height=80% style="width:auto;height:48.4724409448819px;display:block;margin:0 auto;padding:0;"/></div><div style="font-size:0.4rem; text-align: center;line-height: 10px;">'+item+'</div>';
+					}
+				});
+			})
+
+			var load_index 	= layer.load(2);	
+			$('#codeTpl').html(html);
+			$("#codeTpl").print({
+				mediaPrint:true,
+				timeout:200*code.length,
+				deferred: $.Deferred().done(function(){
+					layer.close(load_index);
+				}),
+			});
+		}
+		
+		form.on('submit(query)', function(data) {
+			table.reload('dataTable', {
+				where: data.field,
+				page:{curr: 1}
+			})
+			return false;
+		});	
+
+		form.on('submit(refresh)', function(data) {
+			location.reload();
+			return false;
+		});	
+
+		_interval = setInterval(function (){
+			var data = form.val('search-form');
+			data.page = 1;
+			data.limit = 1;
+			$.ajax({
+				type: 'GET',
+				url:'{:url('index')}',
+				data: data,
+				dataType: 'json',
+				success: function(res){
+					if(res.count > data_count){
+						$('.layui-icon-refresh').html('有新数据');
+					}else{
+						$('.layui-icon-refresh').html('');
+					}
+				},
+			});
+		},10000)		
+	
+	})
+</script>
+{/block}
+
+

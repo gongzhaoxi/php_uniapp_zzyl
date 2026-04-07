@@ -1,0 +1,77 @@
+{extend name="base" /}
+{block name="body"}
+<style>
+	.pear-container{background-color:white;}
+</style>
+<form class="layui-form" action="" data-reload="3">
+	<input type="hidden" name="from_id" id="from_id"  value="" >
+	<input type="hidden" name="to_id" id="to_id"  value="" >
+	<div class="layui-form-item">
+		<label for="" class="layui-form-label">把</label>
+		<div class="layui-input-block">
+			<ul id="demoTree" class="dtree" ></ul>
+		</div>
+	</div>
+	<div class="layui-form-item">
+		<label for="" class="layui-form-label">调拨</label>
+		<div class="layui-input-block">
+			<ul id="demoTree2" class="dtree" ></ul>
+		</div>
+	</div>
+	<div class="bottom">
+		<div class="button-container">
+			<button type="submit" class="layui-btn layui-btn-normal layui-btn-sm" lay-submit="" lay-filter="*">
+				<i class="layui-icon layui-icon-ok"></i>
+				提交
+			</button>
+		</div>
+	</div>
+</form>
+{/block}
+{block name="script"}
+<script>
+layui.use(['form','element','iconPicker','jquery','dtree'], function() {
+	var form = layui.form;
+	var element = layui.element;
+	var dtree = layui.dtree;
+	var $ = layui.jquery;
+	var demoTree = dtree.renderSelect({
+		elem: "#demoTree",
+		data:{:json_encode($tree)},
+		selectInitVal: "0", 
+		//skin: "laySimple",  // layui主题风格
+		//icon: "-1",  // 隐藏二级图标
+		line: true,  // 显示树线
+		response:{
+            treeId: "id",			  //节点ID
+            parentId: "pid",	  //父节点ID
+            title: "title",			  //节点名称 
+            childName: "children",	  //子节点名称
+		}
+	});
+
+	dtree.on("node('demoTree')" ,function(param){
+		$('#from_id').val(param.param.nodeId);
+	});
+
+	var demoTree2 = dtree.renderSelect({
+		elem: "#demoTree2",
+		data:{:json_encode($tree)},
+		selectInitVal: "0", 
+		//skin: "laySimple",  // layui主题风格
+		//icon: "-1",  // 隐藏二级图标
+		line: true,  // 显示树线
+		response:{
+            treeId: "id",			  //节点ID
+            parentId: "pid",	  //父节点ID
+            title: "title",			  //节点名称 
+            childName: "children",	  //子节点名称
+		}
+	});
+
+	dtree.on("node('demoTree2')" ,function(param){
+		$('#to_id').val(param.param.nodeId);
+	});
+});
+</script>
+{/block}

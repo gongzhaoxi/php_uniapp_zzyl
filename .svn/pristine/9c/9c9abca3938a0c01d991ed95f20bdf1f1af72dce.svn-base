@@ -1,0 +1,275 @@
+<?php
+declare (strict_types = 1);
+namespace app\index\logic;
+use think\facade\Db;
+use app\common\model\{ErpOrderProduce,ErpOrderProduceProcess,ErpOrderProduceError,ErpProduct};
+
+
+class BoardLogic{
+
+	public static function getList($query=[]){
+		$map	 		= [];
+		$map[]			= ['a.finish_date', '=', ''];
+		$map[]			= ['a.produce_date', '<>', ''];
+		$field 			= 'a.id,a.product_id,a.pass_down_time,a.create_time,a.produce_date,a.produce_sn,b.order_sn,b.address,c.product_model,c.product_specs';		
+		if(isset($query['process_id']) && $query['process_id'] !== ''){
+			$map[]		= ['a.process_id', '=', $query['process_id']];
+		}
+		$list 			= ErpOrderProduce::alias('a')->join('erp_order b','a.order_id = b.id','LEFT')->join('erp_order_product c','a.order_product_id = c.id','LEFT')->where($map)->field($field)->order(['a.create_time'=>'asc','b.order_sn'=>'asc','a.product_id'=>'asc','a.produce_sn'=>'asc'])->select();
+		$data 			= [];
+		$keys 			= [];
+		$tmp	 		= ErpOrderProduceProcess::field('id,create_time,process_id,order_produce_id')->where('process_id','in','1,2,3')->where('order_produce_id','in',$list->column('id'))->order('id asc')->select();
+		$process		= [];
+		foreach($tmp as $vo){
+			$process[$vo['order_produce_id']][$vo['process_id']] = $vo->toArray();
+		}
+		$tmp	 		= ErpOrderProduceError::field('id,check_type,process_id,order_produce_id')->where('status',0)->where('type','检验不良')->where('check_type','<>','')->where('order_produce_id','in',$list->column('id'))->order('id asc')->select();
+		$error			= [];
+		foreach($tmp as $vo){
+			$error[$vo['order_produce_id']][$vo['process_id']] = $vo->toArray();
+		}
+		
+		foreach($list as $k=>$vo){
+			if(!empty($process[$vo['id']][3])){
+				continue;
+			}
+			$data[$k]					= $vo->toArray();
+			$data[$k]['create_time']	= substr($vo['create_time'],0,10);
+			$data[$k]['numbers']		= $k+1;
+			$key 						= $data[$k]['create_time'].$data[$k]['order_sn'].$data[$k]['product_id'];
+			if(in_array($key,$keys)){
+				$data[$k]['address']		= '';
+				$data[$k]['create_time']	= '';
+				$data[$k]['order_sn']		= '';
+				$data[$k]['product_model']	= '';
+				$data[$k]['product_specs']	= '';
+			}else{
+				$keys[] 					= $key;
+			}
+			if(!empty($process[$vo['id']][1])){
+				$data[$k]['process1']		= '→';
+			}else if($vo['pass_down_time']){
+				$data[$k]['process1']		= date('H:i:s',$vo['pass_down_time']);
+			}else{
+				$data[$k]['process1']		= '';
+			}
+			
+			if(!empty($process[$vo['id']][2])){
+				$data[$k]['process2']		= '→';
+			}else if(!empty($process[$vo['id']][1])){
+				$data[$k]['process2']		= date('H:i:s',strtotime($process[$vo['id']][1]['create_time']));
+			}else{
+				$data[$k]['process2']		= '';
+			}
+			
+			if(!empty($process[$vo['id']][2])){
+				$data[$k]['process3']		= date('H:i:s',strtotime($process[$vo['id']][2]['create_time']));
+			}else if(!empty($error[$vo['id']][2])){
+				$data[$k]['process3']		= $error[$vo['id']][2]['check_type'];
+			}else{
+				$data[$k]['process3']		= '';
+			}
+		}
+		return ['code'=>0,'data'=>$data,'extend'=>['count' => $list->count(), 'limit' => 10000]];
+    }
+	
+	
+	public static function getBoardMonthStat(){
+		$month 		= date('Y-m');
+		$data 		= [];
+		for($i=1;$i<=7;$i++){
+			$count	= ErpOrderProduce::where('finish_date','>=',$month.'-01')->where('finish_date','<=',$month.'-'.date('t'))->count();
+			$days 	= $i == 1?date('j'):date('t');
+			$data[]	= ['month'=>$month,'count'=>round($count/$days,1)];
+			$month	= date('Y-m',strtotime('-'.$i.' month'));
+		}
+		return array_reverse($data);
+	}
+	
+	public static function getBoardPass(){
+		$map 	= [];
+		$map[]	= ['a.process_id','=',3];
+		$map[]	= ['b.process_id','<>',5];
+		$field 	= 'b.produce_sn,c.address';
+		return ErpOrderProduceProcess::alias('a')
+		->join('erp_order_produce b','a.order_produce_id = b.id','LEFT')
+		->join('erp_order c','b.order_id = c.id','LEFT')->where($map)->whereDay('a.create_time')
+		->order(['b.create_time'=>'asc','c.order_sn'=>'asc','b.product_id'=>'asc','b.produce_sn'=>'asc'])->select();
+	}
+	
+	
+	public static function getBoardError1(){
+		return ErpOrderProduceError::field('id,error,username,material_sn,material_name,lack_num,create_time,order_produce_id')->where('status',0)->where('type','缺料中')->order('id asc')->select();
+	}
+	
+	public static function getBoardError2(){
+		$list 	= ErpOrderProduceError::alias('a')->join('erp_order_produce b','a.order_produce_id = b.id','LEFT')->field('a.id,a.error,a.username,a.check_type,a.create_time,a.order_produce_id,b.produce_sn')->where('status',0)->where('type','检验不良')->order('id asc')->select();
+		$data 	= [];
+		foreach($list as $vo){
+			if(empty($data[$vo['order_produce_id']])){
+				$data[$vo['order_produce_id']] 				= $vo->toArray();
+				$data[$vo['order_produce_id']]['error']		= [$vo['error']];
+			}else{
+				$data[$vo['order_produce_id']]['error'][]	= $vo['error'];
+			}
+		}
+		return $data;
+	}
+		
+	public static function getBoardCount(){
+		$data 	= [];
+		$data[]	= ErpOrderProduceProcess::where('process_id',1)->whereDay('create_time')->count();
+		$data[]	= ErpOrderProduceProcess::where('process_id',2)->whereDay('create_time')->count();
+		$data[]	= ErpOrderProduceProcess::where('process_id',3)->whereDay('create_time')->count();
+		$data[]	= ErpOrderProduceProcess::where('process_id',5)->whereDay('create_time')->count();
+		$data[]	= ErpOrderProduce::where('produce_date',date('Y-m-d'))->count();
+		$data[]	= ErpOrderProduce::where('produce_status','=',10)->count();
+		$data[]	= ErpOrderProduce::alias('a')
+							->join('erp_order_produce_process b','a.id = b.order_produce_id and b.process_id = 2 ','LEFT')
+							->where('a.produce_date','<>','')
+							->where('a.finish_date','')
+							->whereNull('b.id')
+							->field('a.id')
+							->count();
+		return $data;
+	}
+	
+	public static function getBoardWait(){
+		$tmp  	= ErpOrderProduce::field('id,product_id')->with(['product'=>function($query){return $query->field('id,model,specs');}])->where('produce_status','=',10)->select();
+		$data 	= [];
+		foreach($tmp as $vo){
+			if(empty($data[$vo['product_id']])){
+				$data[$vo['product_id']] 			= ['model'=>$vo['product']['model'],'specs'=>$vo['product']['specs'],'count'=>1];
+			}else{
+				$data[$vo['product_id']]['count'] 	= $data[$vo['product_id']]['count'] + 1;
+			}
+		}
+		array_multisort(array_column($data,'count'),SORT_DESC,$data);
+		return $data;
+	}
+	
+	public static function getProduct($act){
+		$limit 		= 20;
+		$map 		= [];
+		if($act == 1){
+			$map[] 	= ['a.create_time','>=',strtotime(date('Y-m-d'))];
+		}else if($act == 2){
+			$map[] 	= ['a.create_time','>=',strtotime(date('Y-m-01'))];
+			$map[] 	= ['a.create_time','<=',strtotime(date('Y-m-').date('t').' 23:59:59')];
+		}else if($act == 3){
+			$map[] 	= ['a.create_time','>=',strtotime(date('Y-01-01'))];
+			$map[] 	= ['a.create_time','<=',strtotime(date('Y-12-31 23:59:59'))];
+		}
+		$list 		= ErpOrderProduce::alias('a')->join('erp_product b','a.product_id = b.id','LEFT')->field('a.product_id,count(a.product_id) as num,b.specs,b.model')->where($map)->group('a.product_id')->order('num desc')->limit($limit)->select()->toArray();
+		$count 		= $limit - count($list);
+		if($count > 0){
+			$tmp 		= ErpProduct::field('model,specs')->where('id','not in',array_column($list,'id'))->order('id asc')->limit($count)->select();
+			foreach($tmp as $vo){
+				$list[]	= ['num'=>0,'specs'=>$vo['specs'],'model'=>$vo['model']];
+			}
+		}
+		$series 	= [];
+		$other 		= 0;
+		foreach($list as $k=>$vo){
+			if($k <= 4){
+				$series[] 	= ['name'=>$vo['model'].$vo['specs'],'value'=>$vo['num']];
+			}else{
+				$other 		= $other + $vo['num'];
+			}
+		}
+		if($other){
+			$series[] 		= ['name'=>'其它型号','value'=>$other];
+		}
+		return ['list'=>$list,'series'=>$series];
+	}
+	
+	public static function getSummaryCount($act){
+		$count 		= [];
+		$map 		= [];
+		$map2 		= [];
+		$xAxis 		= [];
+		$series 	= [['name'=>'接单量','type'=>'line','stack'=>'Total','data'=>[]],['name'=>'出货量','type'=>'line','stack'=> 'Total','data'=>[]]];
+		if($act == 1){
+			$today 					= date('Y-m-d');
+			$map[] 					= ['a.shipping_time','>=',strtotime($today)];
+			$map2[] 				= ['c.out_warehouse_time','=',$today];
+			$xAxis					= [$today];
+			$series[0]['data'][] 	= ErpOrderProduce::whereDay('create_time')->count();
+			$series[1]['data'][] 	= ErpOrderProduce::alias('a')->join('erp_order_shipping b','a.order_shipping_id = b.id','LEFT')->where('b.out_warehouse_time',$today)->count();
+		}else if($act == 2){
+			$map[] 						= ['a.shipping_time','>=',strtotime(date('Y-m-01'))];
+			$map[] 						= ['a.shipping_time','<=',strtotime(date('Y-m-').date('t').' 23:59:59')];
+			$map2[] 					= ['c.out_warehouse_time','>=',(date('Y-m-01'))];
+			$map2[] 					= ['c.out_warehouse_time','<=',(date('Y-m-').date('t'))];
+			for($i=1;$i<=date('t');$i++){
+				$xAxis[] 				= $i;
+				$date 					= date('Y-m-').($i<10?('0'.$i):$i);
+				$series[0]['data'][] 	= ErpOrderProduce::whereDay('create_time', $date)->count();
+				$series[1]['data'][] 	= ErpOrderProduce::alias('a')->join('erp_order_shipping b','a.order_shipping_id = b.id','LEFT')->where('b.out_warehouse_time',$date)->count();
+			}
+		}else if($act == 3){
+			$map[] 						= ['a.shipping_time','>=',strtotime(date('Y-01-01'))];
+			$map[] 						= ['a.shipping_time','<=',strtotime(date('Y-12-31 23:59:59'))];
+			$map2[] 					= ['c.out_warehouse_time','>=',(date('Y-01-01'))];
+			$map2[] 					= ['c.out_warehouse_time','<=',(date('Y-12-31'))];
+			for($i=1;$i<=12;$i++){
+				$xAxis[] 				= $i;
+				$month 					= date('Y-').($i<10?('0'.$i):$i);
+				$series[0]['data'][] 	= ErpOrderProduce::whereMonth('create_time',$month)->count();
+				$series[1]['data'][] 	= ErpOrderProduce::alias('a')->join('erp_order_shipping b','a.order_shipping_id = b.id','LEFT')->where('b.out_warehouse_time','>=',$month.'-01')->where('b.out_warehouse_time','<=',$month.'-31')->count();
+			}
+		}
+		$cid 				= '42,43,44';
+		$order_amount 		= ErpOrderProduce::alias('a')->join('erp_order_product b','a.order_product_id = b.id','LEFT')->join('erp_order_shipping c','a.order_shipping_id = c.id','LEFT')->join('erp_product d','a.product_id = d.id','LEFT')->where('d.cid','in',$cid)->where($map2)->where('c.shipping_status','=',30)->sum('b.product_price');
+		$order_amount 		= $order_amount + ErpOrderProduce::alias('a')->join('erp_order_accessory b','a.order_product_id = b.order_product_id','LEFT')->join('erp_order_shipping c','a.order_shipping_id = c.id','LEFT')->join('erp_product d','a.product_id = d.id','LEFT')->where('d.cid','in',$cid)->where('c.shipping_status','=',30)->where($map2)->sum('b.product_price');
+		$order_amount 		= $order_amount + Db::table('erp_order')->alias('a')->join('erp_order_accessory b','a.id = b.order_id','LEFT')->where($map)->where('b.order_product_id','=',0)->where('a.shipping_status','=',30)->sum('total_price');
+		
+		if($order_amount>10000){
+			$order_amount 	= sprintf('%.2f', $order_amount/10000);
+			$count[] 		= num_format($order_amount).'万';
+		}else{
+			$count[] 		= $order_amount;
+		}
+		$product_count 		= ErpOrderProduce::alias('a')->join('erp_order_shipping c','a.order_shipping_id = c.id','LEFT')->join('erp_product d','a.product_id = d.id','LEFT')->where('d.cid','in',$cid)->where($map2)->where('c.shipping_status','=',30)->count();
+		if($product_count>10000){
+			$product_count 	= sprintf('%.2f', $product_count/10000);
+			$count[] 		= num_format($product_count).'万';
+		}else{
+			$count[] 		= $product_count;
+		}
+		return ['count'=>$count,'xAxis'=>$xAxis,'series'=>$series];
+	}
+	
+
+	public static function getShipping($act){
+		$limit 		= 40;
+		$map 		= [];
+		$map[] 		= ['c.shipping_status','=',30];
+		if($act == 1){
+			$map[] 	= ['c.out_warehouse_time','=',date('Y-m-d')];
+		}else if($act == 2){
+			$map[] 	= ['c.out_warehouse_time','>=',(date('Y-m-01'))];
+			$map[] 	= ['c.out_warehouse_time','<=',(date('Y-m-').date('t'))];
+		}else if($act == 3){
+			$map[] 	= ['c.out_warehouse_time','>=',(date('Y-01-01'))];
+			$map[] 	= ['c.out_warehouse_time','<=',(date('Y-12-31'))];
+		}
+		$list 		= ErpOrderProduce::alias('a')
+							->join('erp_product b','a.product_id = b.id','LEFT')
+							->join('erp_order_shipping c','a.order_shipping_id = c.id','LEFT')
+							->field('a.product_id,count(a.product_id) as num,b.specs,b.model')
+							->where($map)->group('a.product_id')
+							->order('num desc')->limit($limit)->select()->toArray();
+		$count 		= $limit - count($list);
+		if($count > 0){
+			$tmp 		= ErpProduct::field('id,model,specs')
+							->where('id','not in',array_column($list,'product_id'))
+							->order('id asc')->limit($count)->select();
+			foreach($tmp as $vo){
+				$list[]	= ['product_id'=>$vo['id'],'num'=>0,'specs'=>$vo['specs'],'model'=>$vo['model']];
+			}
+		}
+		return $list ;
+	}
+
+}
